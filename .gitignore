@@ -1,3 +1,4 @@
 node_modules/
 functions/
 .env
+.DS_Store
