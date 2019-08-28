@@ -1,1 +1,2 @@
-/    https://github.com/olivernyc/nycmesh-api   302
+/		https://github.com/olivernyc/nycmesh-api	302
+/v1/*	/.netlify/functions/:splat					200
