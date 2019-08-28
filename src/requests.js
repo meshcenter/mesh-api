@@ -4,7 +4,7 @@ import pathToRegexp from "path-to-regexp";
 import { performQuery } from "./db";
 import { createResponse } from "./utils";
 
-export async function handler(event, context) {
+export async function handler(event) {
 	// This is a private endpoint. Auth is required for all requests
 	if (!event.headers.authorization)
 		return createResponse(401, {
@@ -59,12 +59,12 @@ export async function handler(event, context) {
 	// Handle request
 	try {
 		if (event.httpMethod === "GET") {
-			if (event.path === "/requests") {
+			if (event.path === "/v1/requests") {
 				const requests = await getRequests();
 				return createResponse(200, requests);
 			}
 
-			if (event.path === "/requests/") {
+			if (event.path === "/v1/requests/") {
 				return createResponse(404, {
 					error: {
 						message: `Unrecognized request URL (${event.httpMethod} ${event.path}). If you are trying to list objects, remove the trailing slash. If you are trying to retrieve an object, pass a valid identifier.`
@@ -73,7 +73,9 @@ export async function handler(event, context) {
 			}
 
 			// TODO: Do this better
-			const regex = pathToRegexp("/requests/:id", null, { strict: true });
+			const regex = pathToRegexp("/v1/requests/:id", null, {
+				strict: true
+			});
 			const result = regex.exec(event.path);
 
 			if (!result) {

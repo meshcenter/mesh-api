@@ -2,15 +2,15 @@ import pathToRegexp from "path-to-regexp";
 import { performQuery } from "./db";
 import { createResponse } from "./utils";
 
-export async function handler(event, context) {
+export async function handler(event) {
 	try {
 		if (event.httpMethod === "GET") {
-			if (event.path === "/buildings") {
+			if (event.path === "/v1/buildings") {
 				const buildings = await getBuildings();
 				return createResponse(200, buildings);
 			}
 
-			if (event.path === "/buildings/") {
+			if (event.path === "/v1/buildings/") {
 				return createResponse(404, {
 					error: {
 						message: `Unrecognized request URL (${event.httpMethod} ${event.path}). If you are trying to list objects, remove the trailing slash. If you are trying to retrieve an object, pass a valid identifier.`
@@ -19,7 +19,7 @@ export async function handler(event, context) {
 			}
 
 			// TODO: Do this better
-			const regex = pathToRegexp("/buildings/:id", null, {
+			const regex = pathToRegexp("/v1/buildings/:id", null, {
 				strict: true
 			});
 			const result = regex.exec(event.path);
