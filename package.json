@@ -1,0 +1,24 @@
+{
+  "name": "nycmesh-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "olivernyc <oliver@static.network>",
+  "license": "MIT",
+  "dependencies": {
+    "heroku-client": "^3.0.7",
+    "jsonwebtoken": "^8.5.1",
+    "jwks-rsa": "^1.6.0",
+    "node-fetch": "^2.6.0",
+    "path-to-regexp": "^3.0.0",
+    "pg": "^7.12.0",
+    "pg-native": "^3.0.0"
+  },
+  "devDependencies": {
+    "netlify-lambda": "^1.5.1"
+  },
+  "scripts": {
+    "start": "netlify-lambda serve src",
+    "build": "netlify-lambda build src",
+    "reset-db": "node scripts/create-database && node scripts/import-spreadsheet.js"
+  }
+}
