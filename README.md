@@ -1,62 +1,24 @@
 # NYC Mesh API
 
+🚧 Work in progress!
+
+## Architecture
+
+This API is a thin wrapper around a Heroku Postgres database. Endpoints are implemented with AWS Lambda functions, deployed and versioned by Netlify. These functions query the database directly, using the Heroku API to obtain credentials. User access control is implemented with Auth0 tokens and roles.
+
+## Endpoints
+
+https://api.nycmesh.net/v1/nodes  
+https://api.nycmesh.net/v1/nodes/227  
+https://api.nycmesh.net/v1/buildings  
+https://api.nycmesh.net/v1/members (Auth Required)  
+https://api.nycmesh.net/v1/requests (Auth Required)  
+
 ## Schema
 
-Node
-Link
-Device
-Building
-Member
-Join Request
-Install
+Currently, we use node numbers to represent join requests, members, and nodes. This schema is an attempt to detangle our data and create a common definition of the various components of the mesh.
 
-### Node
-
-A specific location on the network. For example, an individual apartment, a rooftop access point, or an upstream internet connection.
-
--   id
--   building
--   coordinates
--   install_date
--   name (optional) // e.g. "Apt 4G", "Guernsey Hub", "Supernode 3"
--   notes (optional)
--   abandon_date (optional)
-
-*   devices
-*   members
-
-### Device
-
-A unit of hardware. Routers, radios, servers.
-
--   id
--   type (Device Type)
--   node
--   install_date
--   active
--   name (optional)
--   ssid (optional)
--   notes (optional)
--   abandon_date (optional)
-
-*   links
-
-### Device Type
-
--   id
--   name
--   manufacturer
--   directional
--   range
--   angle
-
-### Link
-
-A connection between two devices. For example, an ethernet cable or wireless connection.
-
--   id
--   device_a
--   device_b
+It also attempts to address some ambiguities in our current system. For example, in a building with multiple connected apartments, is the rooftop antenna and router an individual node? Or is it part of one of the apartment nodes? In this schema, devices can belong to either a node or a building. 
 
 ### Building
 
@@ -68,9 +30,6 @@ A physical location.
 -   bin (optional) // NYC Building ID Number
 -   notes (optional)
 
-*   devices
-*   nodes
-
 ### Member
 
 A person in the mesh community. For example, a node-owner, donor or installer.
@@ -80,34 +39,80 @@ A person in the mesh community. For example, a node-owner, donor or installer.
 -   email
 -   phone
 
--   nodes
--   join requests
+### Node
+
+A specific location on the network. For example, an individual apartment, a rooftop access point, or an upstream internet connection.
+
+-   id
+-   coordinates
+-   name (optional) // e.g. "Apt 4G", "Guernsey Hub", "Supernode 3"
+-   notes (optional)
+-   install_date
+-   abandon_date (optional)
+-   building_id
+-   member_id
 
 ### Join Request
 
 -   id
--   building
 -   date
--   roofAccess
--   panoramas
+-   roof_access
+-   member_id
+-   building_id
 
--   Member
+### Panorama
+
+-   id
+-   url
+-   date
+-   join_request_id
+
+### Device Type
+
+-   id
+-   name
+-   manufacturer
+-   directional
+-   range
+-   angle
+
+### Device
+
+A unit of hardware. Routers, radios, servers, etc.
+
+-   id
+-   type (Device Type)
+-   node
+-   active
+-   name (optional)
+-   ssid (optional)
+-   notes (optional)
+-   install_date
+-   abandon_date (optional)
+
+### Link
+
+A connection between two devices. For example, an ethernet cable or wireless connection.
+
+-   id
+-   device_a
+-   device_b
 
 ### Install
 
 -   id
 -   node
 -   date
+-   node_id
+-   install_leader_id (Member)
+-   install_trainee_ids (optional) (Member)
+-   installee_id (Member)
 
-*   node
-*   install_leader (Member)
-*   install_trainees (optional) (Member)
-*   installee
-
-### Speed Test ?
+### Speed Test
 
 -   id
 -   date
+-   node_id
 
 ## Example Queries
 
