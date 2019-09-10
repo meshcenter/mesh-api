@@ -12,13 +12,13 @@ https://api.nycmesh.net/v1/nodes
 https://api.nycmesh.net/v1/nodes/227  
 https://api.nycmesh.net/v1/buildings  
 https://api.nycmesh.net/v1/members (Auth Required)  
-https://api.nycmesh.net/v1/requests (Auth Required)  
+https://api.nycmesh.net/v1/requests (Auth Required)
 
 ## Schema
 
 Currently, we use node numbers to represent join requests, members, and nodes. This schema is an attempt to detangle our data and create a common definition of the various components of the mesh.
 
-It also attempts to address some ambiguities in our current system. For example, in a building with multiple connected apartments, is the rooftop antenna and router an individual node? Or is it part of one of the apartment nodes? In this schema, devices can belong to either a node or a building. 
+It also attempts to address some ambiguities in our current system. For example, in a building with multiple connected apartments, is the rooftop antenna and router an individual node? Or is it part of one of the apartment nodes? In this schema, devices can belong to either a node or a building.
 
 ### Building
 
@@ -45,7 +45,8 @@ A specific location on the network. For example, an individual apartment, a roof
 
 -   id
 -   coordinates
--   name (optional) // e.g. "Apt 4G", "Guernsey Hub", "Supernode 3"
+-   name (optional) // e.g. "Saratoga", "SN1"
+-   location (optional) // Human readable location, e.g. "Apt 4B", "Basement"
 -   notes (optional)
 -   install_date
 -   abandon_date (optional)
@@ -83,7 +84,9 @@ A unit of hardware. Routers, radios, servers, etc.
 -   id
 -   type (Device Type)
 -   node
--   active
+-   status (in stock, active, dead)
+-   coordinates
+-   azimuth (direction in degrees, default 0)
 -   name (optional)
 -   ssid (optional)
 -   notes (optional)
