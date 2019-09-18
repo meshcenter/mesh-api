@@ -3,6 +3,10 @@ import { performQuery } from "./db";
 import { createResponse, checkAuth } from "./utils";
 
 export async function handler(event) {
+	if (event.httpMethod === "OPTIONS") {
+		return createResponse(200);
+	}
+
 	// Verify token
 	try {
 		await checkAuth(event);
