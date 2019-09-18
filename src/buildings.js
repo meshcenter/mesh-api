@@ -3,6 +3,10 @@ import { performQuery } from "./db";
 import { createResponse } from "./utils";
 
 export async function handler(event) {
+	if (event.httpMethod === "OPTIONS") {
+		return createResponse(200);
+	}
+
 	try {
 		if (event.httpMethod === "GET") {
 			if (event.path === "/buildings") {
