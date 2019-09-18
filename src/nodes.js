@@ -5,12 +5,7 @@ import { createResponse } from "./utils";
 export async function handler(event) {
 	try {
 		if (event.httpMethod === "GET") {
-			if (event.path === "/v1/nodes") {
-				const nodes = await getNodes();
-				return createResponse(200, nodes);
-			}
-
-			if (event.path === "/v1/nodes/") {
+			if (event.path === "/nodes/") {
 				return createResponse(404, {
 					error: {
 						message: `Unrecognized request URL (${event.httpMethod} ${event.path}). If you are trying to list objects, remove the trailing slash. If you are trying to retrieve an object, pass a valid identifier.`
@@ -18,8 +13,13 @@ export async function handler(event) {
 				});
 			}
 
+			if (event.path === "/nodes") {
+				const nodes = await getNodes();
+				return createResponse(200, nodes);
+			}
+
 			// TODO: Do this better
-			const regex = pathToRegexp("/v1/nodes/:id", null, { strict: true });
+			const regex = pathToRegexp("/nodes/:id", null, { strict: true });
 			const result = regex.exec(event.path);
 
 			if (!result) {
@@ -78,7 +78,17 @@ async function getNode(id) {
 
 async function getNodes(id) {
 	return performQuery(
-		"SELECT nodes.*, buildings.address as address FROM nodes LEFT JOIN buildings ON nodes.building_id = buildings.id GROUP BY nodes.id, buildings.id ORDER BY nodes.created DESC;"
+		`SELECT
+			nodes.*,
+			buildings.address AS building
+		FROM
+			nodes
+			LEFT JOIN buildings ON nodes.building_id = buildings.id
+		GROUP BY
+			nodes.id,
+			buildings.id
+		ORDER BY
+			nodes.created DESC;`
 	);
 }
 
