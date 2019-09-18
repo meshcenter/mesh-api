@@ -41,8 +41,8 @@ async function createDatabase() {
 		await performQuery(
 			`CREATE TABLE "members" (
 				id			SERIAL PRIMARY KEY,
-				email		VARCHAR(256) NOT NULL UNIQUE,
 				name		VARCHAR(256),
+				email		VARCHAR(256) NOT NULL UNIQUE,
 				phone		VARCHAR(256)
 			)`
 		);
