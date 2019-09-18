@@ -105,12 +105,33 @@ async function verifyToken(token) {
 
 async function getMember(id) {
 	if (!Number.isInteger(parseInt(id, 10))) return null;
-	const result = await performQuery("SELECT * FROM members WHERE id = $1", [
-		id
-	]);
+	const result = await performQuery(
+		`SELECT
+			members.*,
+			JSON_AGG(DISTINCT nodes.*) AS nodes
+		FROM
+			members
+			LEFT JOIN nodes ON nodes.member_id = members.id
+		WHERE
+			members.id = $1
+		GROUP BY
+			members.id`,
+		[id]
+	);
 	return result[0];
 }
 
 async function getMembers() {
-	return performQuery("SELECT * FROM members ORDER BY id DESC");
+	return performQuery(
+		`SELECT
+			members.*,
+			JSON_AGG(DISTINCT nodes.*) AS nodes
+		FROM
+			members
+			LEFT JOIN nodes ON nodes.member_id = members.id
+		GROUP BY
+			members.id
+		ORDER BY
+			members.id DESC`
+	);
 }
