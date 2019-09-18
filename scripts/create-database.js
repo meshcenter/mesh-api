@@ -20,6 +20,12 @@ async function createDatabase() {
 		);
 
 		await performQuery(
+			`DROP type IF EXISTS
+				"node_status",
+				"device_status"`
+		);
+
+		await performQuery(
 			`CREATE TABLE "buildings" (
 				id			SERIAL PRIMARY KEY,
 				address		VARCHAR(256) NOT NULL,
@@ -42,12 +48,19 @@ async function createDatabase() {
 		);
 
 		console.log("Creating tables...");
+
+		await performQuery(
+			`CREATE TYPE node_status AS ENUM ('active', 'dead');`
+		);
+
 		await performQuery(
 			`CREATE TABLE "nodes" (
 				id			SERIAL PRIMARY KEY,
 				lat			FLOAT NOT NULL,
 				lng			FLOAT NOT NULL,
 				alt			FLOAT NOT NULL,
+				status		node_status NOT NULL,
+				location	VARCHAR(256),
 				name		VARCHAR(256),
 				notes		TEXT,
 				created		TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -87,9 +100,17 @@ async function createDatabase() {
 		);
 
 		await performQuery(
+			`CREATE TYPE device_status AS ENUM ('in stock', 'active', 'dead');`
+		);
+
+		await performQuery(
 			`CREATE TABLE "devices" (
 				id				SERIAL PRIMARY KEY,
-				active			BOOL NOT NULL,
+				lat				FLOAT NOT NULL,
+				lng				FLOAT NOT NULL,
+				alt				FLOAT NOT NULL,
+				azimuth			INT DEFAULT 0,
+				status			device_status NOT NULL,
 				name			VARCHAR(256),
 				ssid			VARCHAR(256),
 				notes			TEXT,
@@ -108,6 +129,6 @@ async function createDatabase() {
 			)`
 		);
 	} catch (error) {
-		console.log(error.message);
+		console.log("Error creating db:", error);
 	}
 }

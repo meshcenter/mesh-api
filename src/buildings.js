@@ -5,12 +5,12 @@ import { createResponse } from "./utils";
 export async function handler(event) {
 	try {
 		if (event.httpMethod === "GET") {
-			if (event.path === "/v1/buildings") {
+			if (event.path === "/buildings") {
 				const buildings = await getBuildings();
 				return createResponse(200, buildings);
 			}
 
-			if (event.path === "/v1/buildings/") {
+			if (event.path === "/buildings/") {
 				return createResponse(404, {
 					error: {
 						message: `Unrecognized request URL (${event.httpMethod} ${event.path}). If you are trying to list objects, remove the trailing slash. If you are trying to retrieve an object, pass a valid identifier.`
@@ -19,7 +19,7 @@ export async function handler(event) {
 			}
 
 			// TODO: Do this better
-			const regex = pathToRegexp("/v1/buildings/:id", null, {
+			const regex = pathToRegexp("/buildings/:id", null, {
 				strict: true
 			});
 			const result = regex.exec(event.path);
@@ -89,6 +89,16 @@ async function getBuilding(id) {
 
 async function getBuildings() {
 	return performQuery(
-		"SELECT buildings.*, json_agg(nodes.id) FILTER (WHERE nodes.id IS NOT NULL) as nodes FROM buildings FULL JOIN nodes ON nodes.building_id = buildings.id FULL JOIN join_requests ON join_requests.building_id = buildings.id GROUP BY buildings.id ORDER BY buildings.id DESC"
+		`SELECT
+			buildings.*,
+			JSON_AGG(DISTINCT nodes.*) AS nodes
+		FROM
+			buildings
+			LEFT JOIN nodes ON nodes.building_id = buildings.id
+			LEFT JOIN join_requests ON join_requests.building_id = buildings.id
+		GROUP BY
+			buildings.id
+		ORDER BY
+			COUNT(DISTINCT nodes.*) DESC`
 	);
 }

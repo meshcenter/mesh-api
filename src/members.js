@@ -1,57 +1,15 @@
-import jwt from "jsonwebtoken";
-import jwksClient from "jwks-rsa";
 import pathToRegexp from "path-to-regexp";
 import { performQuery } from "./db";
-import { createResponse } from "./utils";
+import { createResponse, checkAuth } from "./utils";
 
 export async function handler(event) {
-	// This is a private endpoint. Auth is required for all requests
-	if (!event.headers.authorization)
-		return createResponse(401, {
-			error: {
-				message: "Unauthorized"
-			}
-		});
-
-	// Get token
-	let token;
-	const parts = event.headers.authorization.split(" ");
-	if (parts.length == 2) {
-		const scheme = parts[0];
-		const credentials = parts[1];
-
-		if (/^Bearer$/i.test(scheme)) {
-			token = credentials;
-		} else {
-			return createResponse(401, {
-				error: {
-					message: "Format is Authorization: Bearer [token]"
-				}
-			});
-		}
-	} else {
-		return createResponse(401, {
-			error: {
-				message: "Format is Authorization: Bearer [token]"
-			}
-		});
-	}
-
-	if (!token)
-		return createResponse(401, {
-			error: {
-				message: "No authorization token was found."
-			}
-		});
-
 	// Verify token
 	try {
-		await verifyToken(token);
+		await checkAuth(event);
 	} catch (error) {
-		console.log(error);
 		return createResponse(401, {
 			error: {
-				message: "Invalid token."
+				message: error.message
 			}
 		});
 	}
@@ -59,12 +17,12 @@ export async function handler(event) {
 	// Handle request
 	try {
 		if (event.httpMethod === "GET") {
-			if (event.path === "/v1/members") {
+			if (event.path === "/members") {
 				const members = await getMembers();
 				return createResponse(200, members);
 			}
 
-			if (event.path === "/v1/members/") {
+			if (event.path === "/members/") {
 				return createResponse(404, {
 					error: {
 						message: `Unrecognized member URL (${event.httpMethod} ${event.path}). If you are trying to list objects, remove the trailing slash. If you are trying to retrieve an object, pass a valid identifier.`
@@ -73,7 +31,7 @@ export async function handler(event) {
 			}
 
 			// TODO: Do this better
-			const regex = pathToRegexp("/v1/members/:id", null, {
+			const regex = pathToRegexp("/members/:id", null, {
 				strict: true
 			});
 			const result = regex.exec(event.path);

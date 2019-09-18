@@ -75,6 +75,18 @@ async function importNodes(nodes) {
 		return acc;
 	}, {});
 
+	const actualNodes = nodes.filter(
+		node =>
+			node.status === "Installed" ||
+			node.status === "Abandoned" ||
+			node.status === "Unsubscribe"
+	);
+	const installedNodes = actualNodes.filter(node => node.installDate);
+	const validNodes = installedNodes.filter(
+		node => node.address && buildingsByNodeAddress[node.address]
+	);
+	const activeNodes = validNodes.filter(node => node.status === "Installed");
+
 	await insertBulk(
 		"nodes",
 		[
@@ -82,6 +94,8 @@ async function importNodes(nodes) {
 			"lat",
 			"lng",
 			"alt",
+			"status",
+			"location",
 			"name",
 			"notes",
 			"created",
@@ -89,24 +103,26 @@ async function importNodes(nodes) {
 			"building_id",
 			"member_id"
 		],
-		nodes.filter(
-			node =>
-				node.installDate &&
-				node.address &&
-				buildingsByNodeAddress[node.address]
-		),
+		validNodes,
 		node => {
 			if (
 				!node.memberEmail ||
 				!membersMap[node.memberEmail.toLowerCase()]
 			) {
-				console.log(node, "not found");
+				console.log("Node", node.id, "not found");
+			}
+			if (node.status !== "Installed" && !node.abandonDate) {
+				console.log("Added abandon date to ", node.id);
+				console.log(node.id, node.status);
+				node.abandonDate = node.installDate;
 			}
 			return [
 				node.id,
 				node.coordinates[0],
 				node.coordinates[1],
 				node.coordinates[2],
+				node.status === "Installed" ? "active" : "dead",
+				node.address,
 				node.name,
 				node.notes,
 				new Date(node.installDate),
@@ -170,33 +186,44 @@ async function importDevices(devices) {
 		return acc;
 	}, []);
 
+	const allDevices = [
+		...devices.filter(device => nodesMap[device.nodeId]), // Only import devices on active nodes
+		...unknownDevices
+	].filter(device => device.status === "active");
+
 	// Import devices
 	await insertBulk(
 		"devices",
 		[
-			"active",
+			"status",
 			"name",
 			"ssid",
 			"notes",
 			"install_date",
 			"abandon_date",
 			"device_type_id",
-			"node_id"
+			"node_id",
+			"lat",
+			"lng",
+			"alt",
+			"azimuth"
 		],
-		[
-			...devices.filter(device => nodesMap[device.nodeId]), // Only import devices on active nodes
-			...unknownDevices
-		],
+		allDevices,
 		device => {
+			const deviceNode = nodesMap[device.nodeId];
 			return [
-				device.status === "active",
+				device.status,
 				device.name,
 				device.ssid,
 				device.notes,
 				device.installDate ? new Date(device.installDate) : null,
 				device.abandonDate ? new Date(device.abandonDate) : null,
 				dbDeviceTypeMap[device.device].id,
-				device.nodeId
+				device.nodeId,
+				deviceNode.lat,
+				deviceNode.lng,
+				deviceNode.alt,
+				device.azimuth || 0
 			];
 		}
 	);

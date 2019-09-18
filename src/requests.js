@@ -1,57 +1,15 @@
-import jwt from "jsonwebtoken";
-import jwksClient from "jwks-rsa";
 import pathToRegexp from "path-to-regexp";
 import { performQuery } from "./db";
-import { createResponse } from "./utils";
+import { createResponse, checkAuth } from "./utils";
 
 export async function handler(event) {
-	// This is a private endpoint. Auth is required for all requests
-	if (!event.headers.authorization)
-		return createResponse(401, {
-			error: {
-				message: "Unauthorized"
-			}
-		});
-
-	// Get token
-	let token;
-	const parts = event.headers.authorization.split(" ");
-	if (parts.length == 2) {
-		const scheme = parts[0];
-		const credentials = parts[1];
-
-		if (/^Bearer$/i.test(scheme)) {
-			token = credentials;
-		} else {
-			return createResponse(401, {
-				error: {
-					message: "Format is Authorization: Bearer [token]"
-				}
-			});
-		}
-	} else {
-		return createResponse(401, {
-			error: {
-				message: "Format is Authorization: Bearer [token]"
-			}
-		});
-	}
-
-	if (!token)
-		return createResponse(401, {
-			error: {
-				message: "No authorization token was found."
-			}
-		});
-
 	// Verify token
 	try {
-		await verifyToken(token);
+		await checkAuth(event);
 	} catch (error) {
-		console.log(error);
 		return createResponse(401, {
 			error: {
-				message: "Invalid token."
+				message: error.message
 			}
 		});
 	}
@@ -59,12 +17,12 @@ export async function handler(event) {
 	// Handle request
 	try {
 		if (event.httpMethod === "GET") {
-			if (event.path === "/v1/requests") {
+			if (event.path === "/requests") {
 				const requests = await getRequests();
 				return createResponse(200, requests);
 			}
 
-			if (event.path === "/v1/requests/") {
+			if (event.path === "/requests/") {
 				return createResponse(404, {
 					error: {
 						message: `Unrecognized request URL (${event.httpMethod} ${event.path}). If you are trying to list objects, remove the trailing slash. If you are trying to retrieve an object, pass a valid identifier.`
@@ -73,7 +31,7 @@ export async function handler(event) {
 			}
 
 			// TODO: Do this better
-			const regex = pathToRegexp("/v1/requests/:id", null, {
+			const regex = pathToRegexp("/requests/:id", null, {
 				strict: true
 			});
 			const result = regex.exec(event.path);
@@ -109,42 +67,25 @@ export async function handler(event) {
 	return createResponse(400);
 }
 
-async function verifyToken(token) {
-	const client = jwksClient({
-		cache: true,
-		rateLimit: true,
-		jwksRequestsPerMinute: 5, //10
-		jwksUri: `https://dev-ockepr69.auth0.com/.well-known/jwks.json` //process.env.JWKS_URI
-	});
-
-	function getKey(header, callback) {
-		client.getSigningKey(header.kid, function(err, key) {
-			var signingKey = key.publicKey || key.rsaPublicKey;
-			callback(null, signingKey);
-		});
-	}
-
-	return new Promise((resolve, reject) => {
-		jwt.verify(
-			token,
-			getKey,
-			{
-				audience: "https://api.nycmesh.net",
-				issuer: `https://dev-ockepr69.auth0.com/`,
-				algorithm: "RS256"
-			},
-			function(err, decoded) {
-				if (err) return reject(err);
-				resolve(decoded);
-			}
-		);
-	});
-}
-
 async function getRequest(id) {
 	if (!Number.isInteger(parseInt(id, 10))) return null;
 	const result = await performQuery(
-		"SELECT * FROM join_requests WHERE id = $1",
+		`SELECT
+			join_requests.*,
+			to_json(buildings) AS building,
+			to_json(members) AS member,
+			ARRAY_REMOVE(ARRAY_AGG(DISTINCT panoramas.url), NULL) AS panoramas
+		FROM
+			join_requests
+			JOIN buildings ON join_requests.building_id = buildings.id
+			JOIN members ON join_requests.member_id = members.id
+			LEFT JOIN panoramas ON join_requests.id = panoramas.join_request_id
+		WHERE
+			join_requests.id = $1
+		GROUP BY
+			join_requests.id,
+			buildings.id,
+			members.id`,
 		[id]
 	);
 	return result[0];
@@ -152,10 +93,14 @@ async function getRequest(id) {
 
 async function getRequests() {
 	return performQuery(
-		`SELECT join_requests.*, buildings.address as address, members.email as member
+		`SELECT join_requests.*,
+			buildings.address as address,
+			members.email as member,
+			ARRAY_REMOVE(ARRAY_AGG(DISTINCT panoramas.url), NULL) AS panoramas
 		FROM join_requests
 		LEFT JOIN buildings ON join_requests.building_id = buildings.id
 		LEFT JOIN members ON join_requests.member_id = members.id
+		LEFT JOIN panoramas ON join_requests.id = panoramas.join_request_id
 		GROUP BY join_requests.id, buildings.id, members.id
 		ORDER BY date DESC`
 	);
