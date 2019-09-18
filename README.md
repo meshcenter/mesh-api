@@ -8,11 +8,11 @@ This API is a thin wrapper around a Heroku Postgres database. Endpoints are impl
 
 ## Endpoints
 
-https://api.nycmesh.net/v1/nodes  
-https://api.nycmesh.net/v1/nodes/227  
-https://api.nycmesh.net/v1/buildings  
-https://api.nycmesh.net/v1/members (Auth Required)  
-https://api.nycmesh.net/v1/requests (Auth Required)
+https://api.nycmesh.net/nodes  
+https://api.nycmesh.net/nodes/227  
+https://api.nycmesh.net/buildings  
+https://api.nycmesh.net/members (Auth Required)  
+https://api.nycmesh.net/requests (Auth Required)
 
 ## Schema
 
