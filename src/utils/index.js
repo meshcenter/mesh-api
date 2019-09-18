@@ -15,14 +15,16 @@ export function createResponse(statusCode, body) {
 }
 
 export async function checkAuth(event) {
-	if (!event.headers.authorization) return "Unauthorized";
+	if (!event.headers.authorization) throw new Error("Unauthorized");
 
 	// Get token
 	const [scheme, token] = event.headers.authorization.split(" ");
-	if (!scheme || !token) return "Format is Authorization: Bearer [token]";
+	if (!scheme || !token)
+		throw new Error("Format is Authorization: Bearer [token]");
 	const validScheme = /^Bearer$/i.test(scheme);
-	if (!validScheme) return "Format is Authorization: Bearer [token]";
-	if (!token) return "No authorization token was found.";
+	if (!validScheme)
+		throw new Error("Format is Authorization: Bearer [token]");
+	if (!token) throw new Error("No authorization token was found.");
 
 	return verifyToken(token);
 
