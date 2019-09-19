@@ -74,9 +74,23 @@ function isValidNode(node) {
 
 async function getNode(id) {
 	if (!Number.isInteger(parseInt(id, 10))) return null;
-	const result = await performQuery("SELECT * FROM nodes WHERE id = $1", [
-		id
-	]);
+	const result = await performQuery(
+		`SELECT
+			nodes.*,
+			to_json(buildings) AS building,
+			to_json(members) AS member
+		FROM
+			nodes
+			LEFT JOIN buildings ON nodes.building_id = buildings.id
+			LEFT JOIN members ON nodes.member_id = members.id
+		WHERE
+			nodes.id = $1
+		GROUP BY
+			nodes.id,
+			buildings.id,
+			members.id`,
+		[id]
+	);
 	return result[0];
 }
 

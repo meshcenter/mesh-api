@@ -114,8 +114,9 @@ function searchMembers(query) {
 		FROM
 			members
 		WHERE name ILIKE $1
-			OR email ILIKE $1
+			OR name ILIKE $2
+			OR email ILIKE $3
 		LIMIT 5`,
-		[`${query}%`]
+		[`${query}%`, ` ${query}%`, `${query}%`]
 	);
 }
