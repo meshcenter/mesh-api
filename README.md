@@ -136,22 +136,24 @@ ORDER BY count DESC;
 
 ```sql
 SELECT
-SUBSTRING(buildings.address, 1, 64) as building_address,
-COUNT(DISTINCT join_requests.member_id) as request_count,
-COUNT(DISTINCT nodes.member_id) as node_count,
-ARRAY_AGG(DISTINCT nodes.id) as node_ids,
-ARRAY_AGG(DISTINCT members.email) as request_emails
-FROM buildings
-JOIN join_requests
-ON buildings.id = join_requests.building_id
-JOIN members
-ON members.id = join_requests.member_id
-JOIN nodes
-ON buildings.id = nodes.building_id
-WHERE nodes.abandoned IS NULL
-GROUP BY buildings.id
-HAVING COUNT(DISTINCT join_requests.member_id) > COUNT(DISTINCT nodes.member_id)
-ORDER BY request_count DESC
+	SUBSTRING(buildings.address, 1, 64) AS building_address,
+	COUNT(DISTINCT join_requests.member_id) AS request_count,
+	COUNT(DISTINCT nodes.member_id) AS node_count,
+	ARRAY_AGG(DISTINCT nodes.id) AS node_ids,
+	ARRAY_AGG(DISTINCT members.email) AS request_emails
+FROM
+	buildings
+	JOIN join_requests ON buildings.id = join_requests.building_id
+	JOIN members ON members.id = join_requests.member_id
+	JOIN nodes ON buildings.id = nodes.building_id
+WHERE
+	nodes.abandoned IS NULL
+GROUP BY
+	buildings.id
+HAVING
+	COUNT(DISTINCT join_requests.member_id) > COUNT(DISTINCT nodes.member_id)
+ORDER BY
+	request_count DESC
 ```
 
 ### Tallest buildings with panos

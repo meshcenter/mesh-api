@@ -38,7 +38,7 @@ async function importBuildings(nodes) {
 				bin,
 				bin_address
 			} = cluster[0]; // TODO: Something better than first node
-			const [lat, lng, alt] = coordinates;
+			const [lng, lat, alt] = coordinates;
 			return [
 				String(address).slice(0, 256),
 				parseFloat(lat),
@@ -118,8 +118,8 @@ async function importNodes(nodes) {
 			}
 			return [
 				node.id,
-				node.coordinates[0],
 				node.coordinates[1],
+				node.coordinates[0],
 				node.coordinates[2],
 				node.status === "Installed" ? "active" : "dead",
 				node.address,
@@ -177,9 +177,13 @@ async function importDevices(devices) {
 	}, {});
 	const unknownDevices = nodes.reduce((acc, cur) => {
 		if (!devicesMap[cur.id]) {
+			let device = "Unknown";
+			if (cur.notes && cur.notes.toLowerCase().includes("omni")) {
+				device = "Omni";
+			}
 			acc.push({
 				status: "active",
-				device: "Unknown",
+				device,
 				nodeId: cur.id
 			});
 		}
@@ -431,7 +435,7 @@ function getClusteredNodes(nodes) {
 
 	function geoKey(node) {
 		const precision = 6;
-		const [lat, lng] = node.coordinates;
+		const [lng, lat] = node.coordinates;
 		return `${parseFloat(lat).toFixed(precision)}-${parseFloat(lng).toFixed(
 			precision
 		)}`;

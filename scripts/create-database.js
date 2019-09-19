@@ -73,8 +73,8 @@ async function createDatabase() {
 		await performQuery(
 			`CREATE TABLE "join_requests" (
 		 		id			SERIAL PRIMARY KEY,
-		 		roof_access	BOOL NOT NULL,
 		 		date		TIMESTAMP WITH TIME ZONE NOT NULL,
+		 		roof_access	BOOL NOT NULL,
 		 		member_id	INTEGER REFERENCES members(id),
 		 		building_id	INTEGER REFERENCES buildings(id)
 		 	)`

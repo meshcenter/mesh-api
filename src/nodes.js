@@ -98,10 +98,14 @@ async function getNodes(id) {
 	return performQuery(
 		`SELECT
 			nodes.*,
-			buildings.address AS building
+			buildings.address AS building,
+			json_agg(devices) AS devices,
+			json_agg(device_types) AS device_types
 		FROM
 			nodes
 			LEFT JOIN buildings ON nodes.building_id = buildings.id
+			LEFT JOIN devices ON nodes.id = devices.node_id
+			LEFT JOIN device_types ON devices.device_type_id = device_types.id
 		GROUP BY
 			nodes.id,
 			buildings.id
