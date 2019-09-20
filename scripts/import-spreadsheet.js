@@ -136,14 +136,15 @@ async function importNodes(nodes) {
 
 async function importDevices(devices) {
 	const deviceTypeMap = devices.reduce((acc, cur) => {
-		const { radius, width, device } = cur;
-		acc[device] = {
-			name: device,
-			range: radius,
-			width
+		acc[cur.device] = {
+			name: cur.device,
+			range: cur.radius,
+			width: cur.width
 		};
 		return acc;
 	}, {});
+
+	deviceTypeMap["Unknown"] = { name: "Unknown", range: 0, width: 0 };
 
 	const deviceTypes = Object.values(deviceTypeMap);
 	await insertBulk(
@@ -152,7 +153,7 @@ async function importDevices(devices) {
 		deviceTypes.filter(type => {
 			if (!type.name || !type.range || !type.width) {
 				console.log(`Invalid type`, type);
-				return false;
+				// return false;
 			}
 			return true;
 		}),

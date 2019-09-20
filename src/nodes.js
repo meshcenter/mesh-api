@@ -99,18 +99,17 @@ async function getNodes(id) {
 		`SELECT
 			nodes.*,
 			buildings.address AS building,
-			json_agg(devices) AS devices,
-			json_agg(device_types) AS device_types
+			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'install_date', devices.install_date, 'abandon_date', devices.abandon_date)) AS devices
 		FROM
 			nodes
 			LEFT JOIN buildings ON nodes.building_id = buildings.id
 			LEFT JOIN devices ON nodes.id = devices.node_id
-			LEFT JOIN device_types ON devices.device_type_id = device_types.id
+			LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
 		GROUP BY
 			nodes.id,
 			buildings.id
 		ORDER BY
-			nodes.created DESC;`
+			nodes.created DESC`
 	);
 }
 
