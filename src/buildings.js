@@ -81,7 +81,7 @@ async function getBuilding(id) {
 		[id]
 	);
 	const buildingRequests = await performQuery(
-		"SELECT * FROM join_requests WHERE building_id = $1",
+		"SELECT * FROM requests WHERE building_id = $1",
 		[id]
 	);
 	return {
@@ -99,7 +99,7 @@ async function getBuildings() {
 		FROM
 			buildings
 			LEFT JOIN nodes ON nodes.building_id = buildings.id
-			LEFT JOIN join_requests ON join_requests.building_id = buildings.id
+			LEFT JOIN requests ON requests.building_id = buildings.id
 		GROUP BY
 			buildings.id
 		ORDER BY

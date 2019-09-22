@@ -49,7 +49,7 @@ export async function handler(event) {
 			if (!isValidNode(event.body))
 				return createResponse(400, {
 					error: {
-						message: "Must provide lat, lng, alt, and created."
+						message: "Must provide lat, lng, alt, and create_date."
 					}
 				});
 			const node = await createNode(event.body);
@@ -67,8 +67,8 @@ export async function handler(event) {
 }
 
 function isValidNode(node) {
-	const { lat, lng, alt, created } = node;
-	if (!lat || !lng || !alt || !created) return false;
+	const { lat, lng, alt, create_date } = node;
+	if (!lat || !lng || !alt || !create_date) return false;
 	return true;
 }
 
@@ -99,7 +99,7 @@ async function getNodes(id) {
 		`SELECT
 			nodes.*,
 			buildings.address AS building,
-			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'install_date', devices.install_date, 'abandon_date', devices.abandon_date)) AS devices
+			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
 		FROM
 			nodes
 			LEFT JOIN buildings ON nodes.building_id = buildings.id
@@ -109,13 +109,13 @@ async function getNodes(id) {
 			nodes.id,
 			buildings.id
 		ORDER BY
-			nodes.created DESC`
+			nodes.create_date DESC`
 	);
 }
 
 async function createNode(node) {
-	const { lat, lng, alt, name, notes, created, abandoned } = node;
-	const text = `INSERT INTO nodes (lat, lng, alt, name, notes, created, abandoned)
+	const { lat, lng, alt, name, notes, create_date, abandoned } = node;
+	const text = `INSERT INTO nodes (lat, lng, alt, name, notes, create_date, abandoned)
 	VALUES ($1, $2, $3, $4, $5, $6, $7)`;
 	const values = [
 		lat,
@@ -123,7 +123,7 @@ async function createNode(node) {
 		alt,
 		name,
 		notes,
-		new Date(created),
+		new Date(create_date),
 		abandoned ? new Date(abandoned) : null
 	];
 	await performQuery(text, values);

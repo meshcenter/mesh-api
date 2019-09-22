@@ -1,4 +1,5 @@
 const fetch = require("node-fetch");
+const { isAfter } = require("date-fns");
 const { insertBulk, performQuery } = require("./db");
 
 importSpreadsheet().then(() => process.exit(0));
@@ -98,8 +99,8 @@ async function importNodes(nodes) {
 			"location",
 			"name",
 			"notes",
-			"created",
-			"abandoned",
+			"create_date",
+			"abandon_date",
 			"building_id",
 			"member_id"
 		],
@@ -152,7 +153,7 @@ async function importDevices(devices) {
 		["name", "range", "width"],
 		deviceTypes.filter(type => {
 			if (!type.name || !type.range || !type.width) {
-				console.log(`Invalid type`, type);
+				console.log(`Invalid device type:`, type);
 				// return false;
 			}
 			return true;
@@ -204,7 +205,7 @@ async function importDevices(devices) {
 			"name",
 			"ssid",
 			"notes",
-			"install_date",
+			"create_date",
 			"abandon_date",
 			"device_type_id",
 			"node_id",
@@ -221,8 +222,12 @@ async function importDevices(devices) {
 				device.name,
 				device.ssid,
 				device.notes,
-				device.installDate ? new Date(device.installDate) : null,
-				device.abandonDate ? new Date(device.abandonDate) : null,
+				device.installDate
+					? new Date(device.installDate)
+					: deviceNode.create_date,
+				device.abandonDate
+					? new Date(device.abandonDate)
+					: deviceNode.abandon_date,
 				dbDeviceTypeMap[device.device].id,
 				device.nodeId,
 				deviceNode.lat,
@@ -243,8 +248,8 @@ async function importLinks(links) {
 
 	await insertBulk(
 		"links",
-		["device_a_id", "device_b_id"],
-		links.filter(link => link.status === "active"),
+		["device_a_id", "device_b_id", "status", "create_date"],
+		links.filter(link => link.status === "active"), // TODO: How to represent potential links if links are between devices? Maybe a separate table?
 		link => {
 			const deviceA = devicesMap[link.from];
 			const deviceB = devicesMap[link.to];
@@ -254,7 +259,13 @@ async function importLinks(links) {
 				);
 				return;
 			}
-			return [deviceA.id, deviceB.id];
+			const create_date = isAfter(
+				deviceA.create_date,
+				deviceB.create_date
+			)
+				? deviceA.create_date
+				: deviceB.create_date;
+			return [deviceA.id, deviceB.id, link.status, create_date];
 		}
 	);
 }
@@ -352,7 +363,7 @@ async function importJoinRequests(nodes) {
 	}
 
 	await insertBulk(
-		"join_requests",
+		"requests",
 		["date", "roof_access", "building_id", "member_id"],
 		nodesWithIDs.filter(node => {
 			if (!node.requestDate) {
@@ -370,7 +381,7 @@ async function importJoinRequests(nodes) {
 		]
 	);
 
-	const joinRequests = await performQuery("SELECT * FROM join_requests");
+	const joinRequests = await performQuery("SELECT * FROM requests");
 	const joinRequestsByDate = joinRequests.reduce((acc, cur) => {
 		acc[cur.date.getTime() / 1000] = cur;
 		return acc;

@@ -13,7 +13,7 @@ async function createDatabase() {
 				"devices",
 				"device_types",
 				"panoramas",
-				"join_requests",
+				"requests",
 				"members",
 				"buildings",
 				"nodes"`
@@ -22,7 +22,8 @@ async function createDatabase() {
 		await performQuery(
 			`DROP type IF EXISTS
 				"node_status",
-				"device_status"`
+				"device_status",
+				"link_status"` // Maybe these should be one type?
 		);
 
 		await performQuery(
@@ -55,28 +56,28 @@ async function createDatabase() {
 
 		await performQuery(
 			`CREATE TABLE "nodes" (
-				id			SERIAL PRIMARY KEY,
-				lat			FLOAT NOT NULL,
-				lng			FLOAT NOT NULL,
-				alt			FLOAT NOT NULL,
-				status		node_status NOT NULL,
-				location	VARCHAR(256),
-				name		VARCHAR(256),
-				notes		TEXT,
-				created		TIMESTAMP WITH TIME ZONE NOT NULL,
-				abandoned	TIMESTAMP WITH TIME ZONE,
-		 		building_id	INTEGER REFERENCES buildings(id),
-		 		member_id	INTEGER REFERENCES members(id)
+				id				SERIAL PRIMARY KEY,
+				lat				FLOAT NOT NULL,
+				lng				FLOAT NOT NULL,
+				alt				FLOAT NOT NULL,
+				status			node_status NOT NULL,
+				location		VARCHAR(256),
+				name			VARCHAR(256),
+				notes			TEXT,
+				create_date		TIMESTAMP WITH TIME ZONE NOT NULL,
+				abandon_date	TIMESTAMP WITH TIME ZONE,
+		 		building_id		INTEGER REFERENCES buildings(id),
+		 		member_id		INTEGER REFERENCES members(id)
 			)`
 		);
 
 		await performQuery(
-			`CREATE TABLE "join_requests" (
-		 		id			SERIAL PRIMARY KEY,
-		 		date		TIMESTAMP WITH TIME ZONE NOT NULL,
-		 		roof_access	BOOL NOT NULL,
-		 		member_id	INTEGER REFERENCES members(id),
-		 		building_id	INTEGER REFERENCES buildings(id)
+			`CREATE TABLE "requests" (
+		 		id				SERIAL PRIMARY KEY,
+		 		date			TIMESTAMP WITH TIME ZONE NOT NULL,
+		 		roof_access		BOOL NOT NULL,
+		 		member_id		INTEGER REFERENCES members(id),
+		 		building_id		INTEGER REFERENCES buildings(id)
 		 	)`
 		);
 
@@ -85,7 +86,7 @@ async function createDatabase() {
 				id				SERIAL PRIMARY KEY,
 				url				VARCHAR(256) NOT NULL,
 		 		date			TIMESTAMP WITH TIME ZONE NOT NULL,
-				join_request_id	INTEGER REFERENCES join_requests(id)
+				join_request_id	INTEGER REFERENCES requests(id)
 			)`
 		);
 
@@ -114,7 +115,7 @@ async function createDatabase() {
 				name			VARCHAR(256),
 				ssid			VARCHAR(256),
 				notes			TEXT,
-		 		install_date	TIMESTAMP WITH TIME ZONE,
+		 		create_date		TIMESTAMP WITH TIME ZONE,
 		 		abandon_date	TIMESTAMP WITH TIME ZONE,
 				device_type_id	INTEGER REFERENCES device_types(id),
 				node_id			INTEGER REFERENCES nodes(id)
@@ -122,8 +123,14 @@ async function createDatabase() {
 		);
 
 		await performQuery(
+			`CREATE TYPE link_status AS ENUM ('planned', 'active', 'dead');`
+		);
+
+		await performQuery(
 			`CREATE TABLE "links" (
 				id				SERIAL PRIMARY KEY,
+				status			link_status NOT NULL,
+				create_date		TIMESTAMP WITH TIME ZONE NOT NULL,
 				device_a_id		INTEGER REFERENCES devices(id),
 				device_b_id		INTEGER REFERENCES devices(id)
 			)`
