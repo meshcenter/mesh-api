@@ -133,15 +133,15 @@ async function getMember(id) {
 
 	const requests = await performQuery(
 		`SELECT
-			join_requests.*,
+			requests.*,
 			to_json(buildings) AS building
 		FROM
-			join_requests
-			JOIN buildings ON join_requests.building_id = buildings.id
+			requests
+			JOIN buildings ON requests.building_id = buildings.id
 		WHERE
 			member_id = $1
 		GROUP BY
-			join_requests.id,
+			requests.id,
 			buildings.id`,
 		[id]
 	);

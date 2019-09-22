@@ -75,19 +75,19 @@ async function getRequest(id) {
 	if (!Number.isInteger(parseInt(id, 10))) return null;
 	const result = await performQuery(
 		`SELECT
-			join_requests.*,
+			requests.*,
 			to_json(buildings) AS building,
 			to_json(members) AS member,
 			ARRAY_REMOVE(ARRAY_AGG(DISTINCT panoramas.url), NULL) AS panoramas
 		FROM
-			join_requests
-			JOIN buildings ON join_requests.building_id = buildings.id
-			JOIN members ON join_requests.member_id = members.id
-			LEFT JOIN panoramas ON join_requests.id = panoramas.join_request_id
+			requests
+			JOIN buildings ON requests.building_id = buildings.id
+			JOIN members ON requests.member_id = members.id
+			LEFT JOIN panoramas ON requests.id = panoramas.join_request_id
 		WHERE
-			join_requests.id = $1
+			requests.id = $1
 		GROUP BY
-			join_requests.id,
+			requests.id,
 			buildings.id,
 			members.id`,
 		[id]
@@ -97,15 +97,15 @@ async function getRequest(id) {
 
 async function getRequests() {
 	return performQuery(
-		`SELECT join_requests.*,
+		`SELECT requests.*,
 			buildings.address as address,
 			members.email as member,
 			ARRAY_REMOVE(ARRAY_AGG(DISTINCT panoramas.url), NULL) AS panoramas
-		FROM join_requests
-		LEFT JOIN buildings ON join_requests.building_id = buildings.id
-		LEFT JOIN members ON join_requests.member_id = members.id
-		LEFT JOIN panoramas ON join_requests.id = panoramas.join_request_id
-		GROUP BY join_requests.id, buildings.id, members.id
+		FROM requests
+		LEFT JOIN buildings ON requests.building_id = buildings.id
+		LEFT JOIN members ON requests.member_id = members.id
+		LEFT JOIN panoramas ON requests.id = panoramas.join_request_id
+		GROUP BY requests.id, buildings.id, members.id
 		ORDER BY date DESC`
 	);
 }

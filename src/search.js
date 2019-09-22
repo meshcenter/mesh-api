@@ -88,19 +88,19 @@ function searchBuildings(query) {
 function searchRequests(query) {
 	return performQuery(
 		`SELECT
-			join_requests.*,
+			requests.*,
 			to_json(buildings) AS building,
 			to_json(members) AS member
 		FROM
-			join_requests
-		JOIN buildings ON join_requests.building_id = buildings.id
-		JOIN members ON join_requests.member_id = members.id
+			requests
+		JOIN buildings ON requests.building_id = buildings.id
+		JOIN members ON requests.member_id = members.id
 		WHERE buildings.address ILIKE $1
 			OR members.name ILIKE $1
 			OR members.email ILIKE $1
 			OR notes ILIKE $2
 		GROUP BY
-			join_requests.id,
+			requests.id,
 			buildings.id,
 			members.id
 		LIMIT 5`,
