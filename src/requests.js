@@ -78,7 +78,7 @@ async function getRequest(id) {
 			requests.*,
 			to_json(buildings) AS building,
 			to_json(members) AS member,
-			ARRAY_REMOVE(ARRAY_AGG(DISTINCT panoramas.url), NULL) AS panoramas
+			json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas
 		FROM
 			requests
 			JOIN buildings ON requests.building_id = buildings.id
@@ -98,9 +98,9 @@ async function getRequest(id) {
 async function getRequests() {
 	return performQuery(
 		`SELECT requests.*,
-			buildings.address as address,
-			members.email as member,
-			ARRAY_REMOVE(ARRAY_AGG(DISTINCT panoramas.url), NULL) AS panoramas
+			buildings.address AS address,
+			to_json(members) AS member,
+			json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas
 		FROM requests
 		LEFT JOIN buildings ON requests.building_id = buildings.id
 		LEFT JOIN members ON requests.member_id = members.id
