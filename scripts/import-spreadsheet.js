@@ -366,6 +366,7 @@ async function importJoinRequests(nodes) {
 		"requests",
 		["date", "roof_access", "building_id", "member_id"],
 		nodesWithIDs.filter(node => {
+			console.log(node.roofAccess);
 			if (!node.requestDate) {
 				console.log(`Node ${node.id} missing request date`);
 				return false;
@@ -375,7 +376,7 @@ async function importJoinRequests(nodes) {
 		}),
 		node => [
 			new Date(node.requestDate),
-			node.roofAccess,
+			node.roofAccess ? "yes" : "no",
 			node.buildingId,
 			node.memberId
 		]
