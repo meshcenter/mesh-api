@@ -19,11 +19,13 @@ async function createDatabase() {
 				"nodes"`
 		);
 
+		// Should the statuses be one type?
 		await performQuery(
 			`DROP type IF EXISTS
 				"node_status",
 				"device_status",
-				"link_status"` // Maybe these should be one type?
+				"link_status",
+				"roof_access"`
 		);
 
 		await performQuery(
@@ -72,10 +74,14 @@ async function createDatabase() {
 		);
 
 		await performQuery(
+			`CREATE TYPE roof_access AS ENUM ('yes', 'no', 'maybe');`
+		);
+
+		await performQuery(
 			`CREATE TABLE "requests" (
 		 		id				SERIAL PRIMARY KEY,
 		 		date			TIMESTAMP WITH TIME ZONE NOT NULL,
-		 		roof_access		BOOL NOT NULL,
+		 		roof_access		roof_access NOT NULL,
 		 		member_id		INTEGER REFERENCES members(id),
 		 		building_id		INTEGER REFERENCES buildings(id)
 		 	)`

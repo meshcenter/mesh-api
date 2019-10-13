@@ -7,20 +7,20 @@ export async function handler(event) {
 		return createResponse(200);
 	}
 
-	// Verify token
-	try {
-		await checkAuth(event);
-	} catch (error) {
-		return createResponse(401, {
-			error: {
-				message: error.message
-			}
-		});
-	}
-
 	// Handle request
 	try {
 		if (event.httpMethod === "GET") {
+			// Verify token
+			try {
+				await checkAuth(event);
+			} catch (error) {
+				return createResponse(401, {
+					error: {
+						message: error.message
+					}
+				});
+			}
+
 			if (event.path === "/requests") {
 				const requests = await getRequests();
 				return createResponse(200, requests);
@@ -58,6 +58,11 @@ export async function handler(event) {
 				});
 			}
 
+			return createResponse(200, request);
+		}
+
+		if (event.httpMethod === "POST") {
+			const request = await createRequest(event.body);
 			return createResponse(200, request);
 		}
 	} catch (error) {
@@ -108,4 +113,110 @@ async function getRequests() {
 		GROUP BY requests.id, buildings.id, members.id
 		ORDER BY date DESC`
 	);
+}
+
+async function createRequest(request) {
+	const {
+		name,
+		email,
+		phone,
+		address,
+		lat = 0,
+		lng = 0,
+		alt = 0,
+		roofAccess
+	} = JSON.parse(request);
+
+	// Look up or create member
+	let members = await performQuery(
+		`SELECT id FROM members WHERE email = $1`,
+		[email]
+	);
+	if (!members.length) {
+		members = await performQuery(
+			`INSERT INTO members (name, email, phone) VALUES ($1, $2, $3) RETURNING *`,
+			[name, email, phone]
+		);
+	}
+
+	// Look up or create building
+	let buildings = await performQuery(
+		`SELECT id FROM buildings WHERE address = $1`,
+		[address]
+	);
+	if (!buildings.length) {
+		buildings = await performQuery(
+			`INSERT INTO buildings (address, lat, lng, alt) VALUES ($1, $2, $3, $4) RETURNING *`,
+			[address, lat, lng, alt]
+		);
+	}
+
+	const [member] = members;
+	const [building] = buildings;
+	const date = new Date();
+
+	const [newRequest] = await performQuery(
+		`INSERT INTO requests (date, roof_access, member_id, building_id) VALUES ($1, $2, $3, $4) RETURNING *`,
+		[date, roofAccess, member.id, building.id]
+	);
+
+	return newRequest;
+}
+
+const createMessage = request => `
+timestamp: ${request.date}
+id: ${request.id}
+name: ${request.name}
+email: ${request.email}
+phone: ${request.phone}
+address: ${request.address}
+`;
+
+async function osticket(request) {
+	const {
+		id,
+		name,
+		email,
+		address,
+		phone,
+		roofAccess,
+		lat,
+		lng,
+		date
+	} = request;
+
+	const subject = roofAccess
+		? `NYC Mesh Rooftop Install ${id}`
+		: `NYC Mesh Install ${id}`;
+
+	const message = createMessage(request);
+	const url = "https://support.nycmesh.net/api/http.php/tickets.json";
+	var data = {
+		subject: subject,
+		message: message,
+		id: id,
+		email: email,
+		name: name,
+		phone: phone,
+		location: address,
+		rooftop: roofAccess,
+		// ncl: ncl,
+		ip: "*.*.*.*"
+	};
+
+	var options = {
+		method: "POST",
+		headers: {
+			"X-API-Key": process.env.OSTICKET_API_KEY
+		},
+		body: JSON.stringify(data)
+	};
+
+	try {
+		const response = await fetch(url, options);
+
+		// TODO: Handle API error
+	} catch (e) {
+		// TODO: Handle error
+	}
 }
