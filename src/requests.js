@@ -1,4 +1,5 @@
 import pathToRegexp from "path-to-regexp";
+import fetch from "node-fetch";
 import { performQuery } from "./db";
 import { createResponse, checkAuth } from "./utils";
 
@@ -62,7 +63,7 @@ export async function handler(event) {
 		}
 
 		if (event.httpMethod === "POST") {
-			const request = await createRequest(event.body);
+			const request = await createRequest(JSON.parse(event.body));
 			return createResponse(200, request);
 		}
 	} catch (error) {
@@ -124,14 +125,14 @@ async function createRequest(request) {
 		lat = 0,
 		lng = 0,
 		alt = 0,
+		bin,
 		roofAccess
-	} = JSON.parse(request);
+	} = request;
 
 	// Look up or create member
-	let members = await performQuery(
-		`SELECT id FROM members WHERE email = $1`,
-		[email]
-	);
+	let members = await performQuery(`SELECT * FROM members WHERE email = $1`, [
+		email
+	]);
 	if (!members.length) {
 		members = await performQuery(
 			`INSERT INTO members (name, email, phone) VALUES ($1, $2, $3) RETURNING *`,
@@ -141,13 +142,13 @@ async function createRequest(request) {
 
 	// Look up or create building
 	let buildings = await performQuery(
-		`SELECT id FROM buildings WHERE address = $1`,
+		`SELECT * FROM buildings WHERE address = $1`,
 		[address]
 	);
 	if (!buildings.length) {
 		buildings = await performQuery(
-			`INSERT INTO buildings (address, lat, lng, alt) VALUES ($1, $2, $3, $4) RETURNING *`,
-			[address, lat, lng, alt]
+			`INSERT INTO buildings (address, lat, lng, alt, bin) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+			[address, lat, lng, alt, bin]
 		);
 	}
 
@@ -160,63 +161,72 @@ async function createRequest(request) {
 		[date, roofAccess, member.id, building.id]
 	);
 
+	await createTicket(newRequest, building, member);
+	await createSlackPost(newRequest, building, member);
+
 	return newRequest;
 }
 
-const createMessage = request => `
-timestamp: ${request.date}
-id: ${request.id}
-name: ${request.name}
-email: ${request.email}
-phone: ${request.phone}
-address: ${request.address}
-`;
+async function createTicket(request, building, member) {
+	const { id, date, roofAccess } = request;
+	const { address, lat, lng } = building;
+	const { name, email, phone } = member;
 
-async function osticket(request) {
-	const {
-		id,
-		name,
-		email,
-		address,
-		phone,
-		roofAccess,
-		lat,
-		lng,
-		date
-	} = request;
+	const subject = `NYC Mesh Install`;
+	const message = address;
 
-	const subject = roofAccess
-		? `NYC Mesh Rooftop Install ${id}`
-		: `NYC Mesh Install ${id}`;
-
-	const message = createMessage(request);
-	const url = "https://support.nycmesh.net/api/http.php/tickets.json";
-	var data = {
-		subject: subject,
-		message: message,
-		id: id,
-		email: email,
-		name: name,
-		phone: phone,
-		location: address,
-		rooftop: roofAccess,
-		// ncl: ncl,
-		ip: "*.*.*.*"
-	};
-
-	var options = {
+	const url = "http://devsupport.nycmesh.net/api/http.php/tickets.json";
+	const response = await fetch(url, {
 		method: "POST",
 		headers: {
+			"Content-Type": "application/json",
 			"X-API-Key": process.env.OSTICKET_API_KEY
 		},
-		body: JSON.stringify(data)
-	};
+		body: JSON.stringify({
+			email,
+			name,
+			subject,
+			message,
+			phone
+		})
+	});
 
-	try {
-		const response = await fetch(url, options);
-
-		// TODO: Handle API error
-	} catch (e) {
-		// TODO: Handle error
+	const text = await response.text();
+	if (response.status !== 201) {
+		throw new Error(text);
 	}
+}
+
+async function createSlackPost(request, building, member) {
+	const { address } = building;
+	const { id, roof_access } = request;
+	await fetch(process.env.SLACK_WEBHOOK_URL, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json"
+		},
+		body: JSON.stringify({
+			text: "New join request!",
+			attachments: [
+				{
+					fallback: `New join request! ${address}`,
+					title: address,
+					title_link: `https://www.nycmesh.net/map/requests/${id}`,
+					fields: [
+						{
+							title: "Building Height",
+							value: `${0}m`,
+							short: true
+						},
+						{
+							title: "Roof Access",
+							value: roof_access,
+							short: true
+						}
+					],
+					color: "#777777"
+				}
+			]
+		})
+	});
 }
