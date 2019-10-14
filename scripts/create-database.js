@@ -36,7 +36,6 @@ async function createDatabase() {
 				lng			FLOAT NOT NULL,
 				alt			FLOAT NOT NULL,
 				bin			INT,
-				bin_address	VARCHAR(256),
 				notes		TEXT
 			)`
 		);

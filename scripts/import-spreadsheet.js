@@ -28,17 +28,10 @@ async function importBuildings(nodes) {
 	const clusteredNodes = getClusteredNodes(nodes);
 	return insertBulk(
 		"buildings",
-		["address", "lat", "lng", "alt", "notes", "bin", "bin_address"],
+		["address", "lat", "lng", "alt", "notes", "bin"],
 		clusteredNodes.filter(cluster => cluster[0].address),
 		cluster => {
-			const {
-				id,
-				address,
-				coordinates,
-				notes,
-				bin,
-				bin_address
-			} = cluster[0]; // TODO: Something better than first node
+			const { id, address, coordinates, notes, bin } = cluster[0]; // TODO: Something better than first node
 			const [lng, lat, alt] = coordinates;
 			return [
 				String(address).slice(0, 256),
@@ -46,8 +39,7 @@ async function importBuildings(nodes) {
 				parseFloat(lng),
 				parseFloat(alt),
 				notes ? String(notes) : null,
-				bin,
-				bin_address
+				bin
 			];
 		}
 	);
