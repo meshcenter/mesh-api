@@ -57,7 +57,6 @@ export async function handler(event) {
             </ExtendedData>
             <LineString>
                 <altitudeMode>absolute</altitudeMode>
-                <extrude>1</extrude>
                 <coordinates>${node_a.lng},${node_a.lat},${node_a.alt} ${
 					node_b.lng
 				},${node_b.lat},${node_b.alt}</coordinates>
