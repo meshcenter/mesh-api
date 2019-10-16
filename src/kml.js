@@ -13,41 +13,52 @@ export async function handler(event) {
 			}
 
 			const nodes = await getNodes();
+			const requests = await getRequests();
 			const links = await getLinks();
 
 			const kml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 	<Document>
+		<Style id="request">
+	        <IconStyle>
+	        	<scale>0.4</scale> 
+	        	<Icon>
+	        		<href>https://i.imgur.com/jmBfPPZ.png</href>
+	        	</Icon>
+	        </IconStyle>
+	        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
+        </Style>
 		<Style id="node">
 	        <IconStyle>
-	        	<scale>0.5</scale> 
+	        	<scale>0.4</scale> 
 	        	<Icon>
 	        		<href>https://i.imgur.com/7SIgB7Z.png</href>
 	        	</Icon>
 	        </IconStyle>
 	        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
         </Style>
-        <Style id="hub">
-	        <IconStyle>
-	        	<scale>0.5</scale> 
-	        	<Icon>
-	        		<href>https://i.imgur.com/xbfOy3Q.png</href>
-	        	</Icon>
-	        </IconStyle>
-	        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-        </Style>
         <Style id="omni">
 	        <IconStyle>
-	        	<scale>0.75</scale> 
+	        	<scale>0.4</scale> 
 	        	<Icon>
 	        		<href>https://i.imgur.com/7dMidbX.png</href>
 	        	</Icon>
 	        </IconStyle>
 	        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
         </Style>
+
+        <Style id="hub">
+	        <IconStyle>
+	        	<scale>0.6</scale> 
+	        	<Icon>
+	        		<href>https://i.imgur.com/xbfOy3Q.png</href>
+	        	</Icon>
+	        </IconStyle>
+	        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
+        </Style>
         <Style id="supernode">
 	        <IconStyle>
-		        <scale>0.75</scale> 
+		        <scale>0.6</scale> 
 	        	<Icon>
 	        		<href>https://i.imgur.com/flgK1j1.png</href>
 	        	</Icon>
@@ -86,11 +97,11 @@ export async function handler(event) {
 		<Placemark>
 		    <name>${node.name || node.id}</name>
 		    <ExtendedData>
-		        <Data name="marker-color">
-		            <value>"#F00"</value>
-		        </Data>
 		        <Data name="id">
-		            <value>1341</value>
+		            <value>${node.id}</value>
+		        </Data>
+		        <Data name="name">
+		            <value>${node.name}</value>
 		        </Data>
 		        <Data name="status">
 		            <value>${node.status}</value>
@@ -103,6 +114,24 @@ export async function handler(event) {
 		    <styleUrl>${getStyle(node)}</styleUrl>
 		</Placemark>`
 		)}
+
+		${requests.map(
+			request => `
+		<Placemark>
+		    <name>${request.id}</name>
+		    <ExtendedData>
+		        <Data name="id">
+		            <value>${request.id}</value>
+		        </Data>
+		    </ExtendedData>
+		    <Point>
+		        <altitudeMode>absolute</altitudeMode>
+		        <coordinates>${request.lng},${request.lat},${request.alt}</coordinates>
+		    </Point>
+		    <styleUrl>#request</styleUrl>
+		</Placemark>`
+		)}
+
 		${links.map(link => {
 			const [node_a, node_b] = link.nodes;
 			const [device_type_a, device_type_b] = link.device_types;
@@ -218,6 +247,17 @@ async function getNodes() {
 			buildings.id
 		ORDER BY
 			nodes.create_date DESC`
+	);
+}
+
+async function getRequests() {
+	return performQuery(
+		`SELECT requests.*,
+			buildings.*
+		FROM requests
+		LEFT JOIN buildings ON requests.building_id = buildings.id
+		GROUP BY requests.id, buildings.id
+		ORDER BY date DESC`
 	);
 }
 
