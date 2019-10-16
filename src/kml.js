@@ -13,59 +13,71 @@ export async function handler(event) {
 			}
 
 			const nodes = await getNodes();
-			const requests = await getRequests();
 			const links = await getLinks();
+
+			const nodesKml = nodes.map(
+				node => `
+		<Placemark>
+		    <name>${node.name || node.id}</name>
+		    <ExtendedData>
+		        <Data name="id">
+		            <value>${node.id}</value>
+		        </Data>
+		        <Data name="name">
+		            <value>${node.name}</value>
+		        </Data>
+		        <Data name="status">
+		            <value>${node.status}</value>
+		        </Data>
+		    </ExtendedData>
+		    <Point>
+		        <altitudeMode>absolute</altitudeMode>
+		        <coordinates>${node.lng},${node.lat},${node.alt}</coordinates>
+		    </Point>
+		    <styleUrl>${getStyle(node)}</styleUrl>
+		</Placemark>`
+			);
+
+			const linksKml = links.map(link => {
+				const [node_a, node_b] = link.nodes;
+				const [device_type_a, device_type_b] = link.device_types;
+				return `
+		<Placemark>
+            <name>${node_a.id} - ${node_b.id}</name>
+            <ExtendedData>
+                <Data name="status">
+                    <value>${link.status}</value>
+                </Data>
+                <Data name="from">
+                    <value>${node_a.id}</value>
+                </Data>
+                <Data name="to">
+                    <value>${node_b.id}</value>
+                </Data>
+            </ExtendedData>
+            <LineString>
+                <altitudeMode>absolute</altitudeMode>
+                <extrude>1</extrude>
+                <coordinates>${node_a.lng},${node_a.lat},${node_a.alt},${
+					node_a.lng
+				},${node_a.lat},${node_a.alt},${node_b.lng},${node_b.lat},${
+					node_b.alt
+				},${node_b.lng},${node_b.lat},${node_b.alt}</coordinates>
+            </LineString>
+            <styleUrl>${getLinkStyle(
+				node_a,
+				node_b,
+				device_type_a,
+				device_type_b
+			)}</styleUrl>
+        </Placemark>
+			`;
+			});
 
 			const kml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 	<Document>
-		<Style id="request">
-	        <IconStyle>
-	        	<scale>0.4</scale> 
-	        	<Icon>
-	        		<href>https://i.imgur.com/jmBfPPZ.png</href>
-	        	</Icon>
-	        </IconStyle>
-	        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-        </Style>
-		<Style id="node">
-	        <IconStyle>
-	        	<scale>0.4</scale> 
-	        	<Icon>
-	        		<href>https://i.imgur.com/7SIgB7Z.png</href>
-	        	</Icon>
-	        </IconStyle>
-	        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-        </Style>
-        <Style id="omni">
-	        <IconStyle>
-	        	<scale>0.4</scale> 
-	        	<Icon>
-	        		<href>https://i.imgur.com/7dMidbX.png</href>
-	        	</Icon>
-	        </IconStyle>
-	        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-        </Style>
-
-        <Style id="hub">
-	        <IconStyle>
-	        	<scale>0.6</scale> 
-	        	<Icon>
-	        		<href>https://i.imgur.com/xbfOy3Q.png</href>
-	        	</Icon>
-	        </IconStyle>
-	        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-        </Style>
-        <Style id="supernode">
-	        <IconStyle>
-		        <scale>0.6</scale> 
-	        	<Icon>
-	        		<href>https://i.imgur.com/flgK1j1.png</href>
-	        	</Icon>
-	        </IconStyle>
-	        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-        </Style>
-        <Style id="hubLink">
+		<Style id="hubLink">
         	<LineStyle>
         		<color>FF00FFFF</color>
         		<width>3</width>
@@ -92,79 +104,44 @@ export async function handler(event) {
     			<color>00000000</color>
 			</PolyStyle>
         </Style>
-        ${nodes.map(
-			node => `
-		<Placemark>
-		    <name>${node.name || node.id}</name>
-		    <ExtendedData>
-		        <Data name="id">
-		            <value>${node.id}</value>
-		        </Data>
-		        <Data name="name">
-		            <value>${node.name}</value>
-		        </Data>
-		        <Data name="status">
-		            <value>${node.status}</value>
-		        </Data>
-		    </ExtendedData>
-		    <Point>
-		        <altitudeMode>absolute</altitudeMode>
-		        <coordinates>${node.lng},${node.lat},${node.alt}</coordinates>
-		    </Point>
-		    <styleUrl>${getStyle(node)}</styleUrl>
-		</Placemark>`
-		)}
-
-		${requests.map(
-			request => `
-		<Placemark>
-		    <name>${request.id}</name>
-		    <ExtendedData>
-		        <Data name="id">
-		            <value>${request.id}</value>
-		        </Data>
-		    </ExtendedData>
-		    <Point>
-		        <altitudeMode>absolute</altitudeMode>
-		        <coordinates>${request.lng},${request.lat},${request.alt}</coordinates>
-		    </Point>
-		    <styleUrl>#request</styleUrl>
-		</Placemark>`
-		)}
-
-		${links.map(link => {
-			const [node_a, node_b] = link.nodes;
-			const [device_type_a, device_type_b] = link.device_types;
-			return `
-		<Placemark>
-            <name>${node_a.id} - ${node_b.id}</name>
-            <ExtendedData>
-                <Data name="status">
-                    <value>${link.status}</value>
-                </Data>
-                <Data name="from">
-                    <value>${node_a.id}</value>
-                </Data>
-                <Data name="to">
-                    <value>${node_b.id}</value>
-                </Data>
-            </ExtendedData>
-            <LineString>
-                <altitudeMode>absolute</altitudeMode>
-                <extrude>1</extrude>
-                <coordinates>${node_a.lng},${node_a.lat},${node_a.alt},${
-				node_b.lng
-			},${node_b.lat},${node_b.alt}</coordinates>
-            </LineString>
-            <styleUrl>${getLinkStyle(
-				node_a,
-				node_b,
-				device_type_a,
-				device_type_b
-			)}</styleUrl>
-        </Placemark>
-			`;
-		})}
+		<Style id="supernode">
+	        <IconStyle>
+		        <scale>0.6</scale> 
+	        	<Icon>
+	        		<href>https://i.imgur.com/flgK1j1.png</href>
+	        	</Icon>
+		        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
+	        </IconStyle>
+        </Style>
+		<Style id="hub">
+	        <IconStyle>
+	        	<scale>0.6</scale> 
+	        	<Icon>
+	        		<href>https://i.imgur.com/xbfOy3Q.png</href>
+	        	</Icon>
+		        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
+	        </IconStyle>
+        </Style>
+        <Style id="omni">
+	        <IconStyle>
+	        	<scale>0.4</scale> 
+	        	<Icon>
+	        		<href>https://i.imgur.com/7dMidbX.png</href>
+	        	</Icon>
+		        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
+	        </IconStyle>
+        </Style>
+		<Style id="node">
+	        <IconStyle>
+	        	<scale>0.4</scale> 
+	        	<Icon>
+	        		<href>https://i.imgur.com/7SIgB7Z.png</href>
+	        	</Icon>
+		        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
+	        </IconStyle>
+        </Style>
+		${linksKml}
+        ${nodesKml}
 	</Document>
 </kml>`;
 
@@ -247,17 +224,6 @@ async function getNodes() {
 			buildings.id
 		ORDER BY
 			nodes.create_date DESC`
-	);
-}
-
-async function getRequests() {
-	return performQuery(
-		`SELECT requests.*,
-			buildings.*
-		FROM requests
-		LEFT JOIN buildings ON requests.building_id = buildings.id
-		GROUP BY requests.id, buildings.id
-		ORDER BY date DESC`
 	);
 }
 
