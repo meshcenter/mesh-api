@@ -199,12 +199,6 @@ export async function handler(event) {
 	return createResponse(400);
 }
 
-function isValidNode(node) {
-	const { lat, lng, alt, create_date } = node;
-	if (!lat || !lng || !alt || !create_date) return false;
-	return true;
-}
-
 async function getNodes() {
 	return performQuery(
 		`SELECT
