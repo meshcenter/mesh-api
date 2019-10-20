@@ -1,3 +1,4 @@
+require("dotenv").config();
 const fetch = require("node-fetch");
 const { isAfter } = require("date-fns");
 const { insertBulk, performQuery } = require("./db");
@@ -356,7 +357,7 @@ async function importJoinRequests(nodes) {
 
 	await insertBulk(
 		"requests",
-		["date", "roof_access", "building_id", "member_id"],
+		["id", "date", "roof_access", "building_id", "member_id"],
 		nodesWithIDs.filter(node => {
 			console.log(node.roofAccess);
 			if (!node.requestDate) {
@@ -367,6 +368,7 @@ async function importJoinRequests(nodes) {
 			return true;
 		}),
 		node => [
+			node.id,
 			new Date(node.requestDate),
 			node.roofAccess ? "yes" : "no",
 			node.buildingId,

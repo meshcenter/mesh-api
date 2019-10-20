@@ -6,6 +6,7 @@
   "license": "MIT",
   "dependencies": {
     "date-fns": "^2.2.1",
+    "dotenv": "^8.2.0",
     "encoding": "^0.1.12",
     "heroku-client": "^3.0.7",
     "jsonwebtoken": "^8.5.1",

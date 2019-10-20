@@ -85,7 +85,7 @@ export async function handler(event) {
         </Style>
         <Style id="backboneLink">
         	<LineStyle>
-        		<color>FF00FFFF</color>
+        		<color>ee00FFFF</color>
         		<width>2</width>
     		</LineStyle>
     		<PolyStyle>

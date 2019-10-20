@@ -73,11 +73,17 @@ export async function handler(event) {
 
 async function getRequests() {
 	return performQuery(
-		`SELECT requests.*,
-			buildings.*
-		FROM requests
-		LEFT JOIN buildings ON requests.building_id = buildings.id
-		GROUP BY requests.id, buildings.id
-		ORDER BY date DESC`
+		`SELECT
+			buildings.*,
+			requests.*
+		FROM
+			requests
+			LEFT JOIN buildings ON requests.building_id = buildings.id
+			JOIN panoramas ON panoramas.join_request_id = requests.id
+		GROUP BY
+			requests.id,
+			buildings.id
+		ORDER BY
+			date DESC`
 	);
 }

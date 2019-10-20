@@ -130,24 +130,24 @@ async function createRequest(request) {
 	} = request;
 
 	// Look up or create member
-	let members = await performQuery(`SELECT * FROM members WHERE email = $1`, [
+	let members = await performQuery("SELECT * FROM members WHERE email = $1", [
 		email
 	]);
 	if (!members.length) {
 		members = await performQuery(
-			`INSERT INTO members (name, email, phone) VALUES ($1, $2, $3) RETURNING *`,
+			"INSERT INTO members (name, email, phone) VALUES ($1, $2, $3) RETURNING *",
 			[name, email, phone]
 		);
 	}
 
 	// Look up or create building
 	let buildings = await performQuery(
-		`SELECT * FROM buildings WHERE address = $1`,
+		"SELECT * FROM buildings WHERE address = $1",
 		[address]
 	);
 	if (!buildings.length) {
 		buildings = await performQuery(
-			`INSERT INTO buildings (address, lat, lng, alt, bin) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+			"INSERT INTO buildings (address, lat, lng, alt, bin) VALUES ($1, $2, $3, $4, $5) RETURNING *",
 			[address, lat, lng, alt, bin]
 		);
 	}
@@ -157,16 +157,25 @@ async function createRequest(request) {
 	const date = new Date();
 
 	const [newRequest] = await performQuery(
-		`INSERT INTO requests (date, roof_access, member_id, building_id) VALUES ($1, $2, $3, $4) RETURNING *`,
+		"INSERT INTO requests (date, roof_access, member_id, building_id) VALUES ($1, $2, $3, $4) RETURNING *",
 		[date, roofAccess, member.id, building.id]
 	);
 
-	await createTicket(newRequest, building, member);
-	await createSlackPost(newRequest, building, member);
+	// This doesn't work because osTicket returns the external ticket id
+	// which doesn't do anything... we need the internal ticket id.
+	const ticketId = await createTicket(newRequest, building, member);
 
-	return newRequest;
+	const [updatedRequest] = await performQuery(
+		"UPDATE requests SET osticket_id = $1 WHERE id = $2 RETURNING *",
+		[ticketId, newRequest.id]
+	);
+
+	await createSlackPost(request, updatedRequest, building, member, ticketId);
+
+	return updatedRequest;
 }
 
+// https://docs.osticket.com/en/latest/Developer%20Documentation/API/Tickets.html
 async function createTicket(request, building, member) {
 	const { id, date, roofAccess } = request;
 	const { address, lat, lng } = building;
@@ -195,36 +204,72 @@ async function createTicket(request, building, member) {
 	if (response.status !== 201) {
 		throw new Error(text);
 	}
+
+	return text; // external ticket id of the newly-created ticket
 }
 
-async function createSlackPost(request, building, member) {
-	const { address } = building;
+// TODO: Simplify
+async function createSlackPost(
+	userRequest,
+	request,
+	building,
+	member,
+	ticketId
+) {
+	const { address, lat, lng, alt } = building;
 	const { id, roof_access } = request;
+
+	// Check line of sight
+	const { bin } = userRequest; // Work around for incorrect BINs in db
+	const losUrl = `https://los.nycmesh.net/.netlify/functions/los?bin=${bin}`;
+	const losResponse = await fetch(losUrl);
+	const losResults = await losResponse.json();
+	const { visibleHubs } = losResults;
+	const hubsString = visibleHubs.map(hub => hub.name).join(", ");
+
 	await fetch(process.env.SLACK_WEBHOOK_URL, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json"
 		},
 		body: JSON.stringify({
-			text: "New join request!",
-			attachments: [
+			blocks: [
 				{
-					fallback: `New join request! ${address}`,
-					title: address,
-					title_link: `https://www.nycmesh.net/map/requests/${id}`,
-					fields: [
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `New join request:\n*<https://dashboard.nycmesh.net/requests/${id}|${address}>*`
+					}
+				},
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `*Roof Access:* ${roof_access}\n*Building Height:* ${alt}m\n*Line of Sight:* ${hubsString}`
+					}
+				},
+				{
+					type: "actions",
+					elements: [
 						{
-							title: "Building Height",
-							value: `${0}m`,
-							short: true
+							type: "button",
+							text: {
+								type: "plain_text",
+								text: "View Earth"
+							},
+							url: `https://earth.google.com/web/search/${encodeURIComponent(
+								address
+							)}/@${lat},${lng},${alt}a,100d,45y,0h,45t,0r`
 						},
 						{
-							title: "Roof Access",
-							value: roof_access,
-							short: true
+							type: "button",
+							text: {
+								type: "plain_text",
+								text: "View Ticket"
+							},
+							url: `https://devsupport.nycmesh.net/scp/tickets.php?id=${ticketId}`
 						}
-					],
-					color: "#777777"
+					]
 				}
 			]
 		})
