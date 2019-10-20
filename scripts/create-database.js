@@ -1,3 +1,4 @@
+require("dotenv").config();
 const HerokuClient = require("heroku-client");
 const { performQuery } = require("./db");
 
@@ -9,6 +10,7 @@ async function createDatabase() {
 		console.log("Dropping tables...");
 		await performQuery(
 			`DROP table IF EXISTS
+				"los",
 				"links",
 				"devices",
 				"device_types",
@@ -81,6 +83,7 @@ async function createDatabase() {
 		 		id				SERIAL PRIMARY KEY,
 		 		date			TIMESTAMP WITH TIME ZONE NOT NULL,
 		 		roof_access		roof_access NOT NULL,
+		 		osticket_id		INTEGER,
 		 		member_id		INTEGER REFERENCES members(id),
 		 		building_id		INTEGER REFERENCES buildings(id)
 		 	)`
@@ -138,6 +141,20 @@ async function createDatabase() {
 				create_date		TIMESTAMP WITH TIME ZONE NOT NULL,
 				device_a_id		INTEGER REFERENCES devices(id),
 				device_b_id		INTEGER REFERENCES devices(id)
+			)`
+		);
+
+		await performQuery(
+			`CREATE TABLE "los" (
+				id				SERIAL PRIMARY KEY,
+				building_a_id	INTEGER REFERENCES buildings(id),
+				building_b_id	INTEGER REFERENCES buildings(id),
+				lat_a			FLOAT NOT NULL,
+				lng_a			FLOAT NOT NULL,
+				alt_a			FLOAT NOT NULL,
+				lat_b			FLOAT NOT NULL,
+				lng_b			FLOAT NOT NULL,
+				alt_b			FLOAT NOT NULL
 			)`
 		);
 	} catch (error) {
