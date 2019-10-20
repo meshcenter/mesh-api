@@ -18,7 +18,7 @@ export async function handler(event) {
 			const nodesKml = nodes.map(
 				node => `
 		<Placemark>
-		    <name>${node.name || node.id}</name>
+		    <name>${node.name || ""}</name>
 		    <ExtendedData>
 		        <Data name="id">
 		            <value>${node.id}</value>
