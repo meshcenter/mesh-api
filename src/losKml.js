@@ -12,7 +12,7 @@ export async function handler(event) {
 				return createResponse(404, "Bad path");
 			}
 
-			const los = await getLosOfDegree(2);
+			const los = await getLosOfDegreeAndPanos(1);
 
 			const losKml = los.map(los => {
 				const {
