@@ -6,7 +6,7 @@ lookupBins().then(() => process.exit(0));
 
 async function lookupBins() {
 	const buildings = await getBuildings();
-	for (var i = 0; i < buildings.length; i++) {
+	for (var i = buildings.length - 1; i >= 0; i--) {
 		const building = buildings[i];
 		const bin = await getBIN(building);
 		if (bin && bin !== building.bin) {
@@ -74,7 +74,7 @@ async function getBuildings() {
 		GROUP BY
 			buildings.id
 		ORDER BY
-			COUNT(DISTINCT nodes.*) DESC`
+			id DESC`
 	);
 }
 
