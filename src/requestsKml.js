@@ -79,7 +79,10 @@ async function getRequests() {
 		FROM
 			requests
 			LEFT JOIN buildings ON requests.building_id = buildings.id
+			LEFT JOIN nodes ON requests.building_id = nodes.building_id
 			JOIN panoramas ON panoramas.join_request_id = requests.id
+		WHERE
+			nodes.id IS NULL
 		GROUP BY
 			requests.id,
 			buildings.id
