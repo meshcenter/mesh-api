@@ -247,10 +247,9 @@ async function importLinks(links) {
 			const deviceA = devicesMap[link.from];
 			const deviceB = devicesMap[link.to];
 			if (!deviceA || !deviceB) {
-				console.log(
+				throw new Error(
 					`Device not found for node ${link.from} or ${link.to}`
 				);
-				return;
 			}
 			const create_date = isAfter(
 				deviceA.create_date,
@@ -359,7 +358,6 @@ async function importJoinRequests(nodes) {
 		"requests",
 		["id", "date", "roof_access", "building_id", "member_id"],
 		nodesWithIDs.filter(node => {
-			console.log(node.roofAccess);
 			if (!node.requestDate) {
 				console.log(`Node ${node.id} missing request date`);
 				return false;
