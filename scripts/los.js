@@ -7,25 +7,23 @@ checkLOS().then(() => process.exit(0));
 async function checkLOS() {
 	const requests = await getRequests();
 	for (let i = 0; i < requests.length; i++) {
+		console.log(i);
 		const request = requests[i];
 		if (!request.bin) continue;
 		if (request.roof_access !== "yes") continue;
 		if (!request.panoramas || !request.panoramas.filter(p => p).length)
 			continue;
-		console.log(request.id, request.address);
 		try {
-			const losResponse = await fetch(
-				`https://los.nycmesh.net/.netlify/functions/los?bin=${request.bin}`
-			);
+			const url = `http://localhost:9000/.netlify/functions/los?bin=${request.bin}`;
+			const losResponse = await fetch(url);
 			const response = await losResponse.json();
-			const { visibleHubs, errorMessage } = response;
+			const { visibleOmnis, visibleSectors, errorMessage } = response;
 			if (errorMessage) {
 				console.log(errorMessage);
 			}
-			if (visibleHubs.length) {
-				for (let j = 0; j < visibleHubs.length; j++) {
-					const hub = visibleHubs[j];
-					console.log(hub.name);
+			if (visibleOmnis.length) {
+				for (let j = 0; j < visibleOmnis.length; j++) {
+					const hub = visibleOmnis[j];
 					const [building] = await buildingFromBin(hub.bin);
 
 					// Handle bad BINs (temporary solution)
@@ -33,8 +31,32 @@ async function checkLOS() {
 					const lngDiff = building.lng - request.lng;
 					const cSquared = latDiff * latDiff + lngDiff * lngDiff;
 					const distance = Math.sqrt(cSquared);
-					if (distance > 0.04) continue;
 
+					console.log(`${request.id} <-> ${building.address}`);
+					await saveLOS(
+						request.building_id,
+						building.id,
+						request.lat,
+						request.lng,
+						request.alt,
+						building.lat,
+						building.lng,
+						building.alt
+					);
+				}
+			}
+			if (visibleSectors.length) {
+				for (let j = 0; j < visibleSectors.length; j++) {
+					const hub = visibleSectors[j];
+					const [building] = await buildingFromBin(hub.bin);
+
+					// Handle bad BINs (temporary solution)
+					const latDiff = building.lat - request.lat;
+					const lngDiff = building.lng - request.lng;
+					const cSquared = latDiff * latDiff + lngDiff * lngDiff;
+					const distance = Math.sqrt(cSquared);
+
+					console.log(`${request.id} <-> ${building.address}`);
 					await saveLOS(
 						request.building_id,
 						building.id,
@@ -48,7 +70,7 @@ async function checkLOS() {
 				}
 			}
 		} catch (error) {
-			console.log(error);
+			console.log("Fetch failed");
 		}
 	}
 }
