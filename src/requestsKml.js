@@ -12,7 +12,7 @@ export async function handler(event) {
 				return createResponse(404, { error: "Bad path" });
 			}
 
-			const requests = await getRequests();
+			const requests = await getRequestsWithPanos();
 			const requestsKml = requests.map(
 				request => `
 			 <Placemark>
@@ -21,7 +21,7 @@ export async function handler(event) {
 			        <Data name="id">
 			            <value>${request.id}</value>
 			        </Data>
-			        <Data name="id">
+			        <Data name="address">
 			            <value>${request.address.replace(/&/g, "+")}</value>
 			        </Data>
 			    </ExtendedData>
@@ -73,6 +73,25 @@ export async function handler(event) {
 }
 
 async function getRequests() {
+	return performQuery(
+		`SELECT
+			buildings.*,
+			requests.*
+		FROM
+			requests
+			LEFT JOIN buildings ON requests.building_id = buildings.id
+			LEFT JOIN nodes ON requests.building_id = nodes.building_id
+		WHERE
+			nodes.id IS NULL
+		GROUP BY
+			requests.id,
+			buildings.id
+		ORDER BY
+			date DESC`
+	);
+}
+
+async function getRequestsWithPanos() {
 	return performQuery(
 		`SELECT
 			buildings.*,
