@@ -18,7 +18,7 @@ export async function handler(event) {
 			const nodesKml = nodes.map(
 				node => `
 		<Placemark>
-		    <name>${node.name || ""}</name>
+		    <name>${node.name || node.id}</name>
 		    <ExtendedData>
 		        <Data name="id">
 		            <value>${node.id}</value>
@@ -210,6 +210,8 @@ async function getNodes() {
 			LEFT JOIN buildings ON nodes.building_id = buildings.id
 			LEFT JOIN devices ON nodes.id = devices.node_id
 			LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
+		WHERE
+			nodes.status = 'active'
 		GROUP BY
 			nodes.id,
 			buildings.id
@@ -231,7 +233,9 @@ async function getLinks() {
 				OR devices.id = links.device_b_id
 			JOIN device_types ON device_types.id = devices.device_type_id
 			JOIN nodes ON nodes.id = devices.node_id
-			GROUP BY
-				links.id`
+		WHERE
+			links.status = 'active'
+		GROUP BY
+			links.id`
 	);
 }

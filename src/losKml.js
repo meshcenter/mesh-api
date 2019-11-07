@@ -50,7 +50,7 @@ export async function handler(event) {
 	<Document>
         <Style id="losLink">
         	<LineStyle>
-        		<color>9900ff00</color>
+        		<color>cc00ff00</color>
         		<width>2</width>
     		</LineStyle>
     		<PolyStyle>
