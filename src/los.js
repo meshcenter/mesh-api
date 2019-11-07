@@ -46,14 +46,14 @@ export async function handler(event, context) {
 
 	// TODO: Dedupe code
 	const visibleOmnis = [];
-	for (var i = 0; i < omnisInRange.length; i++) {
+	for (let i = 0; i < omnisInRange.length; i++) {
 		const hub = omnisInRange[i];
-		const { bin, midpoint, alt } = hub;
-		if (parseInt(bin) % 1000000 === 0) continue; // Invalid bin
+		const { midpoint, alt } = hub;
+		if (parseInt(hub.bin) % 1000000 === 0) continue; // Invalid bin
 		const { coordinates } = await JSON.parse(midpoint);
 		const [lat, lng] = coordinates;
 		const hubMidpoint = [lat, lng];
-		const hubHeight = 100;
+		const hubHeight = await getBuildingHeight(hub.bin);
 		const intersections = await getIntersections(
 			buildingMidpoint,
 			buildingHeight,
@@ -73,14 +73,14 @@ export async function handler(event, context) {
 
 	// TODO: Dedupe code
 	const visibleSectors = [];
-	for (var i = 0; i < sectorsInRange.length; i++) {
+	for (let i = 0; i < sectorsInRange.length; i++) {
 		const hub = sectorsInRange[i];
-		const { bin, midpoint, alt } = hub;
-		if (parseInt(bin) % 1000000 === 0) continue; // Invalid bin
+		const { midpoint, alt } = hub;
+		if (parseInt(hub.bin) % 1000000 === 0) continue; // Invalid bin
 		const { coordinates } = await JSON.parse(midpoint);
 		const [lat, lng] = coordinates;
 		const hubMidpoint = [lat, lng];
-		const hubHeight = 100;
+		const hubHeight = await getBuildingHeight(hub.bin);
 		const intersections = await getIntersections(
 			buildingMidpoint,
 			buildingHeight,
@@ -168,15 +168,34 @@ export async function handler(event, context) {
 	async function getIntersections(midpoint1, height1, midpoint2, height2) {
 		const [x1, y1] = midpoint1;
 		const [x2, y2] = midpoint2;
+		// const distance = await getDistance(midpoint1, midpoint2);
+		// const FREQUENCY = 5; // GHz
+		// const MILES_FEET = 5280;
+		// const fresnelRadius =
+		// 	72.05 * Math.sqrt(distance / MILES_FEET / (4 * FREQUENCY));
 		const text = `SELECT
 				a.bldg_bin as bin
 			FROM
 				ny AS a
 			WHERE
-				ST_3DIntersects (a.geom, ST_SetSRID ('LINESTRINGZ (${x1} ${y1} ${height1}, ${x2} ${y2} ${height2})'::geometry, 2263))
+				ST_3DIntersects (a.geom, ST_SetSRID(ST_GeomFromText('LINESTRINGZ(${x1} ${y1} ${height1}, ${x2} ${y2} ${height2})'), 2263))
 			LIMIT 3`;
 		const res = await performLosQuery(text);
 		if (!res) throw "Failed to get intersections";
 		return res;
+	}
+
+	// TODO: 3D
+	async function getDistance(point1, point2) {
+		const [x1, y1] = point1;
+		const [x2, y2] = point2;
+		const text = `SELECT ST_Distance(
+			'POINT (${x1} ${y1})'::geometry,
+			'POINT (${x2} ${y2})'::geometry
+		);`;
+		const res = await performLosQuery(text);
+		if (!res.length) throw "Failed to calculate distance";
+		const { st_distance } = res[0];
+		return st_distance;
 	}
 }
