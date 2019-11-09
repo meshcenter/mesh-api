@@ -1,5 +1,6 @@
 import { performQuery as performLosQuery } from "./db/los";
 import { performQuery } from "./db";
+import { createResponse } from "./utils";
 
 export async function handler(event, context) {
 	const { queryStringParameters } = event;
@@ -100,20 +101,13 @@ export async function handler(event, context) {
 		}
 	}
 
-	return {
-		statusCode: 200,
-		body: JSON.stringify(
-			{
-				buildingHeight,
-				visibleOmnis,
-				visibleSectors,
-				omnisInRange,
-				sectorsInRange
-			},
-			null,
-			2
-		)
-	};
+	return createResponse(200, {
+		buildingHeight,
+		visibleOmnis,
+		visibleSectors,
+		omnisInRange,
+		sectorsInRange
+	});
 
 	async function getBuildingMidpoint(bin) {
 		const text =
