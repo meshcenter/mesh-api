@@ -137,7 +137,7 @@ export async function handler(event, context) {
 		const nodeBins = nodes
 			.map(node => node.bin)
 			.filter(bin => bin % 1000000 !== 0);
-		const nodesInRange = await performLosQuery(
+		const losNodesInRange = await performLosQuery(
 			`SELECT
 				bldg_bin as bin,
 				ST_AsGeoJSON(ST_Centroid(geom)) as midpoint
@@ -158,7 +158,20 @@ export async function handler(event, context) {
 							bldg_bin = $2), $3)`,
 			[nodeBins, bin, range]
 		);
-		return nodesInRange;
+		const losNodesInRangeMap = losNodesInRange.reduce((acc, cur) => {
+			acc[cur.bin] = cur;
+			return acc;
+		}, {});
+
+		const nodesInRangeBins = losNodesInRange.map(node => node.bin);
+
+		const nodesInRange = await getNodesFromBins(nodesInRangeBins);
+		const nodesInRangeWithMidpoint = nodesInRange.map(node => ({
+			...node,
+			midpoint: losNodesInRangeMap[node.bin].midpoint
+		}));
+
+		return nodesInRangeWithMidpoint;
 	}
 
 	async function getIntersections(midpoint1, height1, midpoint2, height2) {
@@ -193,5 +206,19 @@ export async function handler(event, context) {
 		if (!res.length) throw "Failed to calculate distance";
 		const { st_distance } = res[0];
 		return st_distance;
+	}
+
+	async function getNodesFromBins(bins) {
+		return performQuery(
+			`SELECT
+				nodes.*,
+				buildings.bin
+			FROM
+				nodes
+				JOIN buildings ON buildings.id = nodes.building_id
+			WHERE
+				buildings.bin = ANY ($1)`,
+			[bins]
+		);
 	}
 }
