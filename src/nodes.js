@@ -105,6 +105,8 @@ async function getNodes(id) {
 			LEFT JOIN buildings ON nodes.building_id = buildings.id
 			LEFT JOIN devices ON nodes.id = devices.node_id
 			LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
+			LEFT JOIN requests ON requests.building_id = buildings.id
+			LEFT JOIN panoramas ON panoramas.request_id = requests.id
 		GROUP BY
 			nodes.id,
 			buildings.id

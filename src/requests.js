@@ -89,7 +89,7 @@ async function getRequest(id) {
 			requests
 			JOIN buildings ON requests.building_id = buildings.id
 			JOIN members ON requests.member_id = members.id
-			LEFT JOIN panoramas ON requests.id = panoramas.join_request_id
+			LEFT JOIN panoramas ON requests.id = panoramas.request_id
 		WHERE
 			requests.id = $1
 		GROUP BY
@@ -110,7 +110,7 @@ async function getRequests() {
 		FROM requests
 		LEFT JOIN buildings ON requests.building_id = buildings.id
 		LEFT JOIN members ON requests.member_id = members.id
-		LEFT JOIN panoramas ON requests.id = panoramas.join_request_id
+		LEFT JOIN panoramas ON requests.id = panoramas.request_id
 		GROUP BY requests.id, buildings.id, members.id
 		ORDER BY date DESC`
 	);
