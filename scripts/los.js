@@ -11,8 +11,8 @@ async function checkLOS() {
 		const request = requests[i];
 		if (!request.bin) continue;
 		if (request.roof_access !== "yes") continue;
-		if (!request.panoramas || !request.panoramas.filter(p => p).length)
-			continue;
+		if (!request.panoramas) continue;
+		if (!request.panoramas.filter(p => p).length) continue;
 		try {
 			const url = `http://localhost:9000/.netlify/functions/los?bin=${request.bin}`;
 			const losResponse = await fetch(url);
@@ -78,11 +78,11 @@ async function checkLOS() {
 async function getRequests() {
 	return performQuery(
 		`SELECT requests.*,
-			buildings.*,
+			buildings.bin,
 			json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas
 		FROM requests
 		LEFT JOIN buildings ON requests.building_id = buildings.id
-		LEFT JOIN panoramas ON requests.id = panoramas.join_request_id
+		LEFT JOIN panoramas ON requests.id = panoramas.request_id
 		GROUP BY requests.id, buildings.id
 		ORDER BY requests.id DESC`
 	);

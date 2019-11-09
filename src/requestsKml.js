@@ -24,6 +24,12 @@ export async function handler(event) {
 			        <Data name="address">
 			            <value>${request.address.replace(/&/g, "+")}</value>
 			        </Data>
+			        ${(request.panoramas || []).map(
+						(panorama, index) =>
+							`<Data name="panorama ${index + 1}">
+					            <value>${panorama.url}</value>
+						     </Data>`
+					)}
 			    </ExtendedData>
 			    <Point>
 			        <altitudeMode>absolute</altitudeMode>
@@ -95,12 +101,13 @@ async function getRequestsWithPanos() {
 	return performQuery(
 		`SELECT
 			buildings.*,
-			requests.*
+			requests.*,
+			json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas
 		FROM
 			requests
 			LEFT JOIN buildings ON requests.building_id = buildings.id
 			LEFT JOIN nodes ON requests.building_id = nodes.building_id
-			JOIN panoramas ON panoramas.join_request_id = requests.id
+			JOIN panoramas ON panoramas.request_id = requests.id
 		WHERE
 			nodes.id IS NULL
 		GROUP BY

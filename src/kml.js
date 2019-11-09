@@ -29,6 +29,12 @@ export async function handler(event) {
 		        <Data name="status">
 		            <value>${node.status}</value>
 		        </Data>
+		        ${(node.panoramas || []).map(
+					(panorama, index) =>
+						`<Data name="panorama ${index + 1}">
+					            <value>${panorama.url}</value>
+						     </Data>`
+				)}
 		    </ExtendedData>
 		    <Point>
 		        <altitudeMode>absolute</altitudeMode>
@@ -204,14 +210,15 @@ async function getNodes() {
 		`SELECT
 			nodes.*,
 			buildings.address AS building,
-			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
+			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices,
+			json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas
 		FROM
 			nodes
 			LEFT JOIN buildings ON nodes.building_id = buildings.id
 			LEFT JOIN devices ON nodes.id = devices.node_id
-			LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
-		WHERE
-			nodes.status = 'active'
+			LEFT JOIN device_types ON device_types.id IN(devices.device_type_id)
+			LEFT JOIN requests ON requests.building_id = buildings.id
+			LEFT JOIN panoramas ON panoramas.request_id = requests.id
 		GROUP BY
 			nodes.id,
 			buildings.id

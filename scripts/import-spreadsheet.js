@@ -401,7 +401,7 @@ async function importJoinRequests(nodes) {
 
 	await insertBulk(
 		"panoramas",
-		["url", "date", "join_request_id"],
+		["url", "date", "request_id"],
 		panoramas,
 		panorama => [panorama.url, panorama.date, panorama.joinRequestId]
 	);

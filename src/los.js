@@ -17,6 +17,7 @@ export async function handler(event, context) {
 		WHERE
 			device_types.name = 'Omni'
 			AND devices.status = 'active'
+			AND nodes.status = 'active'
 		GROUP BY
 			nodes.id,
 			buildings.bin`
@@ -34,6 +35,7 @@ export async function handler(event, context) {
 		WHERE
 			device_types.name = 'LBE120'
 			AND devices.status = 'active'
+			AND nodes.status = 'active'
 		GROUP BY
 			nodes.id,
 			buildings.bin`

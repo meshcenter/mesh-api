@@ -94,7 +94,7 @@ async function createDatabase() {
 				id				SERIAL PRIMARY KEY,
 				url				VARCHAR(256) NOT NULL,
 		 		date			TIMESTAMP WITH TIME ZONE NOT NULL,
-				join_request_id	INTEGER REFERENCES requests(id)
+				request_id	INTEGER REFERENCES requests(id)
 			)`
 		);
 

@@ -105,8 +105,7 @@ WHERE
 		GROUP BY
 			building_a_id
 		HAVING
-			count(building_a_id) >= $1
-			AND count(building_a_id) < 6)`,
+			count(building_a_id) >= $1)`,
 		[degree]
 	);
 }
@@ -122,7 +121,7 @@ FROM
 	los
 	JOIN buildings ON buildings.id = los.building_a_id
 	JOIN requests ON requests.building_id = buildings.id
-	JOIN panoramas ON panoramas.join_request_id = requests.id
+	JOIN panoramas ON panoramas.request_id = requests.id
 WHERE
 	building_a_id IN(
 		SELECT
@@ -130,8 +129,7 @@ WHERE
 		GROUP BY
 			building_a_id
 		HAVING
-			count(building_a_id) >= $1
-			AND count(building_a_id) < 6)`,
+			count(building_a_id) >= $1)`,
 		[degree]
 	);
 }
@@ -145,7 +143,7 @@ async function getLosOfBuilding(id) {
 	 	los
 	 	JOIN buildings ON buildings.id = los.building_a_id
 	 	JOIN requests ON requests.building_id = buildings.id
-	 	JOIN panoramas ON panoramas.join_request_id = requests.id
+	 	JOIN panoramas ON panoramas.request_id = requests.id
 	 WHERE
 	 	building_a_id = $1`,
 		[id]
