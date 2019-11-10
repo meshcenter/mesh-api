@@ -29,6 +29,9 @@ export async function handler(event) {
 		        <Data name="status">
 		            <value>${node.status}</value>
 		        </Data>
+		        <Data name="installed">
+		            <value>${node.create_date.toDateString()}</value>
+		        </Data>
 		        ${(node.panoramas || []).map(
 					(panorama, index) =>
 						`<Data name="panorama ${index + 1}">
