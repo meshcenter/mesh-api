@@ -6,6 +6,7 @@ export async function handler(event, context) {
 	const { queryStringParameters } = event;
 	const { bin } = queryStringParameters;
 
+	// TODO: One query, and use range of device
 	const omnis = await performQuery(
 		`SELECT
 			nodes.id,
@@ -34,7 +35,7 @@ export async function handler(event, context) {
 			JOIN devices ON devices.node_id = nodes.id
 			JOIN device_types ON devices.device_type_id = device_types.id
 		WHERE
-			device_types.name = 'LBE120'
+			device_types.name IN ('LBE120', 'SN1Sector1', 'SN1Sector2')
 			AND devices.status = 'active'
 			AND nodes.status = 'active'
 		GROUP BY
@@ -44,7 +45,7 @@ export async function handler(event, context) {
 
 	const buildingMidpoint = await getBuildingMidpoint(bin);
 	const buildingHeight = await getBuildingHeight(bin);
-	const omnisInRange = await getNodesInRange(omnis, bin, 0.5 * 5280); // 0.5 miles
+	const omnisInRange = await getNodesInRange(omnis, bin, 0.4 * 5280); // 0.4 miles
 	const sectorsInRange = await getNodesInRange(sectors, bin, 5280); // 1 mile
 
 	// TODO: Dedupe code
