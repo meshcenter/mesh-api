@@ -12,7 +12,12 @@ export async function handler(event) {
 				return createResponse(404, "Bad path");
 			}
 
-			const los = await getLosOfDegreeAndPanos(1);
+			const { queryStringParameters } = event;
+			const { pano } = queryStringParameters;
+
+			const los = pano
+				? await getLosOfDegreeAndPanos(1)
+				: await getLosOfDegree(1);
 
 			const losKml = los.map(los => {
 				const {
