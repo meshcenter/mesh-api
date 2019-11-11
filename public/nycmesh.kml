@@ -15,21 +15,9 @@
 		</Link>
 	</NetworkLink>
 	<NetworkLink>
-		<name>Requests with Panos</name>
-		<Link>
-			<href>https://api.nycmesh.net/requestsKml</href>
-		</Link>
-	</NetworkLink>
-	<NetworkLink>
 		<name>LoS</name>
 		<Link>
 			<href>https://api.nycmesh.net/losKml</href>
-		</Link>
-	</NetworkLink>
-	<NetworkLink>
-		<name>LoS with Panos</name>
-		<Link>
-			<href>https://api.nycmesh.net/losKml?pano=true</href>
 		</Link>
 	</NetworkLink>
 </Document>
