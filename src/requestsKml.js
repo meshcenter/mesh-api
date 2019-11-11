@@ -12,7 +12,13 @@ export async function handler(event) {
 				return createResponse(404, { error: "Bad path" });
 			}
 
-			const requests = await getRequestsWithPanos();
+			const { queryStringParameters } = event;
+			const { pano } = queryStringParameters;
+
+			const requests = pano
+				? await getRequestsWithPanos()
+				: await getRequests();
+
 			const requestsKml = requests.map(
 				request => `
 			 <Placemark>
