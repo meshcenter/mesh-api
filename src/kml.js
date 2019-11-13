@@ -15,9 +15,60 @@ export async function handler(event) {
 			const nodes = await getNodes();
 			const links = await getLinks();
 
-			const nodesKml = nodes.map(
-				node => `
-		<Placemark>
+			const nodesById = nodes.map((acc, cur) => {
+				acc[cur.id] = cur;
+				return acc;
+			}, {});
+
+			const linksByNode = links.reduce((acc, cur) => {
+				acc[cur.nodes[0].id] = acc[cur.nodes[0].id] || [];
+				acc[cur.nodes[0].id].push(cur);
+				return acc;
+			}, {});
+
+			const nodesKml = nodes
+				.sort((a, b) => a.id - b.id)
+				.map(
+					node => `<Folder>
+					<name>${node.id}</name>
+					${nodePlacemark(node)}
+					${(linksByNode[node.id] || []).map(linkPlacemark)}
+				</Folder>`
+				);
+
+			const kml = `<?xml version="1.0" encoding="UTF-8"?>
+						<kml xmlns="http://www.opengis.net/kml/2.2">
+							<Document>
+								${stylesKml}
+						        ${nodesKml}
+							</Document>
+						</kml>`;
+
+			return {
+				statusCode: 200,
+				headers: {
+					"Content-Type": "application/xml",
+					"Access-Control-Allow-Origin": "*",
+					"Access-Control-Allow-Headers":
+						"Content-Type, Authorization",
+					"Access-Control-Allow-Methods": "OPTIONS, POST, GET"
+				},
+				body: kml
+			};
+		}
+	} catch (error) {
+		return createResponse(500, {
+			error: {
+				message: error.message
+			}
+		});
+	}
+
+	return createResponse(400);
+}
+
+function nodePlacemark(node) {
+	return `<Placemark>
 		    <name>${node.name || node.id}</name>
 		    <ExtendedData>
 		        <Data name="id">
@@ -44,169 +95,132 @@ export async function handler(event) {
 		        <coordinates>${node.lng},${node.lat},${node.alt}</coordinates>
 		    </Point>
 		    <styleUrl>${getStyle(node)}</styleUrl>
-		</Placemark>`
-			);
-
-			const linksKml = links.map(link => {
-				const [node_a, node_b] = link.nodes;
-				const [device_type_a, device_type_b] = link.device_types;
-				return `
-		<Placemark>
-            <name>${node_a.id} - ${node_b.id}</name>
-            <ExtendedData>
-                <Data name="status">
-                    <value>${link.status}</value>
-                </Data>
-                <Data name="from">
-                    <value>${node_a.id}</value>
-                </Data>
-                <Data name="to">
-                    <value>${node_b.id}</value>
-                </Data>
-            </ExtendedData>
-            <LineString>
-                <altitudeMode>absolute</altitudeMode>
-                <coordinates>${node_a.lng},${node_a.lat},${node_a.alt} ${
-					node_b.lng
-				},${node_b.lat},${node_b.alt}</coordinates>
-            </LineString>
-            <styleUrl>${getLinkStyle(
-				node_a,
-				node_b,
-				device_type_a,
-				device_type_b
-			)}</styleUrl>
-        </Placemark>
-			`;
-			});
-
-			const kml = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-	<Document>
-		<Style id="hubLink">
-        	<LineStyle>
-        		<color>FF00FFFF</color>
-        		<width>3</width>
-    		</LineStyle>
-    		<PolyStyle>
-    			<color>00000000</color>
-			</PolyStyle>
-        </Style>
-        <Style id="backboneLink">
-        	<LineStyle>
-        		<color>ee00FFFF</color>
-        		<width>2</width>
-    		</LineStyle>
-    		<PolyStyle>
-    			<color>00000000</color>
-			</PolyStyle>
-        </Style>
-        <Style id="activeLink">
-        	<LineStyle>
-        		<color>aa0000ff</color>
-        		<width>2</width>
-    		</LineStyle>
-    		<PolyStyle>
-    			<color>00000000</color>
-			</PolyStyle>
-        </Style>
-		<Style id="supernode">
-	        <IconStyle>
-		        <scale>0.6</scale> 
-	        	<Icon>
-	        		<href>https://i.imgur.com/flgK1j1.png</href>
-	        	</Icon>
-		        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-	        </IconStyle>
-        </Style>
-		<Style id="hub">
-	        <IconStyle>
-	        	<scale>0.6</scale> 
-	        	<Icon>
-	        		<href>https://i.imgur.com/xbfOy3Q.png</href>
-	        	</Icon>
-		        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-	        </IconStyle>
-        </Style>
-        <Style id="omni">
-	        <IconStyle>
-	        	<scale>0.4</scale> 
-	        	<Icon>
-	        		<href>https://i.imgur.com/7dMidbX.png</href>
-	        	</Icon>
-		        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-	        </IconStyle>
-        </Style>
-		<Style id="node">
-	        <IconStyle>
-	        	<scale>0.4</scale> 
-	        	<Icon>
-	        		<href>https://i.imgur.com/7SIgB7Z.png</href>
-	        	</Icon>
-		        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-	        </IconStyle>
-        </Style>
-		${linksKml}
-        ${nodesKml}
-	</Document>
-</kml>`;
-
-			function getStyle(node) {
-				const { name, notes, devices } = node;
-
-				if (name && name.includes("Supernode")) return "#supernode";
-
-				if (notes && notes.includes("hub")) return "#hub";
-
-				if (
-					devices.filter(device => device.type.name === "Omni").length
-				)
-					return "#omni";
-
-				return "#node";
-			}
-
-			function getLinkStyle(node1, node2, device_type1, device_type2) {
-				const isSupernode = node =>
-					node.name && node.name.includes("Supernode");
-				const isHub = node => node.notes && node.notes.includes("hub");
-				const isOmni = device_type => device_type.name === "Omni";
-				const isBackbone = (node, device_type) =>
-					isSupernode(node) || isHub(node) || isOmni(device_type);
-
-				if (isHub(node1) && isHub(node2)) return "#hubLink";
-
-				if (
-					isBackbone(node1, device_type1) &&
-					isBackbone(node2, device_type2)
-				) {
-					return "#backboneLink";
-				}
-				return "#activeLink";
-			}
-
-			return {
-				statusCode: 200,
-				headers: {
-					"Content-Type": "application/xml",
-					"Access-Control-Allow-Origin": "*",
-					"Access-Control-Allow-Headers":
-						"Content-Type, Authorization",
-					"Access-Control-Allow-Methods": "OPTIONS, POST, GET"
-				},
-				body: kml
-			};
-		}
-	} catch (error) {
-		return createResponse(500, {
-			error: {
-				message: error.message
-			}
-		});
-	}
-
-	return createResponse(400);
+		</Placemark>`;
 }
+
+function linkPlacemark(link) {
+	const [node_a, node_b] = link.nodes;
+	const [device_type_a, device_type_b] = link.device_types;
+	return `<Placemark>
+	            <name>${node_a.id} - ${node_b.id}</name>
+	            <ExtendedData>
+	                <Data name="status">
+	                    <value>${link.status}</value>
+	                </Data>
+	                <Data name="from">
+	                    <value>${node_a.id}</value>
+	                </Data>
+	                <Data name="to">
+	                    <value>${node_b.id}</value>
+	                </Data>
+	            </ExtendedData>
+	            <LineString>
+	                <altitudeMode>absolute</altitudeMode>
+	                <coordinates>${node_a.lng},${node_a.lat},${node_a.alt} ${
+		node_b.lng
+	},${node_b.lat},${node_b.alt}</coordinates>
+	            </LineString>
+	            <styleUrl>${getLinkStyle(
+					node_a,
+					node_b,
+					device_type_a,
+					device_type_b
+				)}</styleUrl>
+	        </Placemark>
+			`;
+}
+
+function getStyle(node) {
+	const { name, notes, devices } = node;
+
+	if (name && name.includes("Supernode")) return "#supernode";
+
+	if (notes && notes.includes("hub")) return "#hub";
+
+	if (devices.filter(device => device.type.name === "Omni").length)
+		return "#omni";
+
+	return "#node";
+}
+
+function getLinkStyle(node1, node2, device_type1, device_type2) {
+	const isSupernode = node => node.name && node.name.includes("Supernode");
+	const isHub = node => node.notes && node.notes.includes("hub");
+	const isOmni = device_type => device_type.name === "Omni";
+	const isBackbone = (node, device_type) =>
+		isSupernode(node) || isHub(node) || isOmni(device_type);
+
+	if (isHub(node1) && isHub(node2)) return "#hubLink";
+
+	if (isBackbone(node1, device_type1) && isBackbone(node2, device_type2)) {
+		return "#backboneLink";
+	}
+	return "#activeLink";
+}
+
+const stylesKml = `<Style id="hubLink">
+	<LineStyle>
+		<color>FF00FFFF</color>
+		<width>3</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>00000000</color>
+	</PolyStyle>
+</Style>
+<Style id="backboneLink">
+	<LineStyle>
+		<color>FF00FFFF</color>
+		<width>3</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>00000000</color>
+	</PolyStyle>
+</Style>
+<Style id="activeLink">
+	<LineStyle>
+		<color>aa0000ff</color>
+		<width>2</width>
+	</LineStyle>
+	<PolyStyle>
+		<color>00000000</color>
+	</PolyStyle>
+</Style>
+<Style id="supernode">
+    <IconStyle>
+        <scale>0.6</scale> 
+    	<Icon>
+    		<href>https://i.imgur.com/flgK1j1.png</href>
+    	</Icon>
+        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
+    </IconStyle>
+</Style>
+<Style id="hub">
+    <IconStyle>
+    	<scale>0.6</scale> 
+    	<Icon>
+    		<href>https://i.imgur.com/xbfOy3Q.png</href>
+    	</Icon>
+        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
+    </IconStyle>
+</Style>
+<Style id="omni">
+    <IconStyle>
+    	<scale>0.4</scale> 
+    	<Icon>
+    		<href>https://i.imgur.com/7dMidbX.png</href>
+    	</Icon>
+        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
+    </IconStyle>
+</Style>
+<Style id="node">
+    <IconStyle>
+    	<scale>0.4</scale> 
+    	<Icon>
+    		<href>https://i.imgur.com/7SIgB7Z.png</href>
+    	</Icon>
+        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
+    </IconStyle>
+</Style>`;
 
 async function getNodes() {
 	return performQuery(

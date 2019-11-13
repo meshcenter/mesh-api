@@ -19,52 +19,35 @@ export async function handler(event) {
 				? await getLosOfDegreeAndPanos(1)
 				: await getLosOfDegree(1);
 
-			const losKml = los.map(los => {
-				const {
-					building_a_id,
-					building_b_id,
-					lat_a,
-					lng_a,
-					alt_a,
-					lat_b,
-					lng_b,
-					alt_b
-				} = los;
-				return `
-		<Placemark>
-            <name>${building_a_id} - ${building_b_id}</name>
-            <ExtendedData>
-                <Data name="from">
-                    <value>${building_a_id}</value>
-                </Data>
-                <Data name="to">
-                    <value>${building_b_id}</value>
-                </Data>
-            </ExtendedData>
-            <LineString>
-                <altitudeMode>absolute</altitudeMode>
-                <coordinates>${lng_a},${lat_a},${alt_a} ${lng_b},${lat_b},${alt_b}</coordinates>
-            </LineString>
-            <styleUrl>#losLink</styleUrl>
-        </Placemark>
-			`;
-			});
+			const losByRequest = los.reduce((acc, cur) => {
+				const [request] = cur.requests;
+				acc[request.id] = acc[request.id] || [];
+				acc[request.id].push(cur);
+				return acc;
+			}, {});
+
+			const losKml = Object.entries(losByRequest).map(
+				([id, requestLos]) => {
+					const placemarks = requestLos.map(losPlacemark);
+					return `<Folder><name>${id}</name>${placemarks}</Folder>`;
+				}
+			);
 
 			const kml = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-	<Document>
-        <Style id="losLink">
-        	<LineStyle>
-        		<color>cc00ff00</color>
-        		<width>2</width>
-    		</LineStyle>
-    		<PolyStyle>
-    			<color>00000000</color>
-			</PolyStyle>
-        </Style>
-		${losKml}
-	</Document>
-</kml>`;
+						<kml xmlns="http://www.opengis.net/kml/2.2">
+							<Document>
+						        <Style id="losLink">
+						        	<LineStyle>
+						        		<color>cc00ff00</color>
+						        		<width>2</width>
+						    		</LineStyle>
+						    		<PolyStyle>
+						    			<color>00000000</color>
+									</PolyStyle>
+						        </Style>
+								${losKml}
+							</Document>
+						</kml>`;
 
 			return {
 				statusCode: 200,
@@ -89,6 +72,38 @@ export async function handler(event) {
 	return createResponse(400);
 }
 
+function losPlacemark(los) {
+	const {
+		building_a_id,
+		building_b_id,
+		lat_a,
+		lng_a,
+		alt_a,
+		lat_b,
+		lng_b,
+		alt_b,
+		nodes
+	} = los;
+	return `
+		<Placemark>
+            <name>Line of Sight</name>
+            <ExtendedData>
+                <Data name="from">
+                    <value>${building_a_id}</value>
+                </Data>
+                <Data name="to">
+                    <value>${building_b_id}</value>
+                </Data>
+            </ExtendedData>
+            <LineString>
+                <altitudeMode>absolute</altitudeMode>
+                <coordinates>${lng_a},${lat_a},${alt_a} ${lng_b},${lat_b},${alt_b}</coordinates>
+            </LineString>
+            <styleUrl>#losLink</styleUrl>
+        </Placemark>
+			`;
+}
+
 async function getLos() {
 	return performQuery("SELECT * FROM los");
 }
@@ -98,7 +113,7 @@ async function getLosOfDegree(degree) {
 	return performQuery(
 		`SELECT
 	los.*,
-	buildings.alt
+	json_agg(requests) as requests
 FROM
 	los
 	JOIN buildings ON buildings.id = los.building_a_id
@@ -110,7 +125,9 @@ WHERE
 		GROUP BY
 			building_a_id
 		HAVING
-			count(building_a_id) >= $1)`,
+			count(building_a_id) >= $1)
+GROUP BY
+	los.id`,
 		[degree]
 	);
 }
@@ -120,8 +137,7 @@ async function getLosOfDegreeAndPanos(degree) {
 	return performQuery(
 		`SELECT
 	los.*,
-	buildings.alt,
-	panoramas.url
+	json_agg(requests) as requests
 FROM
 	los
 	JOIN buildings ON buildings.id = los.building_a_id
@@ -134,7 +150,9 @@ WHERE
 		GROUP BY
 			building_a_id
 		HAVING
-			count(building_a_id) >= $1)`,
+			count(building_a_id) >= $1)
+GROUP BY
+	los.id`,
 		[degree]
 	);
 }
@@ -142,8 +160,7 @@ WHERE
 async function getLosOfBuilding(id) {
 	return performQuery(
 		`SELECT
-	 	los.*,
-	 	panoramas.url
+	 	los.*
 	 FROM
 	 	los
 	 	JOIN buildings ON buildings.id = los.building_a_id
