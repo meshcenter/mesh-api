@@ -52,7 +52,7 @@ export async function handler(event, context) {
 				requests
 				JOIN buildings ON requests.building_id = buildings.id
 			WHERE
-				requests.id IN (3946, 1932, 1933)
+				requests.id IN (3946, 1932, 1933, 1084)
 			GROUP BY
 				requests.id,
 				buildings.bin`
