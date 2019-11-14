@@ -70,7 +70,7 @@ export async function handler(event, context) {
 		);
 
 		// TODO: Dedupe code
-		const visibleOmnis = [];
+		const visibleOmnis1 = [];
 		for (let i = 0; i < omnisInRange.length; i++) {
 			const hub = omnisInRange[i];
 			const { midpoint, alt } = hub;
@@ -92,12 +92,13 @@ export async function handler(event, context) {
 				intersection => intersection.bin !== bin
 			);
 			if (!filteredIntersections.length) {
-				visibleOmnis.push(hub);
+				visibleOmnis1.push(hub);
 			}
 		}
+		const visibleOmnis = visibleOmnis1.filter(node => node.bin !== bin);
 
 		// TODO: Dedupe code
-		const visibleSectors = [];
+		let visibleSectors1 = [];
 		for (let i = 0; i < sectorsInRange.length; i++) {
 			const hub = sectorsInRange[i];
 			const { midpoint, alt } = hub;
@@ -119,12 +120,13 @@ export async function handler(event, context) {
 				intersection => intersection.bin !== bin
 			);
 			if (!filteredIntersections.length) {
-				visibleSectors.push(hub);
+				visibleSectors1.push(hub);
 			}
 		}
+		const visibleSectors = visibleSectors1.filter(node => node.bin !== bin);
 
 		// TODO: Dedupe code
-		const visibleRequests = [];
+		const visibleRequests1 = [];
 		for (let i = 0; i < requestsInRange.length; i++) {
 			const request = requestsInRange[i];
 			const { midpoint, alt } = request;
@@ -147,9 +149,12 @@ export async function handler(event, context) {
 			);
 
 			if (!filteredIntersections.length) {
-				visibleRequests.push(request);
+				visibleRequests1.push(request);
 			}
 		}
+		const visibleRequests = visibleRequests1.filter(
+			request => request.bin !== bin
+		);
 
 		return createResponse(200, {
 			buildingHeight,
@@ -290,7 +295,10 @@ async function getRequestsFromBins(bins) {
 	return performQuery(
 		`SELECT
 				requests.*,
-				buildings.bin
+				buildings.bin,
+				buildings.lat,
+				buildings.lng,
+				buildings.alt
 			FROM
 				requests
 				JOIN buildings ON buildings.id = requests.building_id
