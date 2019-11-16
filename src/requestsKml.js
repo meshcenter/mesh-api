@@ -22,7 +22,6 @@ export async function handler(event) {
 			const requestsKml = requests.map(
 				request => `
 			 <Placemark>
-	            <name>${request.id}</name>
 			    <ExtendedData>
 			        <Data name="id">
 			            <value>${request.id}</value>
