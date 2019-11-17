@@ -27,9 +27,9 @@ export async function handler(event) {
 			}, {});
 
 			const losKml = Object.entries(losByRequest).map(
-				([id, requestLos]) => {
+				([requestId, requestLos]) => {
 					const placemarks = requestLos.map(losPlacemark);
-					return `<Folder><name>${id}</name>${placemarks}</Folder>`;
+					return `<Folder><name>${requestId}</name>${placemarks}</Folder>`;
 				}
 			);
 
@@ -82,17 +82,20 @@ function losPlacemark(los) {
 		lat_b,
 		lng_b,
 		alt_b,
-		nodes
+		nodes,
+		requests
 	} = los;
+	let fromId = (los.requests[0] || {}).id;
+	let toId = (los.nodes[0] || {}).id;
 	return `
 		<Placemark>
-            <name>Line of Sight</name>
+            <name>${fromId} - ${toId}</name>
             <ExtendedData>
                 <Data name="from">
-                    <value>${building_a_id}</value>
+                    <value>${fromId}</value>
                 </Data>
                 <Data name="to">
-                    <value>${building_b_id}</value>
+                    <value>${toId}</value>
                 </Data>
             </ExtendedData>
             <LineString>
@@ -112,22 +115,23 @@ async function getLos() {
 async function getLosOfDegree(degree) {
 	return performQuery(
 		`SELECT
-	los.*,
-	json_agg(requests) as requests
-FROM
-	los
-	JOIN buildings ON buildings.id = los.building_a_id
-	JOIN requests ON requests.building_id = buildings.id
-WHERE
-	building_a_id IN(
-		SELECT
-			building_a_id FROM los
+			los.*,
+			json_agg(requests) as requests,
+			json_agg(nodes) as nodes
+		FROM
+			los
+			JOIN requests ON requests.building_id = los.building_a_id
+			JOIN nodes ON nodes.building_id =  los.building_b_id
+		WHERE
+			building_a_id IN(
+				SELECT
+					building_a_id FROM los
+				GROUP BY
+					building_a_id
+				HAVING
+					count(building_a_id) >= $1)
 		GROUP BY
-			building_a_id
-		HAVING
-			count(building_a_id) >= $1)
-GROUP BY
-	los.id`,
+			los.id`,
 		[degree]
 	);
 }
@@ -137,11 +141,13 @@ async function getLosOfDegreeAndPanos(degree) {
 	return performQuery(
 		`SELECT
 	los.*,
-	json_agg(requests) as requests
+	json_agg(requests) as requests,
+	json_agg(nodes) as nodes
 FROM
 	los
 	JOIN buildings ON buildings.id = los.building_a_id
-	JOIN requests ON requests.building_id = buildings.id
+	JOIN requests ON requests.building_id = los.building_a_id
+	JOIN nodes ON nodes.building_id =  los.building_b_id
 	JOIN panoramas ON panoramas.request_id = requests.id
 WHERE
 	building_a_id IN(

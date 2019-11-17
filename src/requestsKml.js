@@ -22,6 +22,7 @@ export async function handler(event) {
 			const requestsKml = requests.map(
 				request => `
 			 <Placemark>
+			    <name>${request.id}</name>
 			    <ExtendedData>
 			        <Data name="id">
 			            <value>${request.id}</value>
@@ -55,6 +56,9 @@ export async function handler(event) {
 	        	</Icon>
 		        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
 	        </IconStyle>
+	        <LabelStyle>
+	        	<scale>0</scale>
+        	</LabelStyle>
         </Style>
 		${requestsKml}
 	</Document>

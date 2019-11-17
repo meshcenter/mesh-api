@@ -72,26 +72,38 @@ export async function handler(event) {
 
 function nodePlacemark(node) {
 	return `<Placemark>
-			    ${node.name ? `<name>${node.name}</name>` : ""}
+			    <name>${node.name || node.id}</name>
 			    <ExtendedData>
 			        <Data name="id">
 			            <value>${node.id}</value>
 			        </Data>
-			        <Data name="name">
+			        ${
+						node.name
+							? `<Data name="name">
 			            <value>${node.name}</value>
-			        </Data>
+			        </Data>`
+							: ""
+					}
 			        <Data name="status">
 			            <value>${node.status}</value>
+			        </Data>
+			        <Data name="address">
+			            <value>${node.address.replace(/&/g, "+")}</value>
+			        </Data>
+			        <Data name="devices">
+			            <value>${node.devices.map(d => d.type.name).join(", ")}</value>
 			        </Data>
 			        <Data name="installed">
 			            <value>${node.create_date.toDateString()}</value>
 			        </Data>
-			        ${(node.panoramas || []).map(
-						(panorama, index) =>
-							`<Data name="panorama ${index + 1}">
+			        ${(node.panoramas || [])
+						.filter(p => p.url)
+						.map(
+							(panorama, index) =>
+								`<Data name="panorama ${index + 1}">
 						            <value>${panorama.url}</value>
 							     </Data>`
-					)}
+						)}
 			    </ExtendedData>
 			    <Point>
 			        <altitudeMode>absolute</altitudeMode>
@@ -111,10 +123,10 @@ function linkPlacemark(link) {
 	                    <value>${link.status}</value>
 	                </Data>
 	                <Data name="from">
-	                    <value>${node_a.id}</value>
+	                    <value>${node_a.name || node_a.id}</value>
 	                </Data>
 	                <Data name="to">
-	                    <value>${node_b.id}</value>
+	                    <value>${node_b.name || node_b.id}</value>
 	                </Data>
 	            </ExtendedData>
 	            <LineString>
@@ -196,6 +208,9 @@ const stylesKml = `<Style id="hubLink">
     	</Icon>
         <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
     </IconStyle>
+    <LabelStyle>
+    	<scale>0</scale>
+	</LabelStyle>
 </Style>
 <Style id="hub">
     <IconStyle>
@@ -205,6 +220,9 @@ const stylesKml = `<Style id="hubLink">
     	</Icon>
         <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
     </IconStyle>
+    <LabelStyle>
+    	<scale>0</scale>
+	</LabelStyle>
 </Style>
 <Style id="omni">
     <IconStyle>
@@ -214,6 +232,9 @@ const stylesKml = `<Style id="hubLink">
     	</Icon>
         <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
     </IconStyle>
+    <LabelStyle>
+    	<scale>0</scale>
+	</LabelStyle>
 </Style>
 <Style id="node">
     <IconStyle>
@@ -223,22 +244,25 @@ const stylesKml = `<Style id="hubLink">
     	</Icon>
         <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
     </IconStyle>
+    <LabelStyle>
+    	<scale>0</scale>
+	</LabelStyle>
 </Style>`;
 
 async function getNodes() {
 	return performQuery(
 		`SELECT
 			nodes.*,
-			buildings.address AS building,
+			buildings.address AS address,
 			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices,
 			json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas
 		FROM
 			nodes
 			LEFT JOIN buildings ON nodes.building_id = buildings.id
 			LEFT JOIN devices ON nodes.id = devices.node_id
-			LEFT JOIN device_types ON device_types.id IN(devices.device_type_id)
-			LEFT JOIN requests ON requests.building_id = buildings.id
-			LEFT JOIN panoramas ON panoramas.request_id = requests.id
+			JOIN device_types ON device_types.id IN(devices.device_type_id)
+			JOIN requests ON requests.building_id = buildings.id
+			JOIN panoramas ON panoramas.request_id = requests.id
 		GROUP BY
 			nodes.id,
 			buildings.id

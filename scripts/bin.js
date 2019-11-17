@@ -8,6 +8,7 @@ async function lookupBins() {
 	const buildings = await getBuildings();
 	for (var i = buildings.length - 1; i >= 0; i--) {
 		const building = buildings[i];
+		if (building.bin) continue;
 		const bin = await getBIN(building);
 		if (bin && bin !== building.bin) {
 			console.log(building.address);
@@ -74,7 +75,7 @@ async function getBuildings() {
 		GROUP BY
 			buildings.id
 		ORDER BY
-			id DESC`
+			buildings.bin`
 	);
 }
 

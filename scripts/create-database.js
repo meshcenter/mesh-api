@@ -1,5 +1,4 @@
 require("dotenv").config();
-const HerokuClient = require("heroku-client");
 const { performQuery } = require("./db");
 
 createDatabase();

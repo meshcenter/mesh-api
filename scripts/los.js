@@ -11,13 +11,16 @@ async function checkLOS() {
 		const request = requests[i];
 		if (!request.bin) continue;
 		if (request.roof_access !== "yes") continue;
-		if (!request.panoramas) continue;
-		if (!request.panoramas.filter(p => p).length) continue;
 		try {
-			const url = `http://localhost:9000/.netlify/functions/los?bin=${request.bin}`;
+			const url = `https://api.nycmesh.net/los?bin=${request.bin}`;
 			const losResponse = await fetch(url);
 			const response = await losResponse.json();
-			const { visibleOmnis, visibleSectors, errorMessage } = response;
+			const {
+				visibleOmnis,
+				visibleSectors,
+				visibleRequests,
+				errorMessage
+			} = response;
 			if (errorMessage) {
 				console.log(errorMessage);
 			}
@@ -69,8 +72,32 @@ async function checkLOS() {
 					);
 				}
 			}
+			if (visibleRequests.length) {
+				for (let k = 0; k < visibleRequests.length; k++) {
+					const request = visibleRequests[k];
+					const [building] = await buildingFromBin(request.bin);
+
+					// Handle bad BINs (temporary solution)
+					const latDiff = building.lat - request.lat;
+					const lngDiff = building.lng - request.lng;
+					const cSquared = latDiff * latDiff + lngDiff * lngDiff;
+					const distance = Math.sqrt(cSquared);
+
+					console.log(`${request.id} <-> ${building.address}`);
+					await saveLOS(
+						request.building_id,
+						building.id,
+						request.lat,
+						request.lng,
+						request.alt,
+						building.lat,
+						building.lng,
+						building.alt
+					);
+				}
+			}
 		} catch (error) {
-			console.log("Fetch failed");
+			console.log("Fetch failed", error);
 		}
 	}
 }
@@ -79,6 +106,9 @@ async function getRequests() {
 	return performQuery(
 		`SELECT requests.*,
 			buildings.bin,
+			buildings.lat,
+			buildings.lng,
+			buildings.alt,
 			json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas
 		FROM requests
 		LEFT JOIN buildings ON requests.building_id = buildings.id
