@@ -9,7 +9,6 @@
     "dotenv": "^8.2.0",
     "dotenv-webpack": "^1.7.0",
     "encoding": "^0.1.12",
-    "heroku-client": "^3.0.7",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^1.6.0",
     "node-fetch": "^2.6.0",

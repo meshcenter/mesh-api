@@ -1,16 +1,17 @@
 import { Pool } from "pg";
-import HerokuClient from "heroku-client";
 
 let pgPool;
 
 async function createPool() {
-	const heroku = new HerokuClient({ token: process.env.HEROKU_API_TOKEN });
-	const configEndpoint = `/addons/${process.env.HEROKU_ADD_ON_ID}/config`;
-	const [config] = await heroku.get(configEndpoint);
-	const connectionString = config.value;
 	pgPool = new Pool({
-		connectionString,
-		ssl: true
+		host: process.env.DB_HOST,
+		database: process.env.DB_NAME,
+		user: process.env.DB_USER,
+		password: process.env.DB_PASS,
+		port: process.env.DB_PORT,
+		ssl: {
+			mode: "require"
+		}
 	});
 }
 
