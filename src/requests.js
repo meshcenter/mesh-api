@@ -212,28 +212,55 @@ async function createTicket(request, building, member) {
 // TODO: Simplify
 async function createSlackPost(userRequest, request, building, member) {
 	const { address, lat, lng, alt } = building;
+	const { bin, spreadsheetId } = userRequest;
 	const { id, roof_access } = request;
 
 	// Check line of sight
-	const { bin } = userRequest; // Work around for incorrect BINs in db
 	const losUrl = `https://api.nycmesh.net/los?bin=${bin}`;
 	const losResponse = await fetch(losUrl);
 	const losResults = await losResponse.json();
 	const {
-		visibleHubs = [],
+		visibleSectors = [],
 		visibleOmnis = [],
 		visibleRequests = []
 	} = losResults;
-	const allVisible = [...visibleHubs, ...visibleOmnis, ...visibleRequests];
+	const allVisible = [
+		...visibleSectors,
+		...visibleOmnis,
+		...visibleRequests.map(request => ({
+			...request,
+			status: "los",
+			devices: [
+				{
+					type: {
+						id: 1,
+						name: "Planned",
+						manufacturer: null,
+						range: 0,
+						width: 0
+					},
+					lat: parseFloat(request.lat),
+					lng: parseFloat(request.lng),
+					alt: parseFloat(request.alt),
+					azimuth: 0,
+					status: "active"
+				}
+			]
+		}))
+	].filter(
+		node =>
+			node.devices.filter(device => device.type.name !== "Unknown").length
+	);
 	const losString = allVisible.length
-		? `LoS to ${allVisible.map(node => node.name || node.id).join(", ")}`
+		? allVisible.map(node => node.name || node.id).join(", ")
 		: "No LoS";
 
+	const mapURL = `https://www.nycmesh.net/map/nodes/${spreadsheetId || id}`;
 	const roofString = roof_access === "yes" ? "Roof access" : "No roof access";
-	const mapURL = `https://www.nycmesh.net/map/nodes/${id}`;
-	const uriAddress = address.replace(/,/g, "").replace(/ /g, "+");
+	const earthAddress = address.replace(/,/g, "").replace(/ /g, "+");
+	const earthURL = `https://earth.google.com/web/search/${earthAddress}/@${lat},${lng},${alt}a,300d,35y,0.6h,65t,0r`;
+	const uriAddress = encodeURIComponent(address);
 	const losURL = `https://los.nycmesh.net/search?address=${uriAddress}&bin=${bin}&lat=${lat}&lng=${lng}`;
-	const earthURL = `https://earth.google.com/web/search/${uriAddress}/@${lat},${lng},${alt}a,300d,35y,0.6h,65t,0r`;
 	const text = `*<${mapURL}|${address}>*\n${alt}m · ${roofString} · ${losString}\n<${earthURL}|View Earth →>\t<${losURL}|View LoS →>`;
 	const blocks = [
 		{
