@@ -224,13 +224,10 @@ async function createSlackPost(userRequest, request, building, member) {
 		visibleOmnis = [],
 		visibleRequests = []
 	} = losResults;
-	const losString = `LoS to ${[
-		...visibleHubs,
-		...visibleOmnis,
-		...visibleRequests
-	]
-		.map(node => node.name || node.id)
-		.join(", ") || "No lines of sight"}`;
+	const allVisible = [...visibleHubs, ...visibleOmnis, ...visibleRequests];
+	const losString = allVisible.length
+		? `LoS to ${allVisible.map(node => node.name || node.id).join(", ")}`
+		: "No lines of sight";
 
 	const roofString = roof_access === "yes" ? "Roof access" : "No roof access";
 	const mapURL = `https://www.nycmesh.net/map/nodes/${id}`;
