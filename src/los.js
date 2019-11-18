@@ -295,6 +295,7 @@ async function getRequestsFromBins(bins) {
 	return performQuery(
 		`SELECT
 				requests.*,
+				buildings.address,
 				buildings.bin,
 				buildings.lat,
 				buildings.lng,
