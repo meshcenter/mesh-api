@@ -81,6 +81,7 @@ async function importNodes(nodes) {
 	);
 	const activeNodes = validNodes.filter(node => node.status === "Installed");
 
+	let maxNodeId = 1;
 	await insertBulk(
 		"nodes",
 		[
@@ -110,6 +111,7 @@ async function importNodes(nodes) {
 				console.log(node.id, node.status);
 				node.abandonDate = node.installDate;
 			}
+			maxNodeId = Math.max(maxNodeId, node.id);
 			return [
 				node.id,
 				node.coordinates[1],
@@ -125,6 +127,9 @@ async function importNodes(nodes) {
 				membersMap[node.memberEmail.toLowerCase()].id
 			];
 		}
+	);
+	await performQuery(
+		`ALTER SEQUENCE nodes_id_seq RESTART WITH ${maxNodeId + 1}`
 	);
 }
 
@@ -354,6 +359,7 @@ async function importJoinRequests(nodes) {
 		}
 	}
 
+	let maxRequestId = 1;
 	await insertBulk(
 		"requests",
 		["id", "date", "roof_access", "building_id", "member_id"],
@@ -363,6 +369,7 @@ async function importJoinRequests(nodes) {
 				return false;
 			}
 			if (node.status === "Abandoned") return false;
+			maxRequestId = Math.max(maxRequestId, node.id);
 			return true;
 		}),
 		node => [
@@ -372,6 +379,9 @@ async function importJoinRequests(nodes) {
 			node.buildingId,
 			node.memberId
 		]
+	);
+	await performQuery(
+		`ALTER SEQUENCE requests_id_seq RESTART WITH ${maxRequestId + 1}`
 	);
 
 	const joinRequests = await performQuery("SELECT * FROM requests");
