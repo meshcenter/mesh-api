@@ -139,6 +139,7 @@ async function createRequest(request) {
 			[name, email, phone]
 		);
 	}
+	const [member] = members;
 
 	// Look up or create building
 	let buildings = await performQuery(
@@ -151,11 +152,11 @@ async function createRequest(request) {
 			[address, lat, lng, alt, bin]
 		);
 	}
-
-	const [member] = members;
 	const [building] = buildings;
+
 	const date = new Date();
 
+	// Insert request
 	const [newRequest] = await performQuery(
 		"INSERT INTO requests (date, roof_access, member_id, building_id) VALUES ($1, $2, $3, $4) RETURNING *",
 		[date, roofAccess, member.id, building.id]
@@ -163,16 +164,16 @@ async function createRequest(request) {
 
 	// This doesn't work because osTicket returns the external ticket id
 	// which doesn't do anything... we need the internal ticket id.
-	const ticketId = await createTicket(newRequest, building, member);
+	// 	const ticketId = await createTicket(newRequest, building, member);
+	//
+	// 	const [updatedRequest] = await performQuery(
+	// 		"UPDATE requests SET osticket_id = $1 WHERE id = $2 RETURNING *",
+	// 		[ticketId, newRequest.id]
+	// 	);
 
-	const [updatedRequest] = await performQuery(
-		"UPDATE requests SET osticket_id = $1 WHERE id = $2 RETURNING *",
-		[ticketId, newRequest.id]
-	);
+	await createSlackPost(request, newRequest, building, member);
 
-	await createSlackPost(request, updatedRequest, building, member, ticketId);
-
-	return updatedRequest;
+	return newRequest;
 }
 
 // https://docs.osticket.com/en/latest/Developer%20Documentation/API/Tickets.html
@@ -209,23 +210,43 @@ async function createTicket(request, building, member) {
 }
 
 // TODO: Simplify
-async function createSlackPost(
-	userRequest,
-	request,
-	building,
-	member,
-	ticketId
-) {
+async function createSlackPost(userRequest, request, building, member) {
 	const { address, lat, lng, alt } = building;
 	const { id, roof_access } = request;
 
 	// Check line of sight
 	const { bin } = userRequest; // Work around for incorrect BINs in db
-	const losUrl = `https://los.nycmesh.net/.netlify/functions/los?bin=${bin}`;
+	const losUrl = `https://api.nycmesh.net/los?bin=${bin}`;
 	const losResponse = await fetch(losUrl);
 	const losResults = await losResponse.json();
-	const { visibleHubs } = losResults;
-	const hubsString = visibleHubs.map(hub => hub.name).join(", ");
+	const {
+		visibleHubs = [],
+		visibleOmnis = [],
+		visibleRequests = []
+	} = losResults;
+	const losString = `LoS to ${[
+		...visibleHubs,
+		...visibleOmnis,
+		...visibleRequests
+	]
+		.map(node => node.name || node.id)
+		.join(", ") || "No lines of sight"}`;
+
+	const roofString = roof_access === "yes" ? "Roof access" : "No roof access";
+	const mapURL = `https://www.nycmesh.net/map/nodes/${id}`;
+	const uriAddress = address.replace(/,/g, "").replace(/ /g, "+");
+	const losURL = `https://los.nycmesh.net/search?address=${uriAddress}&bin=${bin}&lat=${lat}&lng=${lng}`;
+	const earthURL = `https://earth.google.com/web/search/${uriAddress}/@${lat},${lng},${alt}a,300d,35y,0.6h,65t,0r`;
+	const text = `New request:\n*<${mapURL}|${address}>*\n${alt}m · ${roofString} · ${losString}\n<${earthURL}|View Earth →>\n<${losURL}|View LoS →>`;
+	const blocks = [
+		{
+			type: "section",
+			text: {
+				type: "mrkdwn",
+				text
+			}
+		}
+	];
 
 	await fetch(process.env.SLACK_WEBHOOK_URL, {
 		method: "POST",
@@ -233,45 +254,7 @@ async function createSlackPost(
 			"Content-Type": "application/json"
 		},
 		body: JSON.stringify({
-			blocks: [
-				{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: `New join request:\n*<https://dashboard.nycmesh.net/requests/${id}|${address}>*`
-					}
-				},
-				{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: `*Roof Access:* ${roof_access}\n*Building Height:* ${alt}m\n*Line of Sight:* ${hubsString}`
-					}
-				},
-				{
-					type: "actions",
-					elements: [
-						{
-							type: "button",
-							text: {
-								type: "plain_text",
-								text: "View Earth"
-							},
-							url: `https://earth.google.com/web/search/${encodeURIComponent(
-								address
-							)}/@${lat},${lng},${alt}a,100d,45y,0h,45t,0r`
-						},
-						{
-							type: "button",
-							text: {
-								type: "plain_text",
-								text: "View Ticket"
-							},
-							url: `https://devsupport.nycmesh.net/scp/tickets.php?id=${ticketId}`
-						}
-					]
-				}
-			]
+			blocks
 		})
 	});
 }
