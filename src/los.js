@@ -251,7 +251,7 @@ async function getIntersections(midpoint1, height1, midpoint2, height2) {
 				ny AS a
 			WHERE
 				ST_3DIntersects (a.geom, ST_SetSRID(ST_GeomFromText('LINESTRINGZ(${x1} ${y1} ${height1}, ${x2} ${y2} ${height2})'), 2263))
-			LIMIT 3`;
+			LIMIT 1`;
 	const res = await performLosQuery(text);
 	if (!res) throw "Failed to get intersections";
 	return res;
