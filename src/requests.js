@@ -227,14 +227,14 @@ async function createSlackPost(userRequest, request, building, member) {
 	const allVisible = [...visibleHubs, ...visibleOmnis, ...visibleRequests];
 	const losString = allVisible.length
 		? `LoS to ${allVisible.map(node => node.name || node.id).join(", ")}`
-		: "No lines of sight";
+		: "No LoS";
 
 	const roofString = roof_access === "yes" ? "Roof access" : "No roof access";
 	const mapURL = `https://www.nycmesh.net/map/nodes/${id}`;
 	const uriAddress = address.replace(/,/g, "").replace(/ /g, "+");
 	const losURL = `https://los.nycmesh.net/search?address=${uriAddress}&bin=${bin}&lat=${lat}&lng=${lng}`;
 	const earthURL = `https://earth.google.com/web/search/${uriAddress}/@${lat},${lng},${alt}a,300d,35y,0.6h,65t,0r`;
-	const text = `New request:\n*<${mapURL}|${address}>*\n${alt}m · ${roofString} · ${losString}\n<${earthURL}|View Earth →>\n<${losURL}|View LoS →>`;
+	const text = `New request:\n*<${mapURL}|${address}>*\n${alt}m · ${roofString} · ${losString}\n<${earthURL}|View Earth →>\t<${losURL}|View LoS →>`;
 	const blocks = [
 		{
 			type: "section",
