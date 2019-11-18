@@ -38,6 +38,7 @@ export async function handler(event) {
 			statusCode: 200,
 			headers: {
 				"Content-Type": "application/xml",
+				"Content-Disposition": `attachment; filename="nycmesh.kml"`,
 				"Access-Control-Allow-Origin": "*",
 				"Access-Control-Allow-Headers": "Content-Type, Authorization",
 				"Access-Control-Allow-Methods": "OPTIONS, GET"
