@@ -166,7 +166,7 @@ export async function handler(event, context) {
 		});
 	} catch (error) {
 		return createResponse(500, {
-			error: error.message
+			error
 		});
 	}
 }
@@ -176,9 +176,9 @@ async function getBuildingMidpoint(bin) {
 		"SELECT ST_AsText(ST_Centroid((SELECT geom FROM ny WHERE bldg_bin = $1)))";
 	const values = [bin];
 	const res = await performLosQuery(text, values);
-	if (!res.length) throw `Could not find building data for ${bin} (1)`;
+	if (!res.length) throw `Could not find building data for ${bin}`;
 	const { st_astext } = res[0];
-	if (!st_astext) throw `Could not find building data for ${bin} (2)`;
+	if (!st_astext) throw `Could not find building data for ${bin}`;
 	const rawText = st_astext.replace("POINT(", "").replace(")", ""); // Do this better
 	const [lat, lng] = rawText.split(" ");
 	return [parseFloat(lat), parseFloat(lng)];
