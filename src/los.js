@@ -11,12 +11,14 @@ export async function handler(event, context) {
 		const omnis = await performQuery(
 			`SELECT
 			nodes.id,
-			buildings.bin
+			nodes.name,
+			buildings.bin,
+			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
 		FROM
 			nodes
-			JOIN buildings ON nodes.building_id = buildings.id
-			JOIN devices ON devices.node_id = nodes.id
-			JOIN device_types ON devices.device_type_id = device_types.id
+			LEFT JOIN buildings ON nodes.building_id = buildings.id
+			LEFT JOIN devices ON devices.node_id = nodes.id
+			LEFT JOIN device_types ON devices.device_type_id = device_types.id
 		WHERE
 			device_types.name = 'Omni'
 			AND devices.status = 'active'
@@ -29,12 +31,14 @@ export async function handler(event, context) {
 		const sectors = await performQuery(
 			`SELECT
 			nodes.id,
-			buildings.bin
+			nodes.name,
+			buildings.bin,
+			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
 		FROM
 			nodes
-			JOIN buildings ON nodes.building_id = buildings.id
-			JOIN devices ON devices.node_id = nodes.id
-			JOIN device_types ON devices.device_type_id = device_types.id
+			LEFT JOIN buildings ON nodes.building_id = buildings.id
+			LEFT JOIN devices ON devices.node_id = nodes.id
+			LEFT JOIN device_types ON devices.device_type_id = device_types.id
 		WHERE
 			device_types.name IN ('LBE120', 'SN1Sector1', 'SN1Sector2')
 			AND devices.status = 'active'
@@ -46,8 +50,9 @@ export async function handler(event, context) {
 
 		const requests = await performQuery(
 			`SELECT
-				requests.id,
-				buildings.bin
+				requests.*,
+				buildings.bin,
+				buildings.address
 			FROM
 				requests
 				JOIN buildings ON requests.building_id = buildings.id
@@ -55,7 +60,8 @@ export async function handler(event, context) {
 				requests.id IN (3946, 1932, 1933, 1084)
 			GROUP BY
 				requests.id,
-				buildings.bin`
+				buildings.bin,
+				buildings.address`
 		);
 
 		const buildingMidpoint = await getBuildingMidpoint(bin);
@@ -226,9 +232,9 @@ async function getNodesInRange(nodes, bin, range, isRequests) {
 
 	const nodesInRangeBins = losNodesInRange.map(node => node.bin);
 
-	const nodesInRange = isRequests
-		? await getRequestsFromBins(nodesInRangeBins)
-		: await getNodesFromBins(nodesInRangeBins);
+	const nodesInRange = nodes.filter(node =>
+		nodesInRangeBins.includes(String(node.bin))
+	);
 	const nodesInRangeWithMidpoint = nodesInRange.map(node => ({
 		...node,
 		midpoint: losNodesInRangeMap[node.bin].midpoint
@@ -269,45 +275,4 @@ async function getDistance(point1, point2) {
 	if (!res.length) throw "Failed to calculate distance";
 	const { st_distance } = res[0];
 	return st_distance;
-}
-
-async function getNodesFromBins(bins) {
-	return performQuery(
-		`SELECT
-				nodes.*,
-				buildings.bin,
-				json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
-			FROM
-				nodes
-				JOIN buildings ON buildings.id = nodes.building_id
-				LEFT JOIN devices ON nodes.id = devices.node_id
-				LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
-			WHERE
-				buildings.bin = ANY ($1)
-			GROUP BY
-				nodes.id,
-				buildings.id`,
-		[bins]
-	);
-}
-
-async function getRequestsFromBins(bins) {
-	return performQuery(
-		`SELECT
-				requests.*,
-				buildings.address,
-				buildings.bin,
-				buildings.lat,
-				buildings.lng,
-				buildings.alt
-			FROM
-				requests
-				JOIN buildings ON buildings.id = requests.building_id
-			WHERE
-				buildings.bin = ANY ($1)
-			GROUP BY
-				requests.id,
-				buildings.id`,
-		[bins]
-	);
 }
