@@ -234,7 +234,7 @@ async function createSlackPost(userRequest, request, building, member) {
 	const uriAddress = address.replace(/,/g, "").replace(/ /g, "+");
 	const losURL = `https://los.nycmesh.net/search?address=${uriAddress}&bin=${bin}&lat=${lat}&lng=${lng}`;
 	const earthURL = `https://earth.google.com/web/search/${uriAddress}/@${lat},${lng},${alt}a,300d,35y,0.6h,65t,0r`;
-	const text = `New request:\n*<${mapURL}|${address}>*\n${alt}m · ${roofString} · ${losString}\n<${earthURL}|View Earth →>\t<${losURL}|View LoS →>`;
+	const text = `*<${mapURL}|${address}>*\n${alt}m · ${roofString} · ${losString}\n<${earthURL}|View Earth →>\t<${losURL}|View LoS →>`;
 	const blocks = [
 		{
 			type: "section",
