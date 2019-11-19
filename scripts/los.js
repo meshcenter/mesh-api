@@ -7,15 +7,14 @@ checkLOS().then(() => process.exit(0));
 async function checkLOS() {
 	const requests = await getRequests();
 	for (let i = 0; i < requests.length; i++) {
-		console.log(i);
 		const request = requests[i];
 		// if (request.id < 4856) continue;
 		if (!request.bin) continue;
 		if (request.roof_access !== "yes") continue;
 		if (request.bin < 0 || request.bin % 1000000 === 0) continue;
 		try {
-			const url = `http://localhost:9000/los?bin=${request.bin}`;
-			console.log(request.bin);
+			const url = `https://api.nycmesh.net/los?bin=${request.bin}`;
+			console.log(i, url);
 			const losResponse = await fetch(url);
 			const response = await losResponse.json();
 			const {

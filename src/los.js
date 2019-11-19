@@ -78,7 +78,7 @@ export async function handler(event, context) {
 				buildings.id`
 		);
 
-		const building = await getBuilding(bin);
+		const building = (await getBuilding(bin)) || {};
 		const buildingMidpoint = await getBuildingMidpoint(bin);
 		const buildingHeight = await getBuildingHeight(bin);
 		const omnisInRange = await getNodesInRange(omnis, bin, 0.4 * 5280); // 0.4 miles
@@ -177,46 +177,49 @@ export async function handler(event, context) {
 			request => request.bin !== bin
 		);
 
-		for (let j = 0; j < visibleOmnis.length; j++) {
-			const omniNode = visibleOmnis[j];
-			await saveLOS(
-				building.id,
-				omniNode.building_id,
-				building.lat,
-				building.lng,
-				building.alt,
-				omniNode.lat,
-				omniNode.lng,
-				omniNode.alt
-			);
-		}
+		// Only save los if building is in db -- for now
+		if (building.id) {
+			for (let j = 0; j < visibleOmnis.length; j++) {
+				const omniNode = visibleOmnis[j];
+				await saveLOS(
+					building.id,
+					omniNode.building_id,
+					building.lat,
+					building.lng,
+					building.alt,
+					omniNode.lat,
+					omniNode.lng,
+					omniNode.alt
+				);
+			}
 
-		for (let k = 0; k < visibleSectors.length; k++) {
-			const sectorNode = visibleSectors[k];
-			await saveLOS(
-				building.id,
-				sectorNode.building_id,
-				building.lat,
-				building.lng,
-				building.alt,
-				sectorNode.lat,
-				sectorNode.lng,
-				sectorNode.alt
-			);
-		}
+			for (let k = 0; k < visibleSectors.length; k++) {
+				const sectorNode = visibleSectors[k];
+				await saveLOS(
+					building.id,
+					sectorNode.building_id,
+					building.lat,
+					building.lng,
+					building.alt,
+					sectorNode.lat,
+					sectorNode.lng,
+					sectorNode.alt
+				);
+			}
 
-		for (let l = 0; l < visibleRequests.length; l++) {
-			const requestNode = visibleRequests[l];
-			await saveLOS(
-				building.id,
-				requestNode.building_id,
-				building.lat,
-				building.lng,
-				building.alt,
-				requestNode.lat,
-				requestNode.lng,
-				requestNode.alt
-			);
+			for (let l = 0; l < visibleRequests.length; l++) {
+				const requestNode = visibleRequests[l];
+				await saveLOS(
+					building.id,
+					requestNode.building_id,
+					building.lat,
+					building.lng,
+					building.alt,
+					requestNode.lat,
+					requestNode.lng,
+					requestNode.alt
+				);
+			}
 		}
 
 		return createResponse(200, {
