@@ -9,95 +9,44 @@ async function checkLOS() {
 	for (let i = 0; i < requests.length; i++) {
 		console.log(i);
 		const request = requests[i];
+		// if (request.id < 4856) continue;
 		if (!request.bin) continue;
 		if (request.roof_access !== "yes") continue;
+		if (request.bin < 0 || request.bin % 1000000 === 0) continue;
 		try {
-			const url = `https://api.nycmesh.net/los?bin=${request.bin}`;
+			const url = `http://localhost:9000/los?bin=${request.bin}`;
+			console.log(request.bin);
 			const losResponse = await fetch(url);
 			const response = await losResponse.json();
 			const {
 				visibleOmnis,
 				visibleSectors,
 				visibleRequests,
-				errorMessage
+				error
 			} = response;
-			if (errorMessage) {
-				console.log(errorMessage);
+			if (error) {
+				throw Error(error);
 			}
 			if (visibleOmnis.length) {
 				for (let j = 0; j < visibleOmnis.length; j++) {
 					const hub = visibleOmnis[j];
-					const [building] = await buildingFromBin(hub.bin);
-
-					// Handle bad BINs (temporary solution)
-					const latDiff = building.lat - request.lat;
-					const lngDiff = building.lng - request.lng;
-					const cSquared = latDiff * latDiff + lngDiff * lngDiff;
-					const distance = Math.sqrt(cSquared);
-
-					console.log(`${request.id} <-> ${building.address}`);
-					await saveLOS(
-						request.building_id,
-						building.id,
-						request.lat,
-						request.lng,
-						request.alt,
-						building.lat,
-						building.lng,
-						building.alt
-					);
+					console.log(`${request.id} <-> ${hub.id}`);
 				}
 			}
 			if (visibleSectors.length) {
 				for (let j = 0; j < visibleSectors.length; j++) {
 					const hub = visibleSectors[j];
-					const [building] = await buildingFromBin(hub.bin);
-
-					// Handle bad BINs (temporary solution)
-					const latDiff = building.lat - request.lat;
-					const lngDiff = building.lng - request.lng;
-					const cSquared = latDiff * latDiff + lngDiff * lngDiff;
-					const distance = Math.sqrt(cSquared);
-
-					console.log(`${request.id} <-> ${building.address}`);
-					await saveLOS(
-						request.building_id,
-						building.id,
-						request.lat,
-						request.lng,
-						request.alt,
-						building.lat,
-						building.lng,
-						building.alt
-					);
+					console.log(`${request.id} <-> ${hub.id}`);
 				}
 			}
 			if (visibleRequests.length) {
 				for (let k = 0; k < visibleRequests.length; k++) {
-					const request = visibleRequests[k];
-					const [building] = await buildingFromBin(request.bin);
-
-					// Handle bad BINs (temporary solution)
-					const latDiff = building.lat - request.lat;
-					const lngDiff = building.lng - request.lng;
-					const cSquared = latDiff * latDiff + lngDiff * lngDiff;
-					const distance = Math.sqrt(cSquared);
-
-					console.log(`${request.id} <-> ${building.address}`);
-					await saveLOS(
-						request.building_id,
-						building.id,
-						request.lat,
-						request.lng,
-						request.alt,
-						building.lat,
-						building.lng,
-						building.alt
-					);
+					const potentialNode = visibleRequests[k];
+					console.log(`${request.id} <-> ${potentialNode.id}`);
 				}
 			}
 		} catch (error) {
-			console.log("Fetch failed", error);
+			console.log(error.message);
 		}
 	}
 }
@@ -114,43 +63,6 @@ async function getRequests() {
 		LEFT JOIN buildings ON requests.building_id = buildings.id
 		LEFT JOIN panoramas ON requests.id = panoramas.request_id
 		GROUP BY requests.id, buildings.id
-		ORDER BY requests.id DESC`
-	);
-}
-
-async function buildingFromBin(bin) {
-	return performQuery(
-		`SELECT *
-		FROM buildings
-		WHERE bin = $1 LIMIT 1`,
-		[bin]
-	);
-}
-
-async function nodesFromBin(bin) {
-	return performQuery(
-		`SELECT
-			*
-		FROM
-			nodes
-			LEFT JOIN buildings ON buildings.id = nodes.building_id
-			WHERE buildings.bin = $1`,
-		[bin]
-	);
-}
-
-async function saveLOS(
-	building_a_id,
-	building_b_id,
-	lat_a,
-	lng_a,
-	alt_a,
-	lat_b,
-	lng_b,
-	alt_b
-) {
-	return performQuery(
-		`INSERT INTO los (building_a_id, building_b_id, lat_a, lng_a, alt_a, lat_b, lng_b, alt_b) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		[building_a_id, building_b_id, lat_a, lng_a, alt_a, lat_b, lng_b, alt_b]
+		ORDER BY requests.id`
 	);
 }

@@ -13,6 +13,10 @@ export async function handler(event, context) {
 			nodes.id,
 			nodes.name,
 			buildings.bin,
+			buildings.id as building_id,
+			buildings.lat,
+			buildings.lng,
+			buildings.alt,
 			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
 		FROM
 			nodes
@@ -25,7 +29,8 @@ export async function handler(event, context) {
 			AND nodes.status = 'active'
 		GROUP BY
 			nodes.id,
-			buildings.bin`
+			buildings.bin,
+			buildings.id`
 		);
 
 		const sectors = await performQuery(
@@ -33,6 +38,10 @@ export async function handler(event, context) {
 			nodes.id,
 			nodes.name,
 			buildings.bin,
+			buildings.id as building_id,
+			buildings.lat,
+			buildings.lng,
+			buildings.alt,
 			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
 		FROM
 			nodes
@@ -45,14 +54,19 @@ export async function handler(event, context) {
 			AND nodes.status = 'active'
 		GROUP BY
 			nodes.id,
-			buildings.bin`
+			buildings.bin,
+			buildings.id`
 		);
 
 		const requests = await performQuery(
 			`SELECT
 				requests.*,
+				buildings.id as building_id,
 				buildings.bin,
-				buildings.address
+				buildings.address,
+				buildings.lat,
+				buildings.lng,
+				buildings.alt
 			FROM
 				requests
 				JOIN buildings ON requests.building_id = buildings.id
@@ -61,9 +75,10 @@ export async function handler(event, context) {
 			GROUP BY
 				requests.id,
 				buildings.bin,
-				buildings.address`
+				buildings.id`
 		);
 
+		const building = await getBuilding(bin);
 		const buildingMidpoint = await getBuildingMidpoint(bin);
 		const buildingHeight = await getBuildingHeight(bin);
 		const omnisInRange = await getNodesInRange(omnis, bin, 0.4 * 5280); // 0.4 miles
@@ -162,6 +177,48 @@ export async function handler(event, context) {
 			request => request.bin !== bin
 		);
 
+		for (let j = 0; j < visibleOmnis.length; j++) {
+			const omniNode = visibleOmnis[j];
+			await saveLOS(
+				building.id,
+				omniNode.building_id,
+				building.lat,
+				building.lng,
+				building.alt,
+				omniNode.lat,
+				omniNode.lng,
+				omniNode.alt
+			);
+		}
+
+		for (let k = 0; k < visibleSectors.length; k++) {
+			const sectorNode = visibleSectors[k];
+			await saveLOS(
+				building.id,
+				sectorNode.building_id,
+				building.lat,
+				building.lng,
+				building.alt,
+				sectorNode.lat,
+				sectorNode.lng,
+				sectorNode.alt
+			);
+		}
+
+		for (let l = 0; l < visibleRequests.length; l++) {
+			const requestNode = visibleRequests[l];
+			await saveLOS(
+				building.id,
+				requestNode.building_id,
+				building.lat,
+				building.lng,
+				building.alt,
+				requestNode.lat,
+				requestNode.lng,
+				requestNode.alt
+			);
+		}
+
 		return createResponse(200, {
 			buildingHeight,
 			visibleOmnis,
@@ -206,23 +263,23 @@ async function getNodesInRange(nodes, bin, range, isRequests) {
 		.filter(bin => bin % 1000000 !== 0);
 	const losNodesInRange = await performLosQuery(
 		`SELECT
-				bldg_bin as bin,
-				ST_AsGeoJSON(ST_Centroid(geom)) as midpoint
-			FROM (
-				SELECT
-					*
-				FROM
-					ny
-				WHERE
-					bldg_bin = ANY ($1)) AS hubs
+			bldg_bin as bin,
+			ST_AsGeoJSON(ST_Centroid(geom)) as midpoint
+		FROM (
+			SELECT
+				*
+			FROM
+				ny
 			WHERE
-				ST_DWithin (ST_Centroid(geom), (
-						SELECT
-							ST_Centroid(geom)
-						FROM
-							ny
-						WHERE
-							bldg_bin = $2), $3)`,
+				bldg_bin = ANY ($1)) AS hubs
+		WHERE
+			ST_DWithin (ST_Centroid(geom), (
+					SELECT
+						ST_Centroid(geom)
+					FROM
+						ny
+					WHERE
+						bldg_bin = $2), $3)`,
 		[nodeBins, bin, range]
 	);
 	const losNodesInRangeMap = losNodesInRange.reduce((acc, cur) => {
@@ -275,4 +332,31 @@ async function getDistance(point1, point2) {
 	if (!res.length) throw "Failed to calculate distance";
 	const { st_distance } = res[0];
 	return st_distance;
+}
+
+async function getBuilding(bin) {
+	const results = await performQuery(
+		`SELECT *
+		FROM buildings
+		WHERE bin = $1
+		LIMIT 1`,
+		[bin]
+	);
+	return results[0];
+}
+
+async function saveLOS(
+	building_a_id,
+	building_b_id,
+	lat_a,
+	lng_a,
+	alt_a,
+	lat_b,
+	lng_b,
+	alt_b
+) {
+	return performQuery(
+		"INSERT INTO los (building_a_id, building_b_id, lat_a, lng_a, alt_a, lat_b, lng_b, alt_b) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+		[building_a_id, building_b_id, lat_a, lng_a, alt_a, lat_b, lng_b, alt_b]
+	);
 }
