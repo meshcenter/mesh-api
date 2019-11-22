@@ -85,6 +85,8 @@ WHERE
 				bldg_bin = $2), $3)`;
 
 export async function getLos(bin) {
+	if (!bin) throw Error("Bad params");
+
 	// TODO: One query, and use range of device
 	const omnis = await performQuery(getOmnisQuery);
 	const sectors = await performQuery(getSectorsQuery);
@@ -175,9 +177,9 @@ async function getBuildingMidpoint(bin) {
 		"SELECT ST_AsText(ST_Centroid((SELECT geom FROM ny WHERE bldg_bin = $1)))";
 	const values = [bin];
 	const res = await performLosQuery(text, values);
-	if (!res.length) throw `Could not find building data for ${bin}`;
+	if (!res.length) throw "Not found";
 	const { st_astext } = res[0];
-	if (!st_astext) throw `Could not find building data for ${bin}`;
+	if (!st_astext) throw "Not found";
 	const rawText = st_astext.replace("POINT(", "").replace(")", ""); // Do this better
 	const [lat, lng] = rawText.split(" ");
 	return [parseFloat(lat), parseFloat(lng)];
@@ -187,7 +189,7 @@ async function getBuildingHeight(bin) {
 	const text = "SELECT ST_ZMax((SELECT geom FROM ny WHERE bldg_bin = $1))";
 	const values = [bin];
 	const res = await performLosQuery(text, values);
-	if (!res.length) throw `Could not find building data for ${bin} (3)`;
+	if (!res.length) throw "Not found";
 	const { st_zmax } = res[0];
 	const offset = 4;
 	return parseInt(st_zmax) + offset;

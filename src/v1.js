@@ -18,6 +18,8 @@ import { getNodesKML } from "./kml/nodes";
 import { getLosKML } from "./kml/los";
 import { getRequestsKML } from "./kml/requests";
 
+// TODO: Something better than this handleErrors wrapper
+
 const ROOT = "/v1";
 const app = express(ROOT);
 
@@ -27,119 +29,175 @@ const router = Router({
 	caseSensitive: true
 });
 
-router.get("/buildings", async (req, res) => {
-	const buildings = await getBuildings();
-	res.json(buildings);
-});
+router.get(
+	"/buildings",
+	handleErrors(async (req, res) => {
+		const buildings = await getBuildings();
+		res.json(buildings);
+	})
+);
 
-router.get("/building/:id", async (req, res) => {
-	const building = await getBuilding(req.params.id);
-	res.json(building);
-});
+router.get(
+	"/building/:id",
+	handleErrors(async (req, res) => {
+		const building = await getBuilding(req.params.id);
+		res.json(building);
+	})
+);
 
-router.get("/links", async (req, res) => {
-	const links = await getLinks();
-	res.json(links);
-});
+router.get(
+	"/links",
+	handleErrors(async (req, res) => {
+		const links = await getLinks();
+		res.json(links);
+	})
+);
 
-router.get("/kml", async (req, res) => {
-	const kml = await getKML();
-	res.set({
-		"Content-Type": "text/xml",
-		"Content-Disposition": `attachment; filename="nycmesh.kml"`
-	}).send(kml);
-});
+router.get(
+	"/los",
+	handleErrors(async (req, res) => {
+		const los = await getLos(req.query.bin);
+		res.json(los);
+	})
+);
 
-router.get("/kml/los", async (req, res) => {
-	const kml = await getLosKML(req.params);
-	res.set("Content-Type", "text/xml").send(kml);
-});
+router.get(
+	"/members",
+	handleErrors(async (req, res, next) => {
+		await checkAuth(req.headers);
+		const members = await getMembers();
+		res.json(members);
+	})
+);
 
-router.get("/kml/nodes", async (req, res) => {
-	const kml = await getNodesKML(req.params);
-	res.set("Content-Type", "text/xml").send(kml);
-});
+router.get(
+	"/nodes",
+	handleErrors(async (req, res) => {
+		const nodes = await getNodes();
+		res.json(nodes);
+	})
+);
 
-router.get("/kml/requests", async (req, res) => {
-	const kml = await getRequestsKML(req.params);
-	res.set("Content-Type", "text/xml").send(kml);
-});
+router.get(
+	"/nodes/:id",
+	handleErrors(async (req, res) => {
+		const node = await getNode(req.params.id);
+		res.json(node);
+	})
+);
 
-router.get("/kml/", async (req, res) => {
-	const kml = await getKML();
-	res.set("Content-Type", "text/xml").send(kml);
-});
+router.post(
+	"/panos",
+	handleErrors(async (req, res) => {
+		const pano = await savePano(req.body.requestId, req.body.panoURL);
+		res.json(pano);
+	})
+);
 
-router.get("/los", async (req, res) => {
-	const los = await getLos(req.query.bin);
-	res.json(los);
-});
+router.post(
+	"/panos/upload",
+	handleErrors(async (req, res) => {
+		const url = await getUploadURL(req.body.name, req.body.type);
+		res.json({ url });
+	})
+);
 
-router.get("/members", async (req, res) => {
-	try {
-		await checkAuth(req);
-	} catch (error) {
-		return res.status(401).json({ error: error.message });
-	}
-	const members = await getMembers();
-	res.json(members);
-});
+router.get(
+	"/requests",
+	handleErrors(async (req, res, next) => {
+		await checkAuth(req.headers);
+		const requests = await getRequests();
+		res.json(requests);
+	})
+);
 
-router.get("/nodes", async (req, res) => {
-	const nodes = await getNodes();
-	res.json(nodes);
-});
+router.get(
+	"/requests/:id",
+	handleErrors(async (req, res, next) => {
+		await checkAuth(req.headers);
+		const request = await getRequest(req.params.id);
+		res.json(request);
+	})
+);
 
-router.get("/nodes/:id", async (req, res) => {
-	const node = await getNode(req.params.id);
-	res.json(node);
-});
+router.get(
+	"/search",
+	handleErrors(async (req, res, next) => {
+		await checkAuth(req.headers);
+		const results = await getSearch(req.params.s);
+		res.json(results);
+	})
+);
 
-router.post("/panos", async (req, res) => {
-	const pano = await savePano(req.body.requestId, req.body.panoURL);
-	res.json(pano);
-});
+// KML
 
-router.post("/panos/upload", async (req, res) => {
-	const url = await getUploadURL(req.body.name, req.body.type);
-	res.json({ url });
-});
+router.get(
+	"/kml",
+	handleErrors(async (req, res) => {
+		const kml = await getKML();
+		res.set({
+			"Content-Type": "text/xml",
+			"Content-Disposition": `attachment; filename="nycmesh.kml"`
+		}).send(kml);
+	})
+);
 
-router.get("/requests", async (req, res) => {
-	try {
-		await checkAuth(req);
-	} catch (error) {
-		return res.status(401).json({ error: error.message });
-	}
-	const requests = await getRequests();
-	res.json(requests);
-});
+router.get(
+	"/kml/los",
+	handleErrors(async (req, res) => {
+		const kml = await getLosKML(req.params);
+		res.set("Content-Type", "text/xml").send(kml);
+	})
+);
 
-router.get("/requests/:id", async (req, res) => {
-	try {
-		await checkAuth(req);
-	} catch (error) {
-		return res.status(401).json({ error: error.message });
-	}
-	const request = await getRequest(req.params.id);
-	res.json(request);
-});
+router.get(
+	"/kml/nodes",
+	handleErrors(async (req, res) => {
+		const kml = await getNodesKML(req.params);
+		res.set("Content-Type", "text/xml").send(kml);
+	})
+);
 
-router.get("/search", async (req, res) => {
-	try {
-		await checkAuth(req);
-	} catch (error) {
-		return res.status(401).json({ error: error.message });
-	}
-	const results = await getSearch(req.params.s);
-	res.json(results);
-});
+router.get(
+	"/kml/requests",
+	handleErrors(async (req, res) => {
+		const kml = await getRequestsKML(req.params);
+		res.set("Content-Type", "text/xml").send(kml);
+	})
+);
+
+router.get(
+	"/kml/",
+	handleErrors(async (req, res) => {
+		const kml = await getKML();
+		res.set("Content-Type", "text/xml").send(kml);
+	})
+);
 
 app.use(ROOT, router);
+
+app.use(function(error, req, res, next) {
+	let status;
+	if (error.message === "Unauthorized") {
+		status = 401;
+	} else if (error.message === "Bad params") {
+		status = 422;
+	} else if (error.message === "Not found") {
+		status = 404;
+	} else {
+		status = 500;
+	}
+	res.status(status).json({ error: error.message });
+});
 
 const serverlessApp = serverless(app);
 
 export async function handler(event, context) {
-	const result = await serverlessApp(event, context);
-	return result;
+	return serverlessApp(event, context);
+}
+
+function handleErrors(fn) {
+	return (req, res, next) => {
+		fn(req, res, next).catch(next);
+	};
 }

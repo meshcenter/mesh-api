@@ -1,10 +1,10 @@
 import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
 
-export async function checkAuth(req) {
-	if (!req.headers.authorization) throw new Error("Unauthorized");
+export async function checkAuth(headers) {
+	if (!headers.authorization) throw new Error("Unauthorized");
 
-	const [scheme, token] = req.headers.authorization.split(" ");
+	const [scheme, token] = headers.authorization.split(" ");
 	if (!scheme || !token)
 		throw new Error("Format is Authorization: Bearer [token]");
 	const validScheme = /^Bearer$/i.test(scheme);

@@ -36,9 +36,10 @@ GROUP BY
 	members.id`;
 
 export async function getRequest(id) {
-	if (!Number.isInteger(parseInt(id, 10))) return null;
-	const result = await performQuery(getRequestQuery, [id]);
-	return result[0];
+	if (!Number.isInteger(parseInt(id, 10))) throw "Bad params";
+	const [request] = await performQuery(getRequestQuery, [id]);
+	if (!request) throw "Not found";
+	return request;
 }
 
 export async function getRequests() {
@@ -132,7 +133,7 @@ async function createTicket(request, building, member) {
 
 	const text = await response.text();
 	if (response.status !== 201) {
-		throw new Error(text);
+		throw text;
 	}
 
 	return text; // external ticket id of the newly-created ticket

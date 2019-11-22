@@ -24,9 +24,9 @@ export async function getBuildings() {
 }
 
 export async function getBuilding(id) {
-	if (!Number.isInteger(parseInt(id, 10))) return null;
+	if (!Number.isInteger(parseInt(id, 10))) throw "Bad params";
 	const [building] = await performQuery(getBuildingQuery, [id]);
-	if (!building) return null;
+	if (!building) throw "Not found";
 	const nodes = await performQuery(getBuildingNodesQuery, [id]);
 	const requests = await performQuery(getBuildingRequestsQuery, [id]);
 	return {

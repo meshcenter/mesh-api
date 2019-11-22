@@ -47,14 +47,16 @@ export async function getMembers() {
 }
 
 export async function getMember(id) {
-	if (!Number.isInteger(parseInt(id, 10))) return null;
+	if (!Number.isInteger(parseInt(id, 10))) throw "Bad params";
 
-	const members = await performQuery(getMemberQuery, [id]);
+	const [member] = await performQuery(getMemberQuery, [id]);
+	if (!member) throw "Not found";
+
 	const nodes = await performQuery(getMemberNodesQuery, [id]);
 	const requests = await performQuery(getMemberRequestsQuery, [id]);
 
 	return {
-		...members[0],
+		...member,
 		nodes,
 		requests
 	};

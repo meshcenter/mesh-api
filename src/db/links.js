@@ -14,6 +14,6 @@ FROM
 	GROUP BY
 		links.id`;
 
-export async function getLinks(id) {
+export async function getLinks() {
 	return performQuery(getLinksQuery);
 }

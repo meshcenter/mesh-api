@@ -35,13 +35,14 @@ GROUP BY
 const createNodeQuery = `INSERT INTO nodes (lat, lng, alt, name, notes, create_date, abandoned)
 	VALUES($1, $2, $3, $4, $5, $6, $7)`;
 
-export async function getNodes(id) {
+export async function getNodes() {
 	return performQuery(getNodesQuery);
 }
 
 export async function getNode(id) {
-	if (!Number.isInteger(parseInt(id, 10))) return null;
+	if (!Number.isInteger(parseInt(id, 10))) throw "Bad params";
 	const [node] = await performQuery(getNodeQuery, [id]);
+	if (!node) throw "Not found";
 	return node;
 }
 
