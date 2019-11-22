@@ -18,7 +18,8 @@ import { getNodesKML } from "./kml/nodes";
 import { getLosKML } from "./kml/los";
 import { getRequestsKML } from "./kml/requests";
 
-const app = express("v1");
+const ROOT = "/v1";
+const app = express(ROOT);
 
 app.use(bodyParser.json());
 
@@ -134,7 +135,7 @@ router.get("/search", async (req, res) => {
 	res.json(results);
 });
 
-app.use("v1", router);
+app.use(ROOT, router);
 
 const serverlessApp = serverless(app);
 
