@@ -1,177 +1,4 @@
-import { performQuery } from "./db";
-import { createResponse } from "./utils";
-
-export async function handler(event) {
-	if (event.httpMethod === "OPTIONS") {
-		return createResponse(200);
-	}
-
-	try {
-		if (event.httpMethod === "GET") {
-			if (event.path !== "/nodesKml") {
-				return createResponse(404, "Bad path");
-			}
-
-			const nodes = await getNodes();
-			const links = await getLinks();
-
-			const nodesById = nodes.map((acc, cur) => {
-				acc[cur.id] = cur;
-				return acc;
-			}, {});
-
-			const linksByNode = links.reduce((acc, cur) => {
-				acc[cur.nodes[0].id] = acc[cur.nodes[0].id] || [];
-				acc[cur.nodes[0].id].push(cur);
-
-				acc[cur.nodes[1].id] = acc[cur.nodes[1].id] || [];
-				acc[cur.nodes[1].id].push(cur);
-				return acc;
-			}, {});
-
-			const nodesKml = nodes
-				.sort((a, b) => a.id - b.id)
-				.map(
-					node => `<Folder>
-					<name>${node.id}</name>
-					${nodePlacemark(node)}
-					${(linksByNode[node.id] || []).map(linkPlacemark)}
-				</Folder>`
-				);
-
-			const kml = `<?xml version="1.0" encoding="UTF-8"?>
-						<kml xmlns="http://www.opengis.net/kml/2.2">
-							<Document>
-								${stylesKml}
-						        ${nodesKml}
-							</Document>
-						</kml>`;
-
-			return {
-				statusCode: 200,
-				headers: {
-					"Content-Type": "application/xml",
-					"Access-Control-Allow-Origin": "*",
-					"Access-Control-Allow-Headers":
-						"Content-Type, Authorization",
-					"Access-Control-Allow-Methods": "OPTIONS, POST, GET"
-				},
-				body: kml
-			};
-		}
-	} catch (error) {
-		return createResponse(500, {
-			error: {
-				message: error.message
-			}
-		});
-	}
-
-	return createResponse(400);
-}
-
-function nodePlacemark(node) {
-	return `<Placemark>
-			    <name>${node.name || node.id}</name>
-			    <ExtendedData>
-			        <Data name="id">
-			            <value>${node.id}</value>
-			        </Data>
-			        ${
-						node.name
-							? `<Data name="name">
-			            <value>${node.name}</value>
-			        </Data>`
-							: ""
-					}
-			        <Data name="status">
-			            <value>${node.status}</value>
-			        </Data>
-			        <Data name="address">
-			            <value>${node.address.replace(/&/g, "+")}</value>
-			        </Data>
-			        <Data name="devices">
-			            <value>${node.devices.map(d => d.type.name).join(", ")}</value>
-			        </Data>
-			        <Data name="installed">
-			            <value>${node.create_date.toDateString()}</value>
-			        </Data>
-			        ${(node.panoramas || [])
-						.filter(p => p.url)
-						.map(
-							(panorama, index) =>
-								`<Data name="panorama ${index + 1}">
-						            <value>${panorama.url}</value>
-							     </Data>`
-						)}
-			    </ExtendedData>
-			    <Point>
-			        <altitudeMode>absolute</altitudeMode>
-			        <coordinates>${node.lng},${node.lat},${node.alt}</coordinates>
-			    </Point>
-			    <styleUrl>${getStyle(node)}</styleUrl>
-			</Placemark>`;
-}
-
-function linkPlacemark(link) {
-	const [node_a, node_b] = link.nodes;
-	const [device_type_a, device_type_b] = link.device_types;
-	return `<Placemark>
-	            <name>${node_a.id} - ${node_b.id}</name>
-	            <ExtendedData>
-	                <Data name="status">
-	                    <value>${link.status}</value>
-	                </Data>
-	                <Data name="from">
-	                    <value>${node_a.name || node_a.id}</value>
-	                </Data>
-	                <Data name="to">
-	                    <value>${node_b.name || node_b.id}</value>
-	                </Data>
-	            </ExtendedData>
-	            <LineString>
-	                <altitudeMode>absolute</altitudeMode>
-	                <coordinates>${node_a.lng},${node_a.lat},${node_a.alt} ${
-		node_b.lng
-	},${node_b.lat},${node_b.alt}</coordinates>
-	            </LineString>
-	            <styleUrl>${getLinkStyle(
-					node_a,
-					node_b,
-					device_type_a,
-					device_type_b
-				)}</styleUrl>
-	        </Placemark>
-			`;
-}
-
-function getStyle(node) {
-	const { name, notes, devices } = node;
-
-	if (name && name.includes("Supernode")) return "#supernode";
-
-	if (notes && notes.includes("hub")) return "#hub";
-
-	if (devices.filter(device => device.type.name === "Omni").length)
-		return "#omni";
-
-	return "#node";
-}
-
-function getLinkStyle(node1, node2, device_type1, device_type2) {
-	const isSupernode = node => node.name && node.name.includes("Supernode");
-	const isHub = node => node.notes && node.notes.includes("hub");
-	const isOmni = device_type => device_type.name === "Omni";
-	const isBackbone = (node, device_type) =>
-		isSupernode(node) || isHub(node) || isOmni(device_type);
-
-	if (isHub(node1) && isHub(node2)) return "#hubLink";
-
-	if (isBackbone(node1, device_type1) && isBackbone(node2, device_type2)) {
-		return "#backboneLink";
-	}
-	return "#activeLink";
-}
+import { performQuery } from "../db";
 
 const stylesKml = `<Style id="hubLink">
 	<LineStyle>
@@ -249,6 +76,145 @@ const stylesKml = `<Style id="hubLink">
 	</LabelStyle>
 </Style>`;
 
+export async function getNodesKML() {
+	const nodes = await getNodes();
+	const links = await getLinks();
+
+	const nodesById = nodes.map((acc, cur) => {
+		acc[cur.id] = cur;
+		return acc;
+	}, {});
+
+	const linksByNode = links.reduce((acc, cur) => {
+		acc[cur.nodes[0].id] = acc[cur.nodes[0].id] || [];
+		acc[cur.nodes[0].id].push(cur);
+
+		acc[cur.nodes[1].id] = acc[cur.nodes[1].id] || [];
+		acc[cur.nodes[1].id].push(cur);
+		return acc;
+	}, {});
+
+	const nodesKml = nodes
+		.sort((a, b) => a.id - b.id)
+		.map(
+			node => `<Folder>
+					<name>${node.id}</name>
+					${nodePlacemark(node)}
+					${(linksByNode[node.id] || []).map(linkPlacemark)}
+				</Folder>`
+		);
+
+	const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+	<Document>
+		${stylesKml}
+        ${nodesKml}
+	</Document>
+</kml>`;
+
+	return kml;
+}
+
+function nodePlacemark(node) {
+	return `<Placemark>
+			    <name>${node.name || node.id}</name>
+			    <ExtendedData>
+			        <Data name="id">
+			            <value>${node.id}</value>
+			        </Data>
+			        ${
+						node.name
+							? `<Data name="name">
+			            <value>${node.name}</value>
+			        </Data>`
+							: ""
+					}
+			        <Data name="status">
+			            <value>${node.status}</value>
+			        </Data>
+			        <Data name="address">
+			            <value>${node.address.replace(/&/g, "+")}</value>
+			        </Data>
+			        <Data name="devices">
+			            <value>${node.devices.map(d => d.type.name).join(", ")}</value>
+			        </Data>
+			        <Data name="installed">
+			            <value>${node.create_date.toDateString()}</value>
+			        </Data>
+			        ${(node.panoramas || [])
+						.filter(p => p.url)
+						.map(
+							(panorama, index) =>
+								`<Data name="panorama ${index + 1}">
+						            <value>${panorama.url}</value>
+							     </Data>`
+						)}
+			    </ExtendedData>
+			    <Point>
+			        <altitudeMode>absolute</altitudeMode>
+			        <coordinates>${node.lng},${node.lat},${node.alt}</coordinates>
+			    </Point>
+			    <styleUrl>${getStyle(node)}</styleUrl>
+			</Placemark>`;
+}
+
+function linkPlacemark(link) {
+	const [node_a, node_b] = link.nodes;
+	const [device_type_a, device_type_b] = link.device_types;
+	return `<Placemark>
+	            <name>${node_a.id} - ${node_b.id}</name>
+	            <ExtendedData>
+	                <Data name="status">
+	                    <value>${link.status}</value>
+	                </Data>
+	                <Data name="from">
+	                    <value>${node_a.name || node_a.id}</value>
+	                </Data>
+	                <Data name="to">
+	                    <value>${node_b.name || node_b.id}</value>
+	                </Data>
+	            </ExtendedData>
+	            <LineString>
+	                <altitudeMode>absolute</altitudeMode>
+	                <coordinates>${node_a.lng},${node_a.lat},${node_a.alt} ${
+		node_b.lng
+	},${node_b.lat},${node_b.alt}</coordinates>
+	            </LineString>
+	            <styleUrl>${getLinkStyle(link)}</styleUrl>
+	        </Placemark>
+			`;
+}
+
+function getStyle(node) {
+	const { name, notes, devices } = node;
+
+	if (name && name.includes("Supernode")) return "#supernode";
+
+	if (notes && notes.includes("hub")) return "#hub";
+
+	if (devices.filter(device => device.type.name === "Omni").length)
+		return "#omni";
+
+	return "#node";
+}
+
+function getLinkStyle(link) {
+	const { nodes, device_types } = link;
+	const [node1, node2] = nodes;
+	const [device_type1, device_type2] = device_types;
+
+	const isSupernode = node => node.name && node.name.includes("Supernode");
+	const isHub = node => node.notes && node.notes.includes("hub");
+	const isOmni = device_type => device_type.name === "Omni";
+	const isBackbone = (node, device_type) =>
+		isSupernode(node) || isHub(node) || isOmni(node);
+
+	if (isHub(node1) && isHub(node2)) return "#hubLink";
+	if (isBackbone(node1, device_type1) && isBackbone(node2, device_type2))
+		return "#backboneLink";
+	return "#activeLink";
+}
+
 async function getNodes() {
 	return performQuery(
 		`SELECT
@@ -260,9 +226,9 @@ async function getNodes() {
 			nodes
 			LEFT JOIN buildings ON nodes.building_id = buildings.id
 			LEFT JOIN devices ON nodes.id = devices.node_id
-			JOIN device_types ON device_types.id IN(devices.device_type_id)
-			JOIN requests ON requests.building_id = buildings.id
-			JOIN panoramas ON panoramas.request_id = requests.id
+			LEFT JOIN device_types ON device_types.id IN(devices.device_type_id)
+			LEFT JOIN requests ON requests.building_id = buildings.id
+			LEFT JOIN panoramas ON panoramas.request_id = requests.id
 		GROUP BY
 			nodes.id,
 			buildings.id

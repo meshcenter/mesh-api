@@ -5,17 +5,21 @@
   "author": "olivernyc <oliver@static.network>",
   "license": "MIT",
   "dependencies": {
+    "aws-sdk": "^2.575.0",
     "date-fns": "^2.2.1",
     "dotenv": "^8.2.0",
     "dotenv-webpack": "^1.7.0",
     "encoding": "^0.1.12",
+    "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^1.6.0",
     "node-fetch": "^2.6.0",
     "path-to-regexp": "^3.0.0",
-    "pg": "^7.12.0"
+    "pg": "^7.12.0",
+    "serverless-http": "^2.3.0"
   },
   "devDependencies": {
+    "netlify-cli": "netlify/cli#master",
     "netlify-lambda": "^1.5.1"
   },
   "scripts": {

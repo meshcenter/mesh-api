@@ -1,4 +1,4 @@
 https://nycmesh-api.netlify.com/* https://api.nycmesh.net/:splat 301!
 / https://github.com/olivernyc/nycmesh-api 302
-/nycmesh.kml /kml
+/nycmesh.kml /v1/kml
 /* /.netlify/functions/:splat 200

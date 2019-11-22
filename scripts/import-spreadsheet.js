@@ -449,7 +449,7 @@ function getClusteredNodes(nodes) {
 	return Object.values(clusterMap);
 
 	function geoKey(node) {
-		const precision = 6;
+		const precision = 4;
 		const [lng, lat] = node.coordinates;
 		return `${parseFloat(lat).toFixed(precision)}-${parseFloat(lng).toFixed(
 			precision

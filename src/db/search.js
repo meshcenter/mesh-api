@@ -1,56 +1,16 @@
-import pathToRegexp from "path-to-regexp";
-import { performQuery } from "./db";
-import { createResponse, checkAuth } from "./utils";
+import { performQuery } from ".";
 
-export async function handler(event) {
-	try {
-		if (event.httpMethod === "OPTIONS") {
-			return createResponse(200);
-		}
-
-		// Verify token
-		try {
-			await checkAuth(event);
-		} catch (error) {
-			return createResponse(401, {
-				error: {
-					message: error.message
-				}
-			});
-		}
-
-		if (event.httpMethod === "GET") {
-			if (event.path === "/search/") {
-				return createResponse(404, {
-					error: {
-						message: `Unrecognized request URL (${event.httpMethod} ${event.path}).`
-					}
-				});
-			}
-
-			if (event.path === "/search") {
-				const { s } = event.queryStringParameters;
-				const nodes = await searchNodes(s);
-				const buildings = await searchBuildings(s);
-				const requests = await searchRequests(s);
-				const members = await searchMembers(s);
-				return createResponse(200, {
-					nodes,
-					buildings,
-					members,
-					requests
-				});
-			}
-		}
-
-		return createResponse(400);
-	} catch (error) {
-		return createResponse(500, {
-			error: {
-				message: error.message
-			}
-		});
-	}
+export async function getSearch(s) {
+	const nodes = await searchNodes(s);
+	const buildings = await searchBuildings(s);
+	const requests = await searchRequests(s);
+	const members = await searchMembers(s);
+	return {
+		nodes,
+		buildings,
+		members,
+		requests
+	};
 }
 
 function searchNodes(query) {
