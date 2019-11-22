@@ -37,27 +37,30 @@ router.get("/links", async (req, res) => {
 
 router.get("/kml", async (req, res) => {
 	const kml = await getKML();
-	res.send(kml);
+	res.set({
+		"Content-Type": "text/xml",
+		"Content-Disposition": `attachment; filename="nycmesh.kml"`
+	}).send(kml);
 });
 
 router.get("/kml/los", async (req, res) => {
 	const kml = await getLosKML(req.params);
-	res.send(kml);
+	res.set("Content-Type", "text/xml");
 });
 
 router.get("/kml/nodes", async (req, res) => {
 	const kml = await getNodesKML(req.params);
-	res.send(kml);
+	res.set("Content-Type", "text/xml").send(kml);
 });
 
 router.get("/kml/requests", async (req, res) => {
 	const kml = await getRequestsKML(req.params);
-	res.send(kml);
+	res.set("Content-Type", "text/xml").send(kml);
 });
 
 router.get("/kml/", async (req, res) => {
 	const kml = await getKML();
-	res.send(kml);
+	res.set("Content-Type", "text/xml").send(kml);
 });
 
 router.get("/los", async (req, res) => {
@@ -83,11 +86,6 @@ router.get("/nodes", async (req, res) => {
 router.get("/nodes/:id", async (req, res) => {
 	const node = await getNode(req.params.id);
 	res.json(node);
-});
-
-router.get("/nodesKml", async (req, res) => {
-	const nodesKml = await getNodesKML();
-	res.send(nodesKml);
 });
 
 router.post("/panos", async (req, res) => {
