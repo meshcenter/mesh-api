@@ -1,5 +1,9 @@
 import { performQuery, performLosQuery } from ".";
 
+const OMNI_RANGE = 0.4 * 5280;
+const SECTOR_RANGE = 1.5 * 5280;
+const REQUEST_RANGE = 4 * 5280;
+
 const getOmnisQuery = `SELECT
 	nodes.id,
 	nodes.name,
@@ -95,12 +99,12 @@ export async function getLos(bin) {
 	const buildingMidpoint = await getBuildingMidpoint(bin);
 	const buildingHeight = await getBuildingHeight(bin);
 
-	const omnisInRange = await getNodesInRange(omnis, bin, 0.4 * 5280); // 0.4 miles
-	const sectorsInRange = await getNodesInRange(sectors, bin, 1.5 * 5280); // 1.5 miles
+	const omnisInRange = await getNodesInRange(omnis, bin, OMNI_RANGE); // 0.4 miles
+	const sectorsInRange = await getNodesInRange(sectors, bin, SECTOR_RANGE); // 1.5 miles
 	const requestsInRange = await getNodesInRange(
 		requests,
 		bin,
-		4 * 5280, // 4 miles
+		REQUEST_RANGE,
 		true
 	);
 
@@ -122,7 +126,7 @@ export async function getLos(bin) {
 	);
 
 	// Only save los if building is in db... for now
-	if (building.id) {
+	if (building) {
 		const allVisible = [
 			...visibleOmnis,
 			...visibleSectors,
@@ -260,7 +264,6 @@ async function getBuildingFromBIN(bin) {
 		LIMIT 1`,
 		[bin]
 	);
-	if (!building) throw new Error("Not found");
 	return building;
 }
 
