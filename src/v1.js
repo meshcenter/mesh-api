@@ -19,13 +19,12 @@ import { getNodesKML } from "./kml/nodes";
 import { getLosKML } from "./kml/los";
 import { getRequestsKML } from "./kml/requests";
 
-// TODO: Something better than this handleErrors wrapper
-
 const ROOT = "/v1";
 const app = express(ROOT);
 
 app.use(cors());
 app.use(bodyParser.json());
+app.set("etag", false);
 
 const router = Router({
 	caseSensitive: true
@@ -201,12 +200,9 @@ app.use(function(error, req, res, next) {
 	res.status(status).json({ error: error.message });
 });
 
-const serverlessApp = serverless(app);
+export const handler = serverless(app);
 
-export async function handler(event, context) {
-	return serverlessApp(event, context);
-}
-
+// TODO: Something better than this
 function handleErrors(fn) {
 	return (req, res, next) => {
 		fn(req, res, next).catch(next);
