@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+import cors from "cors";
 import bodyParser from "body-parser";
 import serverless from "serverless-http";
 
@@ -23,6 +24,7 @@ import { getRequestsKML } from "./kml/requests";
 const ROOT = "/v1";
 const app = express(ROOT);
 
+app.use(cors());
 app.use(bodyParser.json());
 
 const router = Router({
@@ -56,7 +58,7 @@ router.get(
 router.get(
 	"/los",
 	handleErrors(async (req, res, next) => {
-		const los = await getLos(req.query.bin);
+		const los = await getLos(parseInt(req.query.bin));
 		res.json(los);
 	})
 );

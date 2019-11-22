@@ -7,6 +7,7 @@
   "dependencies": {
     "aws-sdk": "^2.575.0",
     "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
     "date-fns": "^2.2.1",
     "dotenv": "^8.2.0",
     "dotenv-webpack": "^1.7.0",

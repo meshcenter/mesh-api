@@ -1,5 +1,4 @@
 import { performQuery, performLosQuery } from ".";
-import { getBuilding } from "./buildings";
 
 const getOmnisQuery = `SELECT
 	nodes.id,
@@ -92,7 +91,7 @@ export async function getLos(bin) {
 	const sectors = await performQuery(getSectorsQuery);
 	const requests = await performQuery(getRequestsQuery);
 
-	const building = (await getBuilding(bin)) || {};
+	const building = await getBuildingFromBIN(bin);
 	const buildingMidpoint = await getBuildingMidpoint(bin);
 	const buildingHeight = await getBuildingHeight(bin);
 
@@ -177,9 +176,9 @@ async function getBuildingMidpoint(bin) {
 		"SELECT ST_AsText(ST_Centroid((SELECT geom FROM ny WHERE bldg_bin = $1)))";
 	const values = [bin];
 	const res = await performLosQuery(text, values);
-	if (!res.length) throw new Error("Not found");
+	if (!res.length) throw new Error("Not found 1");
 	const { st_astext } = res[0];
-	if (!st_astext) throw new Error("Not found");
+	if (!st_astext) throw new Error("Not found 2");
 	const rawText = st_astext.replace("POINT(", "").replace(")", ""); // Do this better
 	const [lat, lng] = rawText.split(" ");
 	return [parseFloat(lat), parseFloat(lng)];
@@ -189,7 +188,7 @@ async function getBuildingHeight(bin) {
 	const text = "SELECT ST_ZMax((SELECT geom FROM ny WHERE bldg_bin = $1))";
 	const values = [bin];
 	const res = await performLosQuery(text, values);
-	if (!res.length) throw new Error("Not found");
+	if (!res.length) throw new Error("Not found 3");
 	const { st_zmax } = res[0];
 	const offset = 4;
 	return parseInt(st_zmax) + offset;
@@ -251,6 +250,18 @@ async function getDistance(point1, point2) {
 	if (!res.length) throw new Error("Failed to calculate distance");
 	const { st_distance } = res[0];
 	return st_distance;
+}
+
+async function getBuildingFromBIN(bin) {
+	const [building] = await performQuery(
+		`SELECT *
+		FROM buildings
+		WHERE bin = $1
+		LIMIT 1`,
+		[bin]
+	);
+	if (!building) throw new Error("Not found");
+	return building;
 }
 
 async function saveLOS(building, node) {

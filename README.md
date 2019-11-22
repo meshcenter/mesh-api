@@ -5,7 +5,8 @@
 ## TODO
 
 - [ ] Handle multiple members associated with a node
-- [ ] Improve /los performance
+- [ ] Tests
+- [ ] Improve los performance
 
 ## Endpoints
 
@@ -15,6 +16,7 @@ https://api.nycmesh.net/buildings
 https://api.nycmesh.net/members  
 https://api.nycmesh.net/requests  
 https://api.nycmesh.net/kml  
+https://api.nycmesh.net/los   
 https://api.nycmesh.net/search  
 
 ## Architecture
