@@ -1,75 +1,43 @@
-import { performQuery } from "./db";
-import { createResponse } from "./utils";
+import { performQuery } from "../db";
 
-export async function handler(event) {
-	if (event.httpMethod === "OPTIONS") {
-		return createResponse(200);
-	}
+export async function getLosKML(params) {
+	const { pano } = params;
 
-	try {
-		if (event.httpMethod === "GET") {
-			if (event.path !== "/losKml") {
-				return createResponse(404, "Bad path");
-			}
+	const los = pano
+		? await getLosOfDegreeAndPanos(1)
+		: await getLosOfDegree(1);
 
-			const { queryStringParameters } = event;
-			const { pano } = queryStringParameters;
+	const losByRequest = los.reduce((acc, cur) => {
+		const [request] = cur.requests;
+		acc[request.id] = acc[request.id] || [];
+		acc[request.id].push(cur);
+		return acc;
+	}, {});
 
-			const los = pano
-				? await getLosOfDegreeAndPanos(1)
-				: await getLosOfDegree(1);
-
-			const losByRequest = los.reduce((acc, cur) => {
-				const [request] = cur.requests;
-				acc[request.id] = acc[request.id] || [];
-				acc[request.id].push(cur);
-				return acc;
-			}, {});
-
-			const losKml = Object.entries(losByRequest).map(
-				([requestId, requestLos]) => {
-					const placemarks = requestLos.map(losPlacemark);
-					return `<Folder><name>${requestId}</name>${placemarks}</Folder>`;
-				}
-			);
-
-			const kml = `<?xml version="1.0" encoding="UTF-8"?>
-						<kml xmlns="http://www.opengis.net/kml/2.2">
-							<Document>
-						        <Style id="losLink">
-						        	<LineStyle>
-						        		<color>cc00ff00</color>
-						        		<width>2</width>
-						    		</LineStyle>
-						    		<PolyStyle>
-						    			<color>00000000</color>
-									</PolyStyle>
-						        </Style>
-								${losKml}
-							</Document>
-						</kml>`;
-
-			return {
-				statusCode: 200,
-				headers: {
-					"Content-Type": "application/xml",
-					"Access-Control-Allow-Origin": "*",
-					"Access-Control-Allow-Headers":
-						"Content-Type, Authorization",
-					"Access-Control-Allow-Methods": "OPTIONS, POST, GET"
-				},
-				body: kml
-			};
+	const losKml = Object.entries(losByRequest).map(
+		([requestId, requestLos]) => {
+			const placemarks = requestLos.map(losPlacemark);
+			return `<Folder><name>${requestId}</name>${placemarks}</Folder>`;
 		}
-	} catch (error) {
-		return createResponse(500, {
-			error: {
-				message: error.message
-			}
-		});
-	}
+	);
 
-	return createResponse(400);
+	const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+	<Document>
+        <Style id="losLink">
+        	<LineStyle>
+        		<color>cc00ff00</color>
+        		<width>2</width>
+    		</LineStyle>
+    		<PolyStyle>
+    			<color>00000000</color>
+			</PolyStyle>
+        </Style>
+		${losKml}
+	</Document>
+</kml>`;
+
+	return kml;
 }
 
 function losPlacemark(los) {
@@ -89,7 +57,7 @@ function losPlacemark(los) {
 	let toId = (los.nodes[0] || {}).id;
 	return `
 		<Placemark>
-            <name>${fromId} - ${toId}</name>
+            <name>Line of Sight</name>
             <ExtendedData>
                 <Data name="from">
                     <value>${fromId}</value>
