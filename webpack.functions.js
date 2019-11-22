@@ -1,12 +1,6 @@
-const path = require("path");
+const webpack = require("webpack");
 const Dotenv = require("dotenv-webpack");
 
 module.exports = {
-	plugins: [new Dotenv()],
-	resolve: {
-		alias: {
-			"pg-native": path.join(__dirname, "src/aliases/pg-native.js"),
-			pgpass$: path.join(__dirname, "src/aliases/pgpass.js")
-		}
-	}
+	plugins: [new Dotenv(), new webpack.IgnorePlugin(/^pg-native$/)]
 };
