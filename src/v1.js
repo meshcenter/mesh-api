@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+import bodyParser from "body-parser";
 import serverless from "serverless-http";
 
 import { checkAuth } from "./auth";
@@ -20,6 +21,9 @@ import { getRequestsKML } from "./kml/requests";
 const app = express(
 	process.env.CONTEXT === "production" ? "v1" : ".netlify/functions/v1"
 );
+
+app.use(bodyParser.json());
+
 const router = Router({
 	caseSensitive: true
 });
@@ -93,12 +97,12 @@ router.get("/nodes/:id", async (req, res) => {
 });
 
 router.post("/panos", async (req, res) => {
-	const pano = await savePano(requestId, panoURL);
+	const pano = await savePano(req.body.requestId, req.body.panoURL);
 	res.json(pano);
 });
 
 router.post("/panos/upload", async (req, res) => {
-	const url = await getUploadURL(req.params.name, req.params.type);
+	const url = await getUploadURL(req.body.name, req.body.type);
 	res.json({ url });
 });
 
