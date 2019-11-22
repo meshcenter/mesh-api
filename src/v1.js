@@ -8,8 +8,10 @@ import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
 import { getMembers, getMember } from "./db/members";
 import { getNodes, getNode } from "./db/nodes";
+import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest } from "./db/requests";
 import { getSearch } from "./db/search";
+
 import { getKML } from "./kml";
 import { getNodesKML } from "./kml/nodes";
 import { getLosKML } from "./kml/los";
@@ -95,7 +97,7 @@ router.post("/panos", async (req, res) => {
 	res.json(pano);
 });
 
-router.post("/panoUpload", async (req, res) => {
+router.post("/panos/upload", async (req, res) => {
 	const url = await getUploadURL(req.params.name, req.params.type);
 	res.json({ url });
 });
