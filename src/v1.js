@@ -1,5 +1,6 @@
 import express, { Router } from "express";
 import serverless from "serverless-http";
+
 import { checkAuth } from "./auth";
 
 import { getBuildings, getBuilding } from "./db/buildings";
@@ -9,7 +10,6 @@ import { getMembers, getMember } from "./db/members";
 import { getNodes, getNode } from "./db/nodes";
 import { getRequests, getRequest } from "./db/requests";
 import { getSearch } from "./db/search";
-
 import { getKML } from "./kml";
 import { getNodesKML } from "./kml/nodes";
 import { getLosKML } from "./kml/los";
@@ -69,7 +69,7 @@ router.get("/members", async (req, res) => {
 	try {
 		await checkAuth(req);
 	} catch (error) {
-		res.status(401).json({ error: error.message });
+		return res.status(401).json({ error: error.message });
 	}
 	const members = await getMembers();
 	res.json(members);
@@ -104,7 +104,7 @@ router.get("/requests", async (req, res) => {
 	try {
 		await checkAuth(req);
 	} catch (error) {
-		res.status(401).json({ error: error.message });
+		return res.status(401).json({ error: error.message });
 	}
 	const requests = await getRequests();
 	res.json(requests);
@@ -114,7 +114,7 @@ router.get("/requests/:id", async (req, res) => {
 	try {
 		await checkAuth(req);
 	} catch (error) {
-		res.status(401).json({ error: error.message });
+		return res.status(401).json({ error: error.message });
 	}
 	const request = await getRequest(req.params.id);
 	res.json(request);
@@ -124,7 +124,7 @@ router.get("/search", async (req, res) => {
 	try {
 		await checkAuth(req);
 	} catch (error) {
-		res.status(401).json({ error: error.message });
+		return res.status(401).json({ error: error.message });
 	}
 	const results = await getSearch(req.params.s);
 	res.json(results);
