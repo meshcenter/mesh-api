@@ -52,7 +52,7 @@ router.get("/kml", async (req, res) => {
 
 router.get("/kml/los", async (req, res) => {
 	const kml = await getLosKML(req.params);
-	res.set("Content-Type", "text/xml");
+	res.set("Content-Type", "text/xml").send(kml);
 });
 
 router.get("/kml/nodes", async (req, res) => {
