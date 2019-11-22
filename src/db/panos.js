@@ -11,14 +11,14 @@ const s3 = new AWS.S3({
 });
 
 export async function savePano(requestId, panoURL) {
-	if (!requestId || !panoURL) throw "Bad params";
+	if (!requestId || !panoURL) throw new Error("Bad params");
 	const values = [panoURL, new Date(), requestId];
 	const [pano] = await performQuery(insertPanoQuery, values);
 	return pano;
 }
 
 export async function getUploadURL(name, type) {
-	if (!name || !type) throw "Bad params";
+	if (!name || !type) throw new Error("Bad params");
 	const url = await s3.getSignedUrl("putObject", {
 		Bucket: process.env.SPACES_BUCKET,
 		Key: name,

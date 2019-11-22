@@ -177,9 +177,9 @@ async function getBuildingMidpoint(bin) {
 		"SELECT ST_AsText(ST_Centroid((SELECT geom FROM ny WHERE bldg_bin = $1)))";
 	const values = [bin];
 	const res = await performLosQuery(text, values);
-	if (!res.length) throw "Not found";
+	if (!res.length) throw new Error("Not found");
 	const { st_astext } = res[0];
-	if (!st_astext) throw "Not found";
+	if (!st_astext) throw new Error("Not found");
 	const rawText = st_astext.replace("POINT(", "").replace(")", ""); // Do this better
 	const [lat, lng] = rawText.split(" ");
 	return [parseFloat(lat), parseFloat(lng)];
@@ -189,7 +189,7 @@ async function getBuildingHeight(bin) {
 	const text = "SELECT ST_ZMax((SELECT geom FROM ny WHERE bldg_bin = $1))";
 	const values = [bin];
 	const res = await performLosQuery(text, values);
-	if (!res.length) throw "Not found";
+	if (!res.length) throw new Error("Not found");
 	const { st_zmax } = res[0];
 	const offset = 4;
 	return parseInt(st_zmax) + offset;
@@ -235,7 +235,7 @@ async function getIntersections(midpoint1, height1, midpoint2, height2) {
 				ST_3DIntersects (a.geom, ST_SetSRID(ST_GeomFromText('LINESTRINGZ(${x1} ${y1} ${height1}, ${x2} ${y2} ${height2})'), 2263))
 			LIMIT 1`;
 	const res = await performLosQuery(text);
-	if (!res) throw "Failed to get intersections";
+	if (!res) throw new Error("Failed to get intersections");
 	return res;
 }
 
@@ -248,7 +248,7 @@ async function getDistance(point1, point2) {
 			'POINT (${x2} ${y2})'::geometry
 		);`;
 	const res = await performLosQuery(text);
-	if (!res.length) throw "Failed to calculate distance";
+	if (!res.length) throw new Error("Failed to calculate distance");
 	const { st_distance } = res[0];
 	return st_distance;
 }

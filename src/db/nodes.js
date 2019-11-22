@@ -40,9 +40,9 @@ export async function getNodes() {
 }
 
 export async function getNode(id) {
-	if (!Number.isInteger(parseInt(id, 10))) throw "Bad params";
+	if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
 	const [node] = await performQuery(getNodeQuery, [id]);
-	if (!node) throw "Not found";
+	if (!node) throw Error("Not found");
 	return node;
 }
 

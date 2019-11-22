@@ -31,7 +31,7 @@ const router = Router({
 
 router.get(
 	"/buildings",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const buildings = await getBuildings();
 		res.json(buildings);
 	})
@@ -39,7 +39,7 @@ router.get(
 
 router.get(
 	"/building/:id",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const building = await getBuilding(req.params.id);
 		res.json(building);
 	})
@@ -47,7 +47,7 @@ router.get(
 
 router.get(
 	"/links",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const links = await getLinks();
 		res.json(links);
 	})
@@ -55,7 +55,7 @@ router.get(
 
 router.get(
 	"/los",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const los = await getLos(req.query.bin);
 		res.json(los);
 	})
@@ -71,8 +71,17 @@ router.get(
 );
 
 router.get(
+	"/members/:id",
+	handleErrors(async (req, res, next) => {
+		await checkAuth(req.headers);
+		const member = await getMember(req.params.id);
+		res.json(member);
+	})
+);
+
+router.get(
 	"/nodes",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const nodes = await getNodes();
 		res.json(nodes);
 	})
@@ -80,7 +89,7 @@ router.get(
 
 router.get(
 	"/nodes/:id",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const node = await getNode(req.params.id);
 		res.json(node);
 	})
@@ -88,7 +97,7 @@ router.get(
 
 router.post(
 	"/panos",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const pano = await savePano(req.body.requestId, req.body.panoURL);
 		res.json(pano);
 	})
@@ -96,7 +105,7 @@ router.post(
 
 router.post(
 	"/panos/upload",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const url = await getUploadURL(req.body.name, req.body.type);
 		res.json({ url });
 	})
@@ -133,7 +142,7 @@ router.get(
 
 router.get(
 	"/kml",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const kml = await getKML();
 		res.set({
 			"Content-Type": "text/xml",
@@ -144,7 +153,7 @@ router.get(
 
 router.get(
 	"/kml/los",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const kml = await getLosKML(req.params);
 		res.set("Content-Type", "text/xml").send(kml);
 	})
@@ -152,7 +161,7 @@ router.get(
 
 router.get(
 	"/kml/nodes",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const kml = await getNodesKML(req.params);
 		res.set("Content-Type", "text/xml").send(kml);
 	})
@@ -160,7 +169,7 @@ router.get(
 
 router.get(
 	"/kml/requests",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const kml = await getRequestsKML(req.params);
 		res.set("Content-Type", "text/xml").send(kml);
 	})
@@ -168,7 +177,7 @@ router.get(
 
 router.get(
 	"/kml/",
-	handleErrors(async (req, res) => {
+	handleErrors(async (req, res, next) => {
 		const kml = await getKML();
 		res.set("Content-Type", "text/xml").send(kml);
 	})

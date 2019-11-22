@@ -36,9 +36,9 @@ GROUP BY
 	members.id`;
 
 export async function getRequest(id) {
-	if (!Number.isInteger(parseInt(id, 10))) throw "Bad params";
+	if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
 	const [request] = await performQuery(getRequestQuery, [id]);
-	if (!request) throw "Not found";
+	if (!request) throw new Error("Not found");
 	return request;
 }
 
