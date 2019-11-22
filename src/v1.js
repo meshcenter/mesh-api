@@ -18,9 +18,7 @@ import { getNodesKML } from "./kml/nodes";
 import { getLosKML } from "./kml/los";
 import { getRequestsKML } from "./kml/requests";
 
-const app = express(
-	process.env.CONTEXT === "production" ? "v1" : ".netlify/functions/v1"
-);
+const app = express("v1");
 
 app.use(bodyParser.json());
 
@@ -136,10 +134,7 @@ router.get("/search", async (req, res) => {
 	res.json(results);
 });
 
-app.use(
-	process.env.CONTEXT === "production" ? "v1" : "/.netlify/functions/v1",
-	router
-);
+app.use("v1", router);
 
 const serverlessApp = serverless(app);
 
