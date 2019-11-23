@@ -4,14 +4,14 @@
 
 ## Endpoints
 
-Nodes: https://api.nycmesh.net/v1/nodes  
-Links: https://api.nycmesh.net/v1/links  
-Buildings: https://api.nycmesh.net/v1/buildings  
-Members: https://api.nycmesh.net/v1/members  
-Requests: https://api.nycmesh.net/v1/requests  
-Search: https://api.nycmesh.net/v1/search  
-Line of Sight: https://api.nycmesh.net/v1/los 
-Google Earth KML: https://api.nycmesh.net/v1/kml   
+https://api.nycmesh.net/v1/nodes  
+https://api.nycmesh.net/v1/links  
+https://api.nycmesh.net/v1/buildings  
+https://api.nycmesh.net/v1/members  
+https://api.nycmesh.net/v1/requests  
+https://api.nycmesh.net/v1/search  
+https://api.nycmesh.net/v1/los  
+https://api.nycmesh.net/v1/kml
 
 ## Architecture
 
@@ -24,10 +24,8 @@ Google Earth KML: https://api.nycmesh.net/v1/kml
 
 ## Running locally
 
-Clone the repo: `git clone git@github.com:olivernyc/nycmesh-api.git` 
-
-Install dependencies: `yarn install`
-
+Clone the repo: `git clone git@github.com:olivernyc/nycmesh-api.git`  
+Install dependencies: `yarn install`  
 Run the local server: `yarn start`
 
 You'll need a `.env` file with the following values:
