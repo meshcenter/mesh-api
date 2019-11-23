@@ -1,4 +1,6 @@
+import fetch from "node-fetch";
 import { performQuery } from ".";
+import { getLos } from "./los";
 
 const getRequestsQuery = `SELECT
 	requests.*,
@@ -144,53 +146,36 @@ async function createSlackPost(userRequest, request, building, member) {
 	const { bin, spreadsheetId } = userRequest;
 	const { id, roof_access } = request;
 
-	// Check line of sight
-	const losUrl = `https://api.nycmesh.net/los?bin=${bin}`;
-	const losResponse = await fetch(losUrl);
-	const losResults = await losResponse.json();
-	const {
-		visibleSectors = [],
-		visibleOmnis = [],
-		visibleRequests = []
-	} = losResults;
-	const allVisible = [
-		...visibleSectors,
-		...visibleOmnis,
-		...visibleRequests.map(request => ({
-			...request,
-			status: "los",
-			devices: [
-				{
-					type: {
-						id: 1,
-						name: "Planned",
-						manufacturer: null,
-						range: 0,
-						width: 0
-					},
-					lat: parseFloat(request.lat),
-					lng: parseFloat(request.lng),
-					alt: parseFloat(request.alt),
-					azimuth: 0,
-					status: "active"
-				}
-			]
-		}))
-	].filter(
-		node =>
-			node.devices.filter(device => device.type.name !== "Unknown").length
-	);
-	const losString = allVisible.length
-		? allVisible.map(node => node.name || node.id).join(", ")
-		: "No LoS";
+	let losString;
+	try {
+		const los = await getLos(bin);
+		const { visibleSectors = [], visibleOmnis = [] } = los;
+		const visibleNodes = [...visibleSectors, ...visibleOmnis];
+
+		const notUnknown = device => device.type.name !== "Unknown";
+		const hasDevice = node => node.devices.filter(notUnknown).length;
+		const nodeNames = visibleNodes
+			.filter(hasDevice)
+			.map(node => node.name || node.id)
+			.join(", ");
+
+		losString = visibleNodes.length ? nodeNames : "No LoS";
+	} catch (error) {
+		losString = "LoS failed";
+	}
 
 	const mapURL = `https://www.nycmesh.net/map/nodes/${spreadsheetId || id}`;
 	const roofString = roof_access === "yes" ? "Roof access" : "No roof access";
 	const earthAddress = address.replace(/,/g, "").replace(/ /g, "+");
-	const earthURL = `https://earth.google.com/web/search/${earthAddress}/@${lat},${lng},${alt}a,300d,35y,0.6h,65t,0r`;
+	const earthURL = `https://earth.google.com/web/search/${earthAddress}/@${lat},${lng},${alt}a,300d,40y,0.6h,65t,0r`;
 	const uriAddress = encodeURIComponent(address);
 	const losURL = `https://los.nycmesh.net/search?address=${uriAddress}&bin=${bin}&lat=${lat}&lng=${lng}`;
-	const text = `*<${mapURL}|${address}>*\n${alt}m · ${roofString} · ${losString}\n<${earthURL}|View Earth →>\t<${losURL}|View LoS →>`;
+
+	const title = `*<${mapURL}|${address}>*`;
+	const info = `${alt}m · ${roofString} · ${losString}`;
+	const links = `<${earthURL}|View Earth →>\t<${losURL}|View LoS →>`;
+	const text = `${title}\n${info}\n${links}`;
+
 	const blocks = [
 		{
 			type: "section",
