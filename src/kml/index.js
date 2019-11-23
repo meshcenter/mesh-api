@@ -26,7 +26,7 @@ const kmlWithBaseURL = baseURL => `<?xml version="1.0" encoding="UTF-8"?>
 
 export function getKML() {
 	const baseURL =
-		process.env.CONTEXT === "production"
+		process.env.NODE_ENV === "production"
 			? "https://api.nycmesh.net"
 			: "http://localhost:9000";
 	return kmlWithBaseURL(baseURL);
