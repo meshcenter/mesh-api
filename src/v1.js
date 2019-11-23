@@ -11,7 +11,7 @@ import { getLos } from "./db/los";
 import { getMembers, getMember } from "./db/members";
 import { getNodes, getNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
-import { getRequests, getRequest } from "./db/requests";
+import { getRequests, getRequest, createRequest } from "./db/requests";
 import { getSearch } from "./db/search";
 
 import { getKML } from "./kml";
@@ -126,6 +126,14 @@ router.get(
 	handleErrors(async (req, res, next) => {
 		await checkAuth(req.headers);
 		const request = await getRequest(req.params.id);
+		res.json(request);
+	})
+);
+
+router.post(
+	"/requests",
+	handleErrors(async (req, res, next) => {
+		const request = await createRequest(req.body);
 		res.json(request);
 	})
 );
