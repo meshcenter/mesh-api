@@ -2,26 +2,61 @@
 
 🚧 Work in progress!
 
-## TODO
-
-- [ ] Handle multiple members associated with a node
-- [ ] Tests
-- [ ] Improve los performance
-
 ## Endpoints
 
-https://api.nycmesh.net/nodes  
-https://api.nycmesh.net/links  
-https://api.nycmesh.net/buildings  
-https://api.nycmesh.net/members  
-https://api.nycmesh.net/requests  
-https://api.nycmesh.net/kml  
-https://api.nycmesh.net/los   
-https://api.nycmesh.net/search  
+Nodes: https://api.nycmesh.net/v1/nodes  
+Links: https://api.nycmesh.net/v1/links  
+Buildings: https://api.nycmesh.net/v1/buildings  
+Members: https://api.nycmesh.net/v1/members  
+Requests: https://api.nycmesh.net/v1/requests  
+Search: https://api.nycmesh.net/v1/search  
+Line of Sight: https://api.nycmesh.net/v1/los 
+Google Earth KML: https://api.nycmesh.net/v1/kml   
 
 ## Architecture
 
-The API is a thin wrapper around a Postgres database. Endpoints are implemented with AWS Lambda functions, deployed and versioned by Netlify. These functions query the database directly. User access control is implemented with Auth0 tokens and roles.
+- Netlify Functions for hosting
+- Express for handling requests
+- PostgreSQL for main db
+- PostGIS for line of sight db
+- DigitalOcean Spaces (S3) for storing panorama images
+- Auth0 for access control
+
+## Running locally
+
+Clone the repo: `git clone git@github.com:olivernyc/nycmesh-api.git` 
+
+Install dependencies: `yarn install`
+
+Run the local server: `yarn start`
+
+You'll need a `.env` file with the following values:
+```
+DB_USER=
+DB_PASS=
+DB_HOST=
+DB_PORT=
+DB_NAME=
+
+LOS_DB_USER=
+LOS_DB_PASS=
+LOS_DB_HOST=
+LOS_DB_PORT=
+LOS_DB_NAME=
+
+S3_BUCKET=
+S3_ENDPOINT=
+S3_ID=
+S3_KEY=
+
+JWKS_URI=
+JWT_AUDIENCE=
+JWT_ISSUER=
+
+SLACK_WEBHOOK_URL=
+OSTICKET_API_KEY=
+SPREADSHEET_URL=
+```
 
 ## Schema
 
