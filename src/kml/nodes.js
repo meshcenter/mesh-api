@@ -66,9 +66,9 @@ export async function getNodesKML() {
 	const kml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 	<Document>
-		${linkStyle("hubLink", "FF00FFFF", 3)}
+		${linkStyle("hubLink", "ff00ffff", 3)}
 		${linkStyle("backboneLink", "ff00ffff", 3)}
-		${linkStyle("activeLink", "aa0000ff", 3)}
+		${linkStyle("activeLink", "cc552dff", 2)}
 		${nodeStyle("supernode", 0.6, "https://i.imgur.com/flgK1j1.png")}
 		${nodeStyle("hub", 0.6, "https://i.imgur.com/xbfOy3Q.png")}
 		${nodeStyle("hub", 0.6, "https://i.imgur.com/xbfOy3Q.png")}
