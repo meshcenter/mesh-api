@@ -20,7 +20,7 @@
     "netlify-lambda": "^1.5.1"
   },
   "scripts": {
-    "start": "netlify-lambda serve src -c webpack.functions.js",
+    "start": "NODE_ENV=development netlify-lambda serve src -c webpack.functions.js",
     "build": "netlify-lambda build src -c webpack.functions.js",
     "reset-db": "node scripts/create-database && node scripts/import-spreadsheet.js"
   }
