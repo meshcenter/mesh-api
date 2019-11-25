@@ -83,7 +83,7 @@ export async function getLosKML(params) {
 	<Document>
         <Style id="losLink">
         	<LineStyle>
-        		<color>6600ff00</color>
+        		<color>9900ff00</color>
         		<width>2</width>
     		</LineStyle>
     		<PolyStyle>
