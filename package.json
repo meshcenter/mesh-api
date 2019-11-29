@@ -6,6 +6,7 @@
     "aws-sdk": "^2.575.0",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
+    "date-fns": "^2.8.1",
     "encoding": "^0.1.12",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
@@ -15,13 +16,15 @@
     "serverless-http": "^2.3.0"
   },
   "devDependencies": {
+    "colors": "^1.4.0",
     "dotenv": "^8.2.0",
     "dotenv-webpack": "^1.7.0",
     "netlify-lambda": "^1.5.1"
   },
   "scripts": {
-    "start": "netlify-lambda serve src -c webpack.functions.js",
+    "start": "NODE_ENV=development netlify-lambda serve src -c webpack.functions.js",
     "build": "netlify-lambda build src -c webpack.functions.js",
-    "reset-db": "node scripts/create-database && node scripts/import-spreadsheet.js"
+    "reset-db": "node scripts/create-database && node scripts/import-spreadsheet.js",
+    "los": "node scripts/los.js"
   }
 }

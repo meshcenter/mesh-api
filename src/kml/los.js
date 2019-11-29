@@ -1,11 +1,66 @@
 import { performQuery } from "../db";
 
+// Currently this hides lines of sight if nodes are in both buildings.
+// This should be fixed so it shows lines of sight unless there is an
+// active links between buildings.
+const losOfDegreeQuery = `SELECT
+	los.*,
+	json_agg(requests) AS requests,
+	json_agg(nodes) AS nodes
+FROM
+	los
+	JOIN requests ON requests.building_id = los.building_a_id
+	JOIN nodes ON nodes.building_id = los.building_b_id
+		AND nodes.status = 'active'
+WHERE
+	building_a_id IN(
+		SELECT
+			building_a_id FROM los
+		GROUP BY
+			building_a_id
+		HAVING
+			count(building_a_id) >= $1)
+GROUP BY
+	los.id`;
+
+const getLosOfDegreeAndPanosQuery = `SELECT
+	los.*,
+	json_agg(requests) as requests,
+	json_agg(nodes) as nodes
+FROM
+	los
+	JOIN buildings ON buildings.id = los.building_a_id
+	JOIN requests ON requests.building_id = los.building_a_id
+	JOIN nodes ON nodes.building_id = los.building_b_id
+		AND nodes.status = 'active'
+	JOIN panoramas ON panoramas.request_id = requests.id
+WHERE
+	building_a_id IN(
+		SELECT
+			building_a_id FROM los
+		GROUP BY
+			building_a_id
+		HAVING
+			count(building_a_id) >= $1)
+GROUP BY
+	los.id`;
+
+const losOfBuildingQuery = `SELECT
+	los.*
+FROM
+	los
+	JOIN buildings ON buildings.id = los.building_a_id
+	JOIN requests ON requests.building_id = buildings.id
+	JOIN panoramas ON panoramas.request_id = requests.id
+WHERE
+	building_a_id = $1`;
+
 export async function getLosKML(params) {
 	const { pano } = params;
 
 	const los = pano
-		? await getLosOfDegreeAndPanos(1)
-		: await getLosOfDegree(1);
+		? await getLosOfDegreeAndPanos(0)
+		: await getLosOfDegree(0);
 
 	const losByRequest = los.reduce((acc, cur) => {
 		const [request] = cur.requests;
@@ -26,7 +81,7 @@ export async function getLosKML(params) {
 	<Document>
         <Style id="losLink">
         	<LineStyle>
-        		<color>cc00ff00</color>
+				<color>7700ff00</color>
         		<width>2</width>
     		</LineStyle>
     		<PolyStyle>
@@ -79,69 +134,16 @@ async function getLos() {
 	return performQuery("SELECT * FROM los");
 }
 
-// Only show lines of sight for buildings with at least degree lines of sight
+// At least n lines of sight
 async function getLosOfDegree(degree) {
-	return performQuery(
-		`SELECT
-			los.*,
-			json_agg(requests) as requests,
-			json_agg(nodes) as nodes
-		FROM
-			los
-			JOIN requests ON requests.building_id = los.building_a_id
-			JOIN nodes ON nodes.building_id =  los.building_b_id
-		WHERE
-			building_a_id IN(
-				SELECT
-					building_a_id FROM los
-				GROUP BY
-					building_a_id
-				HAVING
-					count(building_a_id) >= $1)
-		GROUP BY
-			los.id`,
-		[degree]
-	);
+	return performQuery(losOfDegreeQuery, [degree]);
 }
 
-// Same as above, but only show requests with panos
+// At least n lines of sight, with panos
 async function getLosOfDegreeAndPanos(degree) {
-	return performQuery(
-		`SELECT
-	los.*,
-	json_agg(requests) as requests,
-	json_agg(nodes) as nodes
-FROM
-	los
-	JOIN buildings ON buildings.id = los.building_a_id
-	JOIN requests ON requests.building_id = los.building_a_id
-	JOIN nodes ON nodes.building_id =  los.building_b_id
-	JOIN panoramas ON panoramas.request_id = requests.id
-WHERE
-	building_a_id IN(
-		SELECT
-			building_a_id FROM los
-		GROUP BY
-			building_a_id
-		HAVING
-			count(building_a_id) >= $1)
-GROUP BY
-	los.id`,
-		[degree]
-	);
+	return performQuery(getLosOfDegreeAndPanosQuery, [degree]);
 }
 
 async function getLosOfBuilding(id) {
-	return performQuery(
-		`SELECT
-	 	los.*
-	 FROM
-	 	los
-	 	JOIN buildings ON buildings.id = los.building_a_id
-	 	JOIN requests ON requests.building_id = buildings.id
-	 	JOIN panoramas ON panoramas.request_id = requests.id
-	 WHERE
-	 	building_a_id = $1`,
-		[id]
-	);
+	return performQuery(losOfBuildingQuery, [id]);
 }
