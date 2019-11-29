@@ -13,6 +13,8 @@ FROM
 	LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
 	LEFT JOIN requests ON requests.building_id = buildings.id
 	LEFT JOIN panoramas ON panoramas.request_id = requests.id
+WHERE
+	nodes.status = 'active'
 GROUP BY
 	nodes.id,
 	buildings.id
@@ -26,8 +28,7 @@ const getLinksQuery = `SELECT
 	json_agg(device_types) as device_types
 FROM
 	links
-	JOIN devices ON devices.id = links.device_a_id
-		OR devices.id = links.device_b_id
+	JOIN devices ON devices.id IN (links.device_a_id, links.device_b_id)
 	JOIN device_types ON device_types.id = devices.device_type_id
 	JOIN nodes ON nodes.id = devices.node_id
 WHERE
@@ -149,6 +150,31 @@ function linkPlacemark(link) {
 `;
 }
 
+const isOmni = device_type => device_type.name === "Omni";
+const isSupernode = node => node.name && node.name.includes("Supernode");
+const isHub = node => node.notes && node.notes.includes("hub");
+const isBackbone = (node, device_type) =>
+	isSupernode(node) || isHub(node) || isOmni(device_type);
+
+function nodeStyleId(node) {
+	const { name, notes, device_types } = node;
+	if (isSupernode(node)) return "#supernode";
+	if (isHub(node)) return "#hub";
+	if (device_types.filter(isOmni).length) return "#omni";
+	return "#node";
+}
+
+// TODO: Need to check all devices on each node to determine color.
+function linkStyleId(link) {
+	const { nodes, device_types } = link;
+	const [node1, node2] = nodes;
+	const [device_type1, device_type2] = device_types;
+	if (isHub(node1) && isHub(node2)) return "#hubLink";
+	if (isBackbone(node1, device_type1) && isBackbone(node2, device_type2))
+		return "#backboneLink";
+	return "#activeLink";
+}
+
 function linkStyle(id, color, width) {
 	return `<Style id="${id}">
 	<LineStyle>
@@ -174,31 +200,6 @@ function nodeStyle(id, scale, icon) {
     	<scale>0</scale>
 	</LabelStyle>
 </Style>`;
-}
-
-const isOmni = device_type => device_type.name === "Omni";
-const isSupernode = node => node.name && node.name.includes("Supernode");
-const isHub = node => node.notes && node.notes.includes("hub");
-const isBackbone = (node, device_type) =>
-	isSupernode(node) || isHub(node) || isOmni(device_type);
-
-function nodeStyleId(node) {
-	const { name, notes, device_types } = node;
-	if (isSupernode(node)) return "#supernode";
-	if (isHub(node)) return "#hub";
-	if (device_types.filter(isOmni).length) return "#omni";
-	return "#node";
-}
-
-// TODO: Need to check all devices on each node to determine color.
-function linkStyleId(link) {
-	const { nodes, device_types } = link;
-	const [node1, node2] = nodes;
-	const [device_type1, device_type2] = device_types;
-	if (isHub(node1) && isHub(node2)) return "#hubLink";
-	if (isBackbone(node1, device_type1) && isBackbone(node2, device_type2))
-		return "#backboneLink";
-	return "#activeLink";
 }
 
 async function getNodes() {

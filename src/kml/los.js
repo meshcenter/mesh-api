@@ -5,12 +5,13 @@ import { performQuery } from "../db";
 // active links between buildings.
 const losOfDegreeQuery = `SELECT
 	los.*,
-	json_agg(requests) as requests,
-	json_agg(nodes) as nodes
+	json_agg(requests) AS requests,
+	json_agg(nodes) AS nodes
 FROM
 	los
 	JOIN requests ON requests.building_id = los.building_a_id
-	JOIN nodes ON nodes.building_id =  los.building_b_id
+	JOIN nodes ON nodes.building_id = los.building_b_id
+		AND nodes.status = 'active'
 WHERE
 	building_a_id IN(
 		SELECT
@@ -20,9 +21,7 @@ WHERE
 		HAVING
 			count(building_a_id) >= $1)
 GROUP BY
-	los.id
-HAVING
-	count(nodes) < 2`;
+	los.id`;
 
 const getLosOfDegreeAndPanosQuery = `SELECT
 	los.*,
@@ -32,7 +31,8 @@ FROM
 	los
 	JOIN buildings ON buildings.id = los.building_a_id
 	JOIN requests ON requests.building_id = los.building_a_id
-	JOIN nodes ON nodes.building_id =  los.building_b_id
+	JOIN nodes ON nodes.building_id = los.building_b_id
+		AND nodes.status = 'active'
 	JOIN panoramas ON panoramas.request_id = requests.id
 WHERE
 	building_a_id IN(
@@ -43,9 +43,7 @@ WHERE
 		HAVING
 			count(building_a_id) >= $1)
 GROUP BY
-	los.id
-HAVING
-	count(nodes) < 2`;
+	los.id`;
 
 const losOfBuildingQuery = `SELECT
 	los.*
@@ -61,8 +59,8 @@ export async function getLosKML(params) {
 	const { pano } = params;
 
 	const los = pano
-		? await getLosOfDegreeAndPanos(1)
-		: await getLosOfDegree(1);
+		? await getLosOfDegreeAndPanos(0)
+		: await getLosOfDegree(0);
 
 	const losByRequest = los.reduce((acc, cur) => {
 		const [request] = cur.requests;
@@ -83,7 +81,7 @@ export async function getLosKML(params) {
 	<Document>
         <Style id="losLink">
         	<LineStyle>
-        		<color>9900ff00</color>
+				<color>7700ff00</color>
         		<width>2</width>
     		</LineStyle>
     		<PolyStyle>
