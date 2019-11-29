@@ -1,12 +1,19 @@
 const fetch = require("node-fetch");
 require("dotenv").config();
 const { performQuery } = require("./db");
+const ProgressBar = require("./ProgressBar");
 
 checkLOS().then(() => process.exit(0));
 
+let bar;
+let processed = 0;
+let notFound = 0;
+
 async function checkLOS() {
 	const requests = await getRequests();
-	for (let i = 0; i < requests.length - 9; i += 10) {
+	bar = new ProgressBar(requests.length);
+	bar.render();
+	for (let i = 0; i < requests.length - 14; i += 15) {
 		const request = requests[i];
 		const request2 = requests[i + 1];
 		const request3 = requests[i + 2];
@@ -17,6 +24,11 @@ async function checkLOS() {
 		const request8 = requests[i + 7];
 		const request9 = requests[i + 8];
 		const request10 = requests[i + 9];
+		const request11 = requests[i + 10];
+		const request12 = requests[i + 11];
+		const request13 = requests[i + 12];
+		const request14 = requests[i + 13];
+		const request15 = requests[i + 14];
 		try {
 			await Promise.all([
 				handleRequest(i, request),
@@ -28,21 +40,29 @@ async function checkLOS() {
 				handleRequest(i + 6, request7),
 				handleRequest(i + 7, request8),
 				handleRequest(i + 8, request9),
-				handleRequest(i + 9, request10)
+				handleRequest(i + 9, request10),
+				handleRequest(i + 10, request11),
+				handleRequest(i + 11, request12),
+				handleRequest(i + 12, request13),
+				handleRequest(i + 13, request14),
+				handleRequest(i + 14, request15)
 			]);
 		} catch (error) {
 			console.log(error.message);
 		}
 	}
+	console.log("\n");
+	console.log(`${processed} buildings processed`);
+	console.log(`${notFound} buildings not found`);
 }
 
 async function handleRequest(i, request) {
-	console.log(i);
+	bar.curr = i;
+	bar.render();
 	if (!request.bin) return;
 	if (request.roof_access !== "yes") return;
 	if (request.bin < 0 || request.bin % 1000000 === 0) return;
-	const url = `https://api.nycmesh.net/v1/los?bin=${request.bin}`;
-	console.log(url);
+	const url = `http://localhost:9000/v1/los?bin=${request.bin}`;
 	const losResponse = await fetch(url);
 	const {
 		visibleOmnis,
@@ -51,25 +71,13 @@ async function handleRequest(i, request) {
 		error
 	} = await losResponse.json();
 	if (error) {
+		if (error === "Not found") {
+			notFound++;
+			return;
+		}
 		throw Error(error);
-	}
-	if (visibleOmnis.length) {
-		for (let j = 0; j < visibleOmnis.length; j++) {
-			const hub = visibleOmnis[j];
-			console.log(`${request.id} <-> ${hub.id}`);
-		}
-	}
-	if (visibleSectors.length) {
-		for (let j = 0; j < visibleSectors.length; j++) {
-			const hub = visibleSectors[j];
-			console.log(`${request.id} <-> ${hub.id}`);
-		}
-	}
-	if (visibleRequests.length) {
-		for (let k = 0; k < visibleRequests.length; k++) {
-			const potentialNode = visibleRequests[k];
-			console.log(`${request.id} <-> ${potentialNode.id}`);
-		}
+	} else {
+		processed++;
 	}
 }
 

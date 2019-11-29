@@ -16,6 +16,7 @@
     "serverless-http": "^2.3.0"
   },
   "devDependencies": {
+    "colors": "^1.4.0",
     "dotenv": "^8.2.0",
     "dotenv-webpack": "^1.7.0",
     "netlify-lambda": "^1.5.1"
@@ -23,6 +24,7 @@
   "scripts": {
     "start": "NODE_ENV=development netlify-lambda serve src -c webpack.functions.js",
     "build": "netlify-lambda build src -c webpack.functions.js",
-    "reset-db": "node scripts/create-database && node scripts/import-spreadsheet.js"
+    "reset-db": "node scripts/create-database && node scripts/import-spreadsheet.js",
+    "los": "node scripts/los.js"
   }
 }
