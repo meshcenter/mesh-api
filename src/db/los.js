@@ -132,9 +132,13 @@ export async function getLos(bin) {
 			...visibleSectors,
 			...visibleRequests
 		];
+		const saved = {};
 		for (let j = 0; j < allVisible.length; j++) {
 			const visibleNode = allVisible[j];
-			await saveLOS(building, visibleNode);
+			if (!saved[visibleNode.id]) {
+				await saveLOS(building, visibleNode);
+				saved[visibleNode.id] = true;
+			}
 		}
 	}
 
