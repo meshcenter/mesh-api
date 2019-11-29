@@ -184,9 +184,9 @@ async function getBuildingMidpoint(bin) {
 		"SELECT ST_AsText(ST_Centroid((SELECT geom FROM ny WHERE bldg_bin = $1)))";
 	const values = [bin];
 	const res = await performLosQuery(text, values);
-	if (!res.length) throw new Error("Not found 1");
+	if (!res.length) throw new Error("Not found");
 	const { st_astext } = res[0];
-	if (!st_astext) throw new Error("Not found 2");
+	if (!st_astext) throw new Error("Not found");
 	const rawText = st_astext.replace("POINT(", "").replace(")", ""); // Do this better
 	const [lat, lng] = rawText.split(" ");
 	return [parseFloat(lat), parseFloat(lng)];
@@ -196,7 +196,7 @@ async function getBuildingHeight(bin) {
 	const text = "SELECT ST_ZMax((SELECT geom FROM ny WHERE bldg_bin = $1))";
 	const values = [bin];
 	const res = await performLosQuery(text, values);
-	if (!res.length) throw new Error("Not found 3");
+	if (!res.length) throw new Error("Not found");
 	const { st_zmax } = res[0];
 	const offset = 4;
 	return parseInt(st_zmax) + offset;

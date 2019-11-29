@@ -16,6 +16,7 @@
     "serverless-http": "^2.3.0"
   },
   "devDependencies": {
+    "colors": "^1.4.0",
     "dotenv": "^8.2.0",
     "dotenv-webpack": "^1.7.0",
     "netlify-lambda": "^1.5.1"
