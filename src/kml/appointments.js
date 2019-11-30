@@ -28,25 +28,30 @@ FROM
     appointments
     JOIN buildings ON buildings.id = appointments.building_id
 WHERE
-    appointments.date > now()`;
+    appointments.date > now()
+ORDER BY
+    date`;
 
 async function getAppointments() {
     return performQuery(appointmentsQuery);
 }
 
 function appointmentKML(appointment) {
+    const capitalizedType = `${appointment.type
+        .charAt(0)
+        .toUpperCase()}${appointment.type.slice(1)}`;
+    const dateString = format(appointment.date, "eee, MMM d, yyyy");
     return `
 <Placemark>
-    <name>${appointment.id}</name>
+    <name>${capitalizedType} - ${dateString}</name>
     <ExtendedData>
-        <Data name="id">
-            <value>${appointment.id}</value>
-        </Data>
         <Data name="type">
-            <value>${appointment.type}</value>
+            <value>${appointment.type
+                .charAt(0)
+                .toUpperCase()}${appointment.type.slice(1)}</value>
         </Data>
         <Data name="date">
-            <value>${format(appointment.date, "eeee, MMMM d, yyyy")}</value>
+            <value>${dateString}</value>
         </Data>
         <Data name="time">
             <value>${format(appointment.date, "h:mm a")}</value>
@@ -76,4 +81,3 @@ function appointmentStyle(id, scale, icon) {
     </LabelStyle>
 </Style>`;
 }
-
