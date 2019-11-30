@@ -7,9 +7,6 @@ const requestKML = request => `
         <Data name="id">
             <value>${request.id}</value>
         </Data>
-        <Data name="address">
-            <value>${request.address.replace(/&/g, "+")}</value>
-        </Data>
         ${(request.panoramas || []).map(
 			(panorama, index) =>
 				`<Data name="panorama ${index + 1}">
@@ -37,7 +34,7 @@ export async function getRequestsKML(params) {
 	        <IconStyle>
 	        	<scale>0.4</scale> 
 	        	<Icon>
-	        		<href>https://i.imgur.com/jmBfPPZ.png</href>
+	        		<href>https://i.imgur.com/2CBT1Wx.png</href>
 	        	</Icon>
 		        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
 	        </IconStyle>

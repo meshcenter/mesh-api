@@ -23,6 +23,7 @@ async function importSpreadsheet() {
 	await importJoinRequests(nodes);
 	await importDevices(sectors);
 	await importLinks(links);
+	await importAppointments();
 }
 
 async function importBuildings(nodes) {
@@ -215,8 +216,12 @@ async function importDevices(devices) {
 		allDevices,
 		device => {
 			const deviceNode = nodesMap[device.nodeId];
+			let actualStatus = device.status;
+			if (deviceNode.status !== "active") {
+				actualStatus = "dead";
+			}
 			return [
-				device.status,
+				actualStatus,
 				device.name,
 				device.ssid,
 				device.notes,
@@ -247,7 +252,7 @@ async function importLinks(links) {
 	await insertBulk(
 		"links",
 		["device_a_id", "device_b_id", "status", "create_date"],
-		links.filter(link => link.status === "active"), // TODO: How to represent potential links if links are between devices? Maybe a separate table?
+		links.filter(link => link.status === "active"),
 		link => {
 			const deviceA = devicesMap[link.from];
 			const deviceB = devicesMap[link.to];
@@ -262,7 +267,13 @@ async function importLinks(links) {
 			)
 				? deviceA.create_date
 				: deviceB.create_date;
-			return [deviceA.id, deviceB.id, link.status, create_date];
+
+			let actualStatus = link.status;
+			if (deviceA.status !== "active" || deviceB.status !== "active") {
+				actualStatus = "dead";
+			}
+
+			return [deviceA.id, deviceB.id, actualStatus, create_date];
 		}
 	);
 }
@@ -434,6 +445,103 @@ async function importPanoramas(node) {
 		["url", "date"],
 		panoramas,
 		panorama => [panorama.url, panorama.date]
+	);
+}
+
+async function importAppointments() {
+	const appointmentsRes = await fetch(
+		`https://acuityscheduling.com/api/v1/appointments?max=25&calendarID=${process.env.ACUITY_CALENDAR_ID}`,
+		{
+			headers: {
+				Authorization: `Basic ${Buffer.from(
+					`${process.env.ACUITY_USER_ID}:${process.env.ACUITY_API_KEY}`
+				).toString("base64")}`
+			}
+		}
+	);
+	const appointments = await appointmentsRes.json();
+
+	const newAppointments = [];
+	for (var i = 0; i < appointments.length; i++) {
+		const appointment = appointments[i];
+		const { id, email, phone, type, datetime } = appointment;
+		const [form] = appointment.forms;
+		const nodeId = form.values.filter(
+			value => value.name === "Node Number"
+		)[0].value;
+		const address = form.values.filter(
+			value => value.name === "Address and Apartment #"
+		)[0].value;
+		const notes = form.values.filter(value => value.name === "Notes")[0]
+			.value;
+
+		// Get Member
+		let [member] = await performQuery(
+			"SELECT * FROM members WHERE email = $1",
+			[email]
+		);
+
+		if (!member) {
+			[member] = await performQuery(
+				"SELECT * FROM members WHERE phone = $1",
+				[phone]
+			);
+			if (!member) continue;
+		}
+
+		// Get Buillding
+		const buildings = await performQuery(
+			`SELECT
+	buildings.*
+FROM
+	members
+	JOIN requests ON requests.member_id = members.id
+	JOIN buildings ON buildings.id = requests.building_id
+WHERE
+	members.email = $1
+GROUP BY buildings.id`,
+			[member.email]
+		);
+
+		let building;
+		if (!buildings.length) {
+			console.log(email);
+		} else if (buildings.length > 1) {
+			const [buildingNumber] = address.split(" ");
+			[building] = buildings.filter(
+				b => b.address.split(" ")[0] === buildingNumber
+			);
+			if (!building) {
+				console.log("???");
+			} else {
+				console.log(building);
+				console.log(address);
+			}
+		} else {
+			[building] = buildings;
+		}
+
+		const typeMap = {
+			Install: "install",
+			Support: "support",
+			"Site survey": "survey"
+		};
+		const dbType = typeMap[type];
+		newAppointments.push([
+			dbType,
+			datetime,
+			notes,
+			id,
+			member.id,
+			building.id
+		]);
+	}
+
+	await insertBulk(
+		"appointments",
+		["type", "date", "notes", "acuity_id", "member_id", "building_id"],
+		newAppointments,
+		appointment => appointment
 	);
 }
 
