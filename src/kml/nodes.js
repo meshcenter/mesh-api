@@ -67,14 +67,13 @@ export async function getNodesKML() {
 	const kml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 	<Document>
-		${linkStyle("hubLink", "ff00ffff", 3)}
-		${linkStyle("backboneLink", "ff00ffff", 3)}
-		${linkStyle("activeLink", "cc552dff", 2)}
-		${nodeStyle("supernode", 0.6, "https://i.imgur.com/flgK1j1.png")}
-		${nodeStyle("hub", 0.6, "https://i.imgur.com/xbfOy3Q.png")}
-		${nodeStyle("hub", 0.6, "https://i.imgur.com/xbfOy3Q.png")}
-		${nodeStyle("omni", 0.4, "https://i.imgur.com/7dMidbX.png")}
-		${nodeStyle("node", 0.4, "https://i.imgur.com/7SIgB7Z.png")}
+		${linkStyle("hubLink", "ff00eeff", 2.5)}
+		${linkStyle("backboneLink", "ff00eeff", 2.5)}
+		${linkStyle("activeLink", "66552dff", 2.5)}
+		${nodeStyle("supernode", 0.75, "https://i.imgur.com/GFd364p.png")}
+		${nodeStyle("hub", 0.75, "https://i.imgur.com/dsizT9e.png")}
+		${nodeStyle("omni", 0.5, "https://i.imgur.com/dsizT9e.png")}
+		${nodeStyle("node", 0.4, "https://i.imgur.com/OBBZi9E.png")}
         ${nodesKml}
 	</Document>
 </kml>`;
@@ -98,9 +97,6 @@ function nodePlacemark(node) {
 					}
 			        <Data name="status">
 			            <value>${node.status}</value>
-			        </Data>
-			        <Data name="address">
-			            <value>${node.address.replace(/&/g, "+")}</value>
 			        </Data>
 			        <Data name="devices">
 			            <value>${node.device_types.map(d => d.name).join(", ")}</value>

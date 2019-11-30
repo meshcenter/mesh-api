@@ -15,8 +15,9 @@ import { getRequests, getRequest, createRequest } from "./db/requests";
 import { getSearch } from "./db/search";
 
 import { getKML } from "./kml";
-import { getNodesKML } from "./kml/nodes";
+import { getAppointmentsKML } from "./kml/appointments";
 import { getLosKML } from "./kml/los";
+import { getNodesKML } from "./kml/nodes";
 import { getRequestsKML } from "./kml/requests";
 
 const ROOT = "/v1";
@@ -157,6 +158,14 @@ router.get(
 			"Content-Type": "text/xml",
 			"Content-Disposition": `attachment; filename="nycmesh.kml"`
 		}).send(kml);
+	})
+);
+
+router.get(
+	"/kml/appointments",
+	handleErrors(async (req, res, next) => {
+		const kml = await getAppointmentsKML(req.params);
+		res.set("Content-Type", "text/xml").send(kml);
 	})
 );
 
