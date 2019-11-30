@@ -10,14 +10,6 @@ const s3 = new AWS.S3({
 	secretAccessKey: process.env.S3_KEY
 });
 
-// TODO: Restrict this somehow. Maybe require a secret?
-export async function savePano(requestId, panoURL) {
-	if (!requestId || !panoURL) throw new Error("Bad params");
-	const values = [panoURL, new Date(), requestId];
-	const [pano] = await performQuery(insertPanoQuery, values);
-	return pano;
-}
-
 export async function getUploadURL(name, type) {
 	if (!name || !type) throw new Error("Bad params");
 	const url = await s3.getSignedUrl("putObject", {
@@ -27,4 +19,12 @@ export async function getUploadURL(name, type) {
 		ACL: "public-read"
 	});
 	return url;
+}
+
+// TODO: Restrict this somehow. Maybe require a secret?
+export async function savePano(requestId, panoURL) {
+	if (!requestId || !panoURL) throw new Error("Bad params");
+	const values = [panoURL, new Date(), requestId];
+	const [pano] = await performQuery(insertPanoQuery, values);
+	return pano;
 }
