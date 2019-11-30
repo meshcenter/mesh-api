@@ -9,6 +9,7 @@ async function createDatabase() {
 		console.log("Dropping tables...");
 		await performQuery(
 			`DROP table IF EXISTS
+				"appointments",
 				"los",
 				"links",
 				"devices",
@@ -26,7 +27,8 @@ async function createDatabase() {
 				"node_status",
 				"device_status",
 				"link_status",
-				"roof_access"`
+				"roof_access",
+				"appointment_type"`
 		);
 
 		await performQuery(
@@ -154,6 +156,22 @@ async function createDatabase() {
 				lat_b			FLOAT NOT NULL,
 				lng_b			FLOAT NOT NULL,
 				alt_b			FLOAT NOT NULL
+			)`
+		);
+
+		await performQuery(
+			`CREATE TYPE appointment_type AS ENUM ('install', 'support', 'survey');`
+		);
+
+		await performQuery(
+			`CREATE TABLE "appointments" (
+				id				SERIAL PRIMARY KEY,
+				type			appointment_type NOT NULL,
+				date			TIMESTAMP WITH TIME ZONE NOT NULL,
+				notes			TEXT,
+				acuity_id		INTEGER NOT NULL,
+				member_id		INTEGER REFERENCES members(id),
+				building_id		INTEGER REFERENCES buildings(id)
 			)`
 		);
 	} catch (error) {
