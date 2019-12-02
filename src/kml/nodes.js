@@ -23,9 +23,52 @@ ORDER BY
 
 const getLinksQuery = `SELECT
 	links.*,
-	json_agg(DISTINCT nodes) as nodes,
-	json_agg(DISTINCT devices) as devices,
-	json_agg(device_types) as device_types
+	(
+		SELECT
+			to_json(devices.*)
+		FROM
+			devices
+		WHERE
+			devices.id = device_a_id) AS device_a,
+	(
+		SELECT
+			to_json(devices.*)
+		FROM
+			devices
+		WHERE
+			devices.id = device_b_id) AS device_b,
+	(
+		SELECT
+			to_json(device_types.*)
+		FROM
+			devices
+			JOIN device_types ON device_types.id = devices.device_type_id
+		WHERE
+			devices.id = device_a_id) AS device_type_a,
+	(
+		SELECT
+			to_json(device_types.*)
+		FROM
+			devices
+			JOIN device_types ON device_types.id = devices.device_type_id
+		WHERE
+			devices.id = device_b_id) AS device_type_b,
+	(
+		SELECT
+			to_json(nodes.*)
+		FROM
+			devices
+			JOIN nodes ON nodes.id = devices.node_id
+		WHERE
+			devices.id = device_a_id) AS node_a,
+	(
+		SELECT
+			to_json(nodes.*)
+		FROM
+			devices
+			JOIN nodes ON nodes.id = devices.node_id
+		WHERE
+			devices.id = device_b_id) AS node_b
 FROM
 	links
 	JOIN devices ON devices.id IN (links.device_a_id, links.device_b_id)
@@ -46,11 +89,11 @@ export async function getNodesKML() {
 	}, {});
 
 	const linksByNode = links.reduce((acc, cur) => {
-		acc[cur.nodes[0].id] = acc[cur.nodes[0].id] || [];
-		acc[cur.nodes[0].id].push(cur);
+		acc[cur.node_a.id] = acc[cur.node_a.id] || [];
+		acc[cur.node_a.id].push(cur);
 
-		acc[cur.nodes[1].id] = acc[cur.nodes[1].id] || [];
-		acc[cur.nodes[1].id].push(cur);
+		acc[cur.node_b.id] = acc[cur.node_b.id] || [];
+		acc[cur.node_b.id].push(cur);
 		return acc;
 	}, {});
 
@@ -70,8 +113,8 @@ export async function getNodesKML() {
 		${linkStyle("hubLink", "aa00ffff", 2.5)}
 		${linkStyle("backboneLink", "aa00ffff", 2.5)}
 		${linkStyle("activeLink", "66552dff", 2.5)}
-		${nodeStyle("supernode", 0.75, "https://i.imgur.com/GFd364p.png")}
-		${nodeStyle("hub", 0.75, "https://i.imgur.com/dsizT9e.png")}
+		${nodeStyle("supernode", 0.6, "https://i.imgur.com/GFd364p.png")}
+		${nodeStyle("hub", 0.6, "https://i.imgur.com/dsizT9e.png")}
 		${nodeStyle("omni", 0.5, "https://i.imgur.com/dsizT9e.png")}
 		${nodeStyle("node", 0.4, "https://i.imgur.com/OBBZi9E.png")}
         ${nodesKml}
@@ -122,19 +165,30 @@ function nodePlacemark(node) {
 }
 
 function linkPlacemark(link) {
-	const [node_a, node_b] = link.nodes;
+	const { node_a, node_b, device_type_a, device_type_b } = link;
 	const coordinates = `${node_a.lng},${node_a.lat},${node_a.alt} ${node_b.lng},${node_b.lat},${node_b.alt}`;
+	const deviceNameA =
+		device_type_a.name === "Unknown"
+			? "Unknown Device"
+			: device_type_a.name;
+	const deviceNameB =
+		device_type_b.name === "Unknown"
+			? "Unknown Device"
+			: device_type_b.name;
 	return `<Placemark>
     <name>${node_a.id} - ${node_b.id}</name>
     <ExtendedData>
+        <Data name="id">
+            <value>${link.id}</value>
+        </Data>
         <Data name="status">
             <value>${link.status}</value>
         </Data>
         <Data name="from">
-            <value>${node_a.name || node_a.id}</value>
+            <value>${node_a.name || node_a.id} ${deviceNameA}</value>
         </Data>
         <Data name="to">
-            <value>${node_b.name || node_b.id}</value>
+            <value>${node_b.name || node_b.id} ${deviceNameB}</value>
         </Data>
     </ExtendedData>
     <LineString>
@@ -162,11 +216,9 @@ function nodeStyleId(node) {
 
 // TODO: Need to check all devices on each node to determine color.
 function linkStyleId(link) {
-	const { nodes, device_types } = link;
-	const [node1, node2] = nodes;
-	const [device_type1, device_type2] = device_types;
-	if (isHub(node1) && isHub(node2)) return "#hubLink";
-	if (isBackbone(node1, device_type1) && isBackbone(node2, device_type2))
+	const { node_a, node_b, device_type_a, device_type_b } = link;
+	if (isHub(node_a) && isHub(node_b)) return "#hubLink";
+	if (isBackbone(node_a, device_type_a) && isBackbone(node_b, device_type_b))
 		return "#backboneLink";
 	return "#activeLink";
 }
