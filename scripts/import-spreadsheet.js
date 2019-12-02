@@ -242,9 +242,17 @@ async function importDevices(devices) {
 	);
 }
 
+const getLinksQuery = `SELECT
+	devices.*,
+	device_types.name AS type
+FROM
+	devices
+	JOIN device_types ON device_types.id = devices.device_type_id`;
+
 async function importLinks(links) {
-	const devices = await performQuery("SELECT * FROM devices");
+	const devices = await performQuery(getLinksQuery);
 	const devicesMap = devices.reduce((acc, cur) => {
+		if (cur.type === "Unknown" && acc[cur.node_id]) return acc;
 		acc[cur.node_id] = cur;
 		return acc;
 	}, {});
@@ -511,12 +519,6 @@ GROUP BY buildings.id`,
 			[building] = buildings.filter(
 				b => b.address.split(" ")[0] === buildingNumber
 			);
-			if (!building) {
-				console.log("???");
-			} else {
-				console.log(building);
-				console.log(address);
-			}
 		} else {
 			[building] = buildings;
 		}

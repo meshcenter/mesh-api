@@ -40,28 +40,27 @@ function appointmentKML(appointment) {
     const capitalizedType = `${appointment.type
         .charAt(0)
         .toUpperCase()}${appointment.type.slice(1)}`;
-    const dateString = format(appointment.date, "eee, MMM d, yyyy");
+    const dateString = format(appointment.date, "eee, MMM d");
+    const hourString = format(appointment.date, "h:mm a", {
+        timeZone: "America/New_York"
+    });
     return `
 <Placemark>
     <name>${capitalizedType} - ${dateString}</name>
     <ExtendedData>
         <Data name="type">
-            <value>${appointment.type
-                .charAt(0)
-                .toUpperCase()}${appointment.type.slice(1)}</value>
+            <value>${capitalizedType}</value>
         </Data>
         <Data name="date">
             <value>${dateString}</value>
         </Data>
         <Data name="time">
-            <value>${format(appointment.date, "h:mm a")}</value>
+            <value>${hourString}</value>
         </Data>
     </ExtendedData>
     <Point>
         <altitudeMode>absolute</altitudeMode>
-        <coordinates>${appointment.lng},${appointment.lat},${
-        appointment.alt
-    }</coordinates>
+        <coordinates>${appointment.lng},${appointment.lat},${appointment.alt}</coordinates>
     </Point>
     <styleUrl>#${appointment.type}</styleUrl>
 </Placemark>`;
