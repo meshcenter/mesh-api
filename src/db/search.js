@@ -1,10 +1,10 @@
 import { performQuery } from ".";
 
-export async function getSearch(s) {
-	const nodes = await searchNodes(s);
-	const buildings = await searchBuildings(s);
-	const requests = await searchRequests(s);
-	const members = await searchMembers(s);
+export async function getSearch(query) {
+	const nodes = await searchNodes(query);
+	const buildings = await searchBuildings(query);
+	const requests = await searchRequests(query);
+	const members = await searchMembers(query);
 	return {
 		nodes,
 		buildings,

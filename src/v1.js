@@ -40,7 +40,7 @@ router.get(
 );
 
 router.get(
-	"/building/:id",
+	"/buildings/:id",
 	handleErrors(async (req, res, next) => {
 		const building = await getBuilding(req.params.id);
 		res.json(building);
@@ -143,7 +143,7 @@ router.get(
 	"/search",
 	handleErrors(async (req, res, next) => {
 		await checkAuth(req.headers);
-		const results = await getSearch(req.params.s);
+		const results = await getSearch(req.query.s);
 		res.json(results);
 	})
 );
