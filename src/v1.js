@@ -40,7 +40,7 @@ router.get(
 );
 
 router.get(
-	"/building/:id",
+	"/buildings/:id",
 	handleErrors(async (req, res, next) => {
 		const building = await getBuilding(req.params.id);
 		res.json(building);
