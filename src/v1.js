@@ -143,7 +143,7 @@ router.get(
 	"/search",
 	handleErrors(async (req, res, next) => {
 		await checkAuth(req.headers);
-		const results = await getSearch(req.params.s);
+		const results = await getSearch(req.query.s);
 		res.json(results);
 	})
 );
