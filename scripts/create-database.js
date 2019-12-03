@@ -28,7 +28,6 @@ async function createDatabase() {
 				"device_status",
 				"link_status",
 				"request_status",
-				"roof_access",
 				"appointment_type"`
 		);
 
