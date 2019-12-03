@@ -165,7 +165,7 @@ async function createSlackPost(userRequest, request, building, member) {
 	}
 
 	const mapURL = `https://www.nycmesh.net/map/nodes/${spreadsheetId || id}`;
-	const roofString = roof_access === "yes" ? "Roof access" : "No roof access";
+	const roofString = roof_access ? "Roof access" : "No roof access";
 	const earthAddress = address.replace(/,/g, "").replace(/ /g, "+");
 	const earthURL = `https://earth.google.com/web/search/${earthAddress}/@${lat},${lng},${alt}a,300d,40y,0.6h,65t,0r`;
 	const uriAddress = encodeURIComponent(address);

@@ -27,6 +27,7 @@ async function createDatabase() {
 				"node_status",
 				"device_status",
 				"link_status",
+				"request_status",
 				"roof_access",
 				"appointment_type"`
 		);
@@ -76,14 +77,15 @@ async function createDatabase() {
 		);
 
 		await performQuery(
-			`CREATE TYPE roof_access AS ENUM ('yes', 'no', 'maybe');`
+			`CREATE TYPE request_status AS ENUM ('active', 'installed', 'dead');`
 		);
 
 		await performQuery(
 			`CREATE TABLE "requests" (
 		 		id				SERIAL PRIMARY KEY,
+		 		status			request_status NOT NULL,
+		 		roof_access		bool NOT NULL,
 		 		date			TIMESTAMP WITH TIME ZONE NOT NULL,
-		 		roof_access		roof_access NOT NULL,
 		 		osticket_id		INTEGER,
 		 		member_id		INTEGER REFERENCES members(id),
 		 		building_id		INTEGER REFERENCES buildings(id)
