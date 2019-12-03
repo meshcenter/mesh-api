@@ -21,7 +21,6 @@ async function createDatabase() {
 				"nodes"`
 		);
 
-		// Should the statuses be one type?
 		await performQuery(
 			`DROP type IF EXISTS
 				"node_status",
