@@ -9,8 +9,8 @@ const losOfDegreeQuery = `SELECT
 	json_agg(nodes) AS nodes
 FROM
 	los
-	JOIN requests ON requests.building_id = los.building_a_id
-	JOIN nodes ON nodes.building_id = los.building_b_id
+	JOIN requests ON requests.building_id IN (los.building_a_id, los.building_b_id)
+	LEFT JOIN nodes ON nodes.building_id = los.building_b_id
 		AND nodes.status = 'active'
 WHERE
 	building_a_id IN(
@@ -109,7 +109,7 @@ function losPlacemark(los) {
 		requests
 	} = los;
 	let fromId = (los.requests[0] || {}).id;
-	let toId = (los.nodes[0] || {}).id;
+	let toId = (los.nodes[0] || los.requests[1] || {}).id;
 	return `
 		<Placemark>
             <name>Line of Sight</name>
