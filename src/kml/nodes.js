@@ -115,8 +115,8 @@ export async function getNodesKML() {
 		${linkStyle("activeLink", "66552dff", 2.5)}
 		${nodeStyle("supernode", 0.6, "https://i.imgur.com/GFd364p.png")}
 		${nodeStyle("hub", 0.6, "https://i.imgur.com/dsizT9e.png")}
-		${nodeStyle("omni", 0.5, "https://i.imgur.com/dsizT9e.png")}
-		${nodeStyle("node", 0.4, "https://i.imgur.com/OBBZi9E.png")}
+		${nodeStyle("omni", 0.6, "https://i.imgur.com/dsizT9e.png")}
+		${nodeStyle("node", 0.5, "https://i.imgur.com/OBBZi9E.png")}
         ${nodesKml}
 	</Document>
 </kml>`;

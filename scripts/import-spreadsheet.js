@@ -381,23 +381,34 @@ async function importJoinRequests(nodes) {
 	let maxRequestId = 1;
 	await insertBulk(
 		"requests",
-		["id", "date", "roof_access", "building_id", "member_id"],
+		["id", "status", "date", "roof_access", "building_id", "member_id"],
 		nodesWithIDs.filter(node => {
 			if (!node.requestDate) {
 				console.log(`Node ${node.id} missing request date`);
 				return false;
 			}
-			if (node.status === "Abandoned") return false;
 			maxRequestId = Math.max(maxRequestId, node.id);
 			return true;
 		}),
-		node => [
-			node.id,
-			new Date(node.requestDate),
-			node.roofAccess ? "yes" : "no",
-			node.buildingId,
-			node.memberId
-		]
+		node => {
+			const status =
+				node.status === "Installed"
+					? "installed"
+					: node.status === "Abandoned" ||
+					  node.status === "Unsubscribe" ||
+					  node.status === "Invalid" ||
+					  node.status === "Not Interested"
+					? "dead"
+					: "active";
+			return [
+				node.id,
+				status,
+				new Date(node.requestDate),
+				node.roofAccess,
+				node.buildingId,
+				node.memberId
+			];
+		}
 	);
 	await performQuery(
 		`ALTER SEQUENCE requests_id_seq RESTART WITH ${maxRequestId + 1}`
