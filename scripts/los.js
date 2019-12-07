@@ -5,7 +5,7 @@ const ProgressBar = require("./ProgressBar");
 
 checkLOS().then(() => process.exit(0));
 
-const QUEUE_SIZE = 8;
+const QUEUE_SIZE = 5;
 
 let bar;
 let processed = 0;
@@ -18,7 +18,7 @@ async function checkLOS() {
 	bar.render();
 
 	await Promise.all(
-		new Array(QUEUE_SIZE).map(async () => {
+		new Array(QUEUE_SIZE).fill("asdf").map(async () => {
 			try {
 				let nextRequest;
 				while ((nextRequest = requests.pop())) {
@@ -38,9 +38,26 @@ async function checkLOS() {
 }
 
 async function handleRequest(request) {
-	if (!request.bin) return;
-	if (!request.roof_access) return;
-	if (request.bin < 0 || request.bin % 1000000 === 0) return;
+	let skip = false;
+	if (!request.bin) skip = true;
+	if (!request.roof_access) skip = true;
+	if (request.bin < 0 || request.bin % 1000000 === 0) skip = true;
+	if (
+		request.device_types.filter(
+			device_type =>
+				device_type &&
+				["Omni", "LBE120", "SN1Sector1", "SN1Sector2"].indexOf(
+					device_type.name
+				) > -1
+		).length
+	)
+		skip = true;
+	if ([3946, 1932, 1933].indexOf(request.id) > -1) skip = true;
+	if (skip) {
+		processed++;
+		return;
+	}
+
 	const url = `http://localhost:9000/v1/los?bin=${request.bin}`;
 	const losResponse = await fetch(url);
 	const {
@@ -62,17 +79,27 @@ async function handleRequest(request) {
 
 async function getRequests() {
 	return performQuery(
-		`SELECT requests.*,
-			buildings.bin,
-			buildings.lat,
-			buildings.lng,
-			buildings.alt,
-			json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas
-		FROM requests
-		LEFT JOIN buildings ON requests.building_id = buildings.id
-		LEFT JOIN panoramas ON requests.id = panoramas.request_id
-		WHERE requests.status = 'active'
-		GROUP BY requests.id, buildings.id
-		ORDER BY requests.id`
+		`SELECT
+	requests.*,
+	buildings.bin,
+	buildings.lat,
+	buildings.lng,
+	buildings.alt,
+	json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas,
+	json_agg(device_types.*) AS device_types
+FROM
+	requests
+	LEFT JOIN buildings ON requests.building_id = buildings.id
+	LEFT JOIN panoramas ON requests.id = panoramas.request_id
+	LEFT JOIN nodes ON nodes.building_id = buildings.id
+	LEFT JOIN devices ON devices.node_id = nodes.id
+	LEFT JOIN device_types ON devices.device_type_id = device_types.id
+WHERE
+	requests.status = 'active'
+GROUP BY
+	requests.id,
+	buildings.id
+ORDER BY
+	requests.id`
 	);
 }

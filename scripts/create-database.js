@@ -81,7 +81,7 @@ async function createDatabase() {
 		await performQuery(
 			`CREATE TABLE "requests" (
 		 		id				SERIAL PRIMARY KEY,
-		 		status			request_status NOT NULL,
+				status			request_status NOT NULL DEFAULT 'active',
 		 		roof_access		bool NOT NULL,
 		 		date			TIMESTAMP WITH TIME ZONE NOT NULL,
 		 		osticket_id		INTEGER,
