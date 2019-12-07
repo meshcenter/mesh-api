@@ -396,8 +396,10 @@ async function importJoinRequests(nodes) {
 					? "installed"
 					: node.status === "Abandoned" ||
 					  node.status === "Unsubscribe" ||
+					  node.status === "Not Interested" ||
+					  node.status === "No Reply" ||
 					  node.status === "Invalid" ||
-					  node.status === "Not Interested"
+					  node.status === "Dupe"
 					? "dead"
 					: "active";
 			return [

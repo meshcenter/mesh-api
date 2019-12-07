@@ -28,7 +28,7 @@ FROM
     appointments
     JOIN buildings ON buildings.id = appointments.building_id
 WHERE
-    appointments.date > now()
+    appointments.date > now() - INTERVAL '12 HOURS'
 ORDER BY
     date`;
 
