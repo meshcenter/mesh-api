@@ -147,6 +147,7 @@ function nodePlacemark(node) {
 			        <Data name="dashboard">
 			            <value>https://dashboard.nycmesh.net/nodes/${node.id}</value>
 			        </Data>
+	        		${(node.panoramas.filter(p => p) || []).map(panoData)}
 			    </ExtendedData>
 			    <Point>
 			        <altitudeMode>absolute</altitudeMode>
@@ -154,6 +155,15 @@ function nodePlacemark(node) {
 			    </Point>
 			    <styleUrl>${nodeStyleId(node)}</styleUrl>
 			</Placemark>`;
+}
+
+function panoData(panorama) {
+	return `
+<Data name="Pano">
+	<value>
+	<img src="${panorama.url}" style="max-width: 32rem;"></img>
+	</value>
+ </Data>`;
 }
 
 function linkPlacemark(link) {

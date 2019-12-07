@@ -11,6 +11,9 @@ function requestPlacemark(request) {
 		<Data name="ID">
 			<value>${id}</value>
 		</Data>
+        <Data name="Date">
+            <value>${request.date.toDateString()}</value>
+        </Data>
         <Data name="Links">
             <value>	
             	${dashboardLink}
