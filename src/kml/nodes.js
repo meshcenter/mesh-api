@@ -176,7 +176,7 @@ function linkPlacemark(link) {
 			? "Unknown Device"
 			: device_type_b.name;
 	return `<Placemark>
-    <name>${node_a.id} - ${node_b.id}</name>
+    <name>Link</name>
     <ExtendedData>
         <Data name="id">
             <value>${link.id}</value>
