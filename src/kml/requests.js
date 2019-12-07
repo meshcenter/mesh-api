@@ -1,66 +1,67 @@
 import { performQuery } from "../db";
 
-const requestKML = request => `
+function requestPlacemark(request) {
+	const { id, building, panoramas } = request;
+	const dashboardLink = `<a href="https://dashboard.nycmesh.net/requests/${id}" style="margin-right: 1rem;">Dashboard →</a>`;
+	const ticketLink = `<a href="https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=${id}" style="margin-right: 1rem;">Tickets →</a>`;
+	return `
 <Placemark>
-	<name>${request.id}</name>
+	<name>${id}</name>
 	<ExtendedData>
-		<Data name="id">
-			<value>${request.id}</value>
+		<Data name="ID">
+			<value>${id}</value>
 		</Data>
-		<Data name="tickets">
-			<value>https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=${
-				request.id
-			}</value>
-		</Data>
-		${(request.panoramas || []).map(
-			(panorama, index) =>
-				`<Data name="panorama ${index + 1}">
-					<value>${panorama.url}</value>
-				 </Data>`
-		)}
+        <Data name="Links">
+            <value>	
+            	${dashboardLink}
+				${ticketLink}
+			</value>
+        </Data>
+		${(panoramas || []).map(panoData)}
 	</ExtendedData>
 	<Point>
 		<altitudeMode>absolute</altitudeMode>
-		<coordinates>${request.building.lng},${request.building.lat},${
-	request.building.alt
-}</coordinates>
+		<coordinates>${building.lng},${building.lat},${building.alt}</coordinates>
 	</Point>
-	<styleUrl>${request.panoramas ? "#panoRequest" : "#request"}</styleUrl>
+	<styleUrl>${panoramas ? "#panoRequest" : "#request"}</styleUrl>
 </Placemark>`;
+}
+
+function panoData(panorama) {
+	return `
+<Data name="Pano">
+	<value>
+	<img src="${panorama.url}" style="max-width: 32rem;"></img>
+	</value>
+ </Data>`;
+}
+
+function iconStyle(id, scale, icon) {
+	return `<Style id="${id}">
+    <IconStyle>
+        <scale>${scale}</scale> 
+    	<Icon>
+    		<href>${icon}</href>
+    	</Icon>
+        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
+    </IconStyle>
+    <LabelStyle>
+    	<scale>0</scale>
+	</LabelStyle>
+</Style>`;
+}
 
 export async function getRequestsKML(params) {
 	const { pano } = params;
-	const requests = pano ? await getRequestsWithPanos() : await getRequests();
+	const requests = await getRequests();
 
-	const requestsKml = requests.map(requestKML);
+	const requestsKml = requests.map(requestPlacemark);
 
 	const kml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 	<Document>
-		<Style id="request">
-			<IconStyle>
-				<scale>0.5</scale> 
-				<Icon>
-					<href>https://i.imgur.com/oVFMyJU.png</href>
-				</Icon>
-				<hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-			</IconStyle>
-			<LabelStyle>
-				<scale>0</scale>
-			</LabelStyle>
-		</Style>
-		<Style id="panoRequest">
-			<IconStyle>
-				<scale>0.5</scale> 
-				<Icon>
-					<href>https://i.imgur.com/uj6HMxZ.png</href>
-				</Icon>
-				<hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-			</IconStyle>
-			<LabelStyle>
-				<scale>0</scale>
-			</LabelStyle>
-		</Style>
+		${iconStyle("request", 0.5, "https://i.imgur.com/oVFMyJU.png")}
+		${iconStyle("panoRequest", 0.5, "https://i.imgur.com/uj6HMxZ.png")}
 		${requestsKml}
 	</Document>
 </kml>`;
@@ -83,26 +84,5 @@ GROUP BY
 	requests.id
 ORDER BY
 	date DESC`
-	);
-}
-
-async function getRequestsWithPanos() {
-	return performQuery(
-		`SELECT
-			buildings.*,
-			requests.*,
-			json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas
-		FROM
-			requests
-			LEFT JOIN buildings ON requests.building_id = buildings.id
-			LEFT JOIN nodes ON requests.building_id = nodes.building_id
-			JOIN panoramas ON panoramas.request_id = requests.id
-		WHERE
-			nodes.id IS NULL
-		GROUP BY
-			requests.id,
-			buildings.id
-		ORDER BY
-			date DESC`
 	);
 }
