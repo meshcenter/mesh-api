@@ -91,9 +91,6 @@ export async function getNodesKML() {
 	const linksByNode = links.reduce((acc, cur) => {
 		acc[cur.node_a.id] = acc[cur.node_a.id] || [];
 		acc[cur.node_a.id].push(cur);
-
-		acc[cur.node_b.id] = acc[cur.node_b.id] || [];
-		acc[cur.node_b.id].push(cur);
 		return acc;
 	}, {});
 
@@ -110,9 +107,9 @@ export async function getNodesKML() {
 	const kml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 	<Document>
-		${linkStyle("hubLink", "aa00ffff", 2.5)}
-		${linkStyle("backboneLink", "aa00ffff", 2.5)}
-		${linkStyle("activeLink", "66552dff", 2.5)}
+		${linkStyle("hubLink", "ff00ffff", 2.5)}
+		${linkStyle("backboneLink", "ff00ffff", 2.5)}
+		${linkStyle("activeLink", "ff0000ff", 2.5)}
 		${nodeStyle("supernode", 0.6, "https://i.imgur.com/GFd364p.png")}
 		${nodeStyle("hub", 0.6, "https://i.imgur.com/dsizT9e.png")}
 		${nodeStyle("omni", 0.6, "https://i.imgur.com/dsizT9e.png")}
@@ -147,14 +144,10 @@ function nodePlacemark(node) {
 			        <Data name="installed">
 			            <value>${node.create_date.toDateString()}</value>
 			        </Data>
-			        ${(node.panoramas || [])
-						.filter(p => p)
-						.map(
-							(panorama, index) =>
-								`<Data name="panorama ${index + 1}">
-						            <value>${panorama.url}</value>
-							     </Data>`
-						)}
+			        <Data name="dashboard">
+			            <value>https://dashboard.nycmesh.net/nodes/${node.id}</value>
+			        </Data>
+	        		${(node.panoramas.filter(p => p) || []).map(panoData)}
 			    </ExtendedData>
 			    <Point>
 			        <altitudeMode>absolute</altitudeMode>
@@ -162,6 +155,15 @@ function nodePlacemark(node) {
 			    </Point>
 			    <styleUrl>${nodeStyleId(node)}</styleUrl>
 			</Placemark>`;
+}
+
+function panoData(panorama) {
+	return `
+<Data name="Pano">
+	<value>
+	<img src="${panorama.url}" style="max-width: 32rem;"></img>
+	</value>
+ </Data>`;
 }
 
 function linkPlacemark(link) {
