@@ -6,11 +6,13 @@ const losQuery = `SELECT
 	json_agg(nodes) AS nodes
 FROM
 	los
-	JOIN requests ON requests.building_id IN (los.building_a_id, los.building_b_id)
+	JOIN requests ON requests.building_id = los.building_a_id
+		AND requests.status = 'active'
 	LEFT JOIN nodes ON nodes.building_id = los.building_b_id
 		AND nodes.status = 'active'
 GROUP BY
-	los.id`;
+	los.id,
+	los.building_a_id`;
 
 // Currently this hides lines of sight if nodes are in both buildings.
 // This should be fixed so it shows lines of sight unless there is an
@@ -70,7 +72,7 @@ WHERE
 export async function getLosKML(params) {
 	const { pano } = params;
 
-	const los = await getLosOfDegree(0);
+	const los = await getLos();
 
 	const losByRequest = los.reduce((acc, cur) => {
 		const [request] = cur.requests;
@@ -91,7 +93,7 @@ export async function getLosKML(params) {
 	<Document>
         <Style id="losLink">
         	<LineStyle>
-				<color>9900ff00</color>
+				<color>7700ff00</color>
         		<width>2.5</width>
     		</LineStyle>
     		<PolyStyle>
@@ -119,7 +121,7 @@ function losPlacemark(los) {
 		requests
 	} = los;
 	let fromId = (los.requests[0] || {}).id;
-	let toId = (los.nodes[0] || los.requests[1] || {}).id;
+	let toId = (los.nodes[0] || {}).id || "Potential";
 	return `
 		<Placemark>
             <name>Line of Sight</name>
