@@ -1,4 +1,17 @@
 import { performQuery } from "../db";
+import { iconStyle, data, panoData, kml } from "./utils";
+
+export async function getRequestsKML(params) {
+	const requests = await getRequests();
+
+	const elements = [
+		iconStyle("request", 0.5, "https://i.imgur.com/oVFMyJU.png"),
+		iconStyle("panoRequest", 0.5, "https://i.imgur.com/uj6HMxZ.png"),
+		requests.map(requestPlacemark)
+	];
+
+	return kml(elements);
+}
 
 function requestPlacemark(request) {
 	const { id, building, panoramas } = request;
@@ -8,18 +21,10 @@ function requestPlacemark(request) {
 <Placemark>
 	<name>${id}</name>
 	<ExtendedData>
-		<Data name="ID">
-			<value>${id}</value>
-		</Data>
-        <Data name="Date">
-            <value>${request.date.toDateString()}</value>
-        </Data>
-        <Data name="Links">
-            <value>	
-            	${dashboardLink}
-				${ticketLink}
-			</value>
-        </Data>
+		${data("ID", id)}
+		${data("Date", request.date.toDateString())}
+		${data("Roof", request.roof_access ? "Yes" : "No")}
+		${data("Links", `${dashboardLink} ${ticketLink}`)}
 		${(panoramas || []).map(panoData)}
 	</ExtendedData>
 	<Point>
@@ -30,51 +35,7 @@ function requestPlacemark(request) {
 </Placemark>`;
 }
 
-function panoData(panorama) {
-	return `
-<Data name="Pano">
-	<value>
-	<img src="${panorama.url}" style="max-width: 32rem;"></img>
-	</value>
- </Data>`;
-}
-
-function iconStyle(id, scale, icon) {
-	return `<Style id="${id}">
-    <IconStyle>
-        <scale>${scale}</scale> 
-    	<Icon>
-    		<href>${icon}</href>
-    	</Icon>
-        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-    </IconStyle>
-    <LabelStyle>
-    	<scale>0</scale>
-	</LabelStyle>
-</Style>`;
-}
-
-export async function getRequestsKML(params) {
-	const { pano } = params;
-	const requests = await getRequests();
-
-	const requestsKml = requests.map(requestPlacemark);
-
-	const kml = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-	<Document>
-		${iconStyle("request", 0.5, "https://i.imgur.com/oVFMyJU.png")}
-		${iconStyle("panoRequest", 0.5, "https://i.imgur.com/uj6HMxZ.png")}
-		${requestsKml}
-	</Document>
-</kml>`;
-
-	return kml;
-}
-
-async function getRequests() {
-	return performQuery(
-		`SELECT
+const getRequestsQuery = `SELECT
 	requests.*,
 	(SELECT to_json(buildings.*) FROM buildings WHERE buildings.id = requests.building_id) AS building,
 	(SELECT json_agg(panoramas.*) FROM panoramas WHERE panoramas.request_id = requests.id) AS panoramas
@@ -86,6 +47,8 @@ WHERE
 GROUP BY
 	requests.id
 ORDER BY
-	date DESC`
-	);
+	date DESC`;
+
+async function getRequests() {
+	return performQuery(getRequestsQuery);
 }
