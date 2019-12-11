@@ -43,7 +43,7 @@ FROM
 	requests
 	LEFT JOIN buildings ON requests.building_id = buildings.id
 WHERE
-	requests.status = 'active'
+	requests.status = 'open'
 GROUP BY
 	requests.id
 ORDER BY

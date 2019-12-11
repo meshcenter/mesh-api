@@ -54,7 +54,7 @@ async function createDatabase() {
 		console.log("Creating tables...");
 
 		await performQuery(
-			`CREATE TYPE node_status AS ENUM ('active', 'dead');`
+			`CREATE TYPE node_status AS ENUM ('planned', 'active', 'dead');`
 		);
 
 		await performQuery(
@@ -63,46 +63,46 @@ async function createDatabase() {
 				lat				FLOAT NOT NULL,
 				lng				FLOAT NOT NULL,
 				alt				FLOAT NOT NULL,
-				status			node_status NOT NULL,
+				status			node_status NOT NULL DEFAULT 'planned',
 				location		VARCHAR(256),
 				name			VARCHAR(256),
 				notes			TEXT,
 				create_date		TIMESTAMP WITH TIME ZONE NOT NULL,
 				abandon_date	TIMESTAMP WITH TIME ZONE,
-		 		building_id		INTEGER REFERENCES buildings(id),
-		 		member_id		INTEGER REFERENCES members(id)
+				building_id		INTEGER REFERENCES buildings(id) NOT NULL,
+				member_id		INTEGER REFERENCES members(id) NOT NULL
 			)`
 		);
 
 		await performQuery(
-			`CREATE TYPE request_status AS ENUM ('active', 'installed', 'dead');`
+			`CREATE TYPE request_status AS ENUM ('open', 'closed');`
 		);
 
 		await performQuery(
 			`CREATE TABLE "requests" (
-		 		id				SERIAL PRIMARY KEY,
-				status			request_status NOT NULL DEFAULT 'active',
-		 		roof_access		bool NOT NULL,
-		 		date			TIMESTAMP WITH TIME ZONE NOT NULL,
-		 		osticket_id		INTEGER,
-		 		member_id		INTEGER REFERENCES members(id),
-		 		building_id		INTEGER REFERENCES buildings(id)
-		 	)`
+				id				SERIAL PRIMARY KEY,
+				status			request_status NOT NULL DEFAULT 'open',
+				roof_access		bool NOT NULL,
+				date			TIMESTAMP WITH TIME ZONE NOT NULL,
+				osticket_id		INTEGER,
+				member_id		INTEGER REFERENCES members(id) NOT NULL,
+				building_id		INTEGER REFERENCES buildings(id) NOT NULL
+			)`
 		);
 
 		await performQuery(
 			`CREATE TABLE "panoramas" (
 				id				SERIAL PRIMARY KEY,
 				url				VARCHAR(256) NOT NULL,
-		 		date			TIMESTAMP WITH TIME ZONE NOT NULL,
-				request_id	INTEGER REFERENCES requests(id)
+				date			TIMESTAMP WITH TIME ZONE NOT NULL,
+				request_id		INTEGER REFERENCES requests(id) NOT NULL
 			)`
 		);
 
 		await performQuery(
 			`CREATE TABLE "device_types" (
 				id				SERIAL PRIMARY KEY,
-		 		name			VARCHAR(256) NOT NULL,
+				name			VARCHAR(256) NOT NULL,
 				manufacturer	VARCHAR(256),
 				range			FLOAT NOT NULL,
 				width			FLOAT NOT NULL
@@ -124,10 +124,10 @@ async function createDatabase() {
 				name			VARCHAR(256),
 				ssid			VARCHAR(256),
 				notes			TEXT,
-		 		create_date		TIMESTAMP WITH TIME ZONE,
-		 		abandon_date	TIMESTAMP WITH TIME ZONE,
-				device_type_id	INTEGER REFERENCES device_types(id),
-				node_id			INTEGER REFERENCES nodes(id)
+				create_date		TIMESTAMP WITH TIME ZONE,
+				abandon_date	TIMESTAMP WITH TIME ZONE,
+				device_type_id	INTEGER REFERENCES device_types(id) NOT NULL,
+				node_id			INTEGER REFERENCES nodes(id) NOT NULL
 			)`
 		);
 
@@ -140,16 +140,16 @@ async function createDatabase() {
 				id				SERIAL PRIMARY KEY,
 				status			link_status NOT NULL,
 				create_date		TIMESTAMP WITH TIME ZONE NOT NULL,
-				device_a_id		INTEGER REFERENCES devices(id),
-				device_b_id		INTEGER REFERENCES devices(id)
+				device_a_id		INTEGER REFERENCES devices(id) NOT NULL,
+				device_b_id		INTEGER REFERENCES devices(id) NOT NULL
 			)`
 		);
 
 		await performQuery(
 			`CREATE TABLE "los" (
 				id				SERIAL PRIMARY KEY,
-				building_a_id	INTEGER REFERENCES buildings(id),
-				building_b_id	INTEGER REFERENCES buildings(id),
+				building_a_id	INTEGER REFERENCES buildings(id) NOT NULL,
+				building_b_id	INTEGER REFERENCES buildings(id) NOT NULL,
 				lat_a			FLOAT NOT NULL,
 				lng_a			FLOAT NOT NULL,
 				alt_a			FLOAT NOT NULL,
@@ -170,7 +170,7 @@ async function createDatabase() {
 				date			TIMESTAMP WITH TIME ZONE NOT NULL,
 				notes			TEXT,
 				acuity_id		INTEGER NOT NULL,
-				member_id		INTEGER REFERENCES members(id),
+				member_id		INTEGER REFERENCES members(id) NOT NULL,
 				building_id		INTEGER REFERENCES buildings(id)
 			)`
 		);
