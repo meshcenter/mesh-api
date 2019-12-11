@@ -46,7 +46,7 @@ const losQuery = `SELECT
 FROM
 	los
 	JOIN requests ON requests.building_id = los.building_a_id
-		AND requests.status = 'active'
+		AND requests.status = 'open'
 	LEFT JOIN nodes ON nodes.building_id = los.building_b_id
 		AND nodes.status = 'active'
 GROUP BY
