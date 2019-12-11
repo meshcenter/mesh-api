@@ -393,15 +393,15 @@ async function importJoinRequests(nodes) {
 		node => {
 			const status =
 				node.status === "Installed"
-					? "installed"
+					? "closed"
 					: node.status === "Abandoned" ||
 					  node.status === "Unsubscribe" ||
 					  node.status === "Not Interested" ||
 					  node.status === "No Reply" ||
 					  node.status === "Invalid" ||
 					  node.status === "Dupe"
-					? "dead"
-					: "active";
+					? "closed"
+					: "open";
 			return [
 				node.id,
 				status,
@@ -487,12 +487,14 @@ async function importAppointments() {
 		const appointment = appointments[i];
 		const { id, email, phone, type, datetime } = appointment;
 		const [form] = appointment.forms;
-		const nodeId = form.values.filter(
-			value => value.name === "Node Number"
-		)[0].value;
-		const address = form.values.filter(
-			value => value.name === "Address and Apartment #"
-		)[0].value;
+		const nodeId = (
+			form.values.filter(value => value.name === "Node Number")[0] || {}
+		).value;
+		const address = (
+			form.values.filter(
+				value => value.name === "Address and Apartment #"
+			)[0] || {}
+		).value;
 		const notes = form.values.filter(value => value.name === "Notes")[0]
 			.value;
 
@@ -524,7 +526,7 @@ GROUP BY buildings.id`,
 			[member.email]
 		);
 
-		let building;
+		let building = {};
 		if (!buildings.length) {
 			console.log(email);
 		} else if (buildings.length > 1) {
@@ -548,7 +550,7 @@ GROUP BY buildings.id`,
 			notes,
 			id,
 			member.id,
-			building.id
+			(building || {}).id
 		]);
 	}
 

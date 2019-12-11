@@ -9,7 +9,7 @@ import { getBuildings, getBuilding } from "./db/buildings";
 import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
 import { getMembers, getMember } from "./db/members";
-import { getNodes, getNode } from "./db/nodes";
+import { getNodes, getNode, createNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest, createRequest } from "./db/requests";
 import { getSearch } from "./db/search";
@@ -26,6 +26,7 @@ const app = express(ROOT);
 app.use(cors());
 app.use(bodyParser.json());
 app.set("etag", false);
+app.disable("x-powered-by");
 
 const router = Router({
 	caseSensitive: true
@@ -93,6 +94,15 @@ router.get(
 	"/nodes/:id",
 	handleErrors(async (req, res, next) => {
 		const node = await getNode(req.params.id);
+		res.json(node);
+	})
+);
+
+router.post(
+	"/nodes",
+	handleErrors(async (req, res, next) => {
+		await checkAuth(req.headers);
+		const node = await createNode(req.body);
 		res.json(node);
 	})
 );

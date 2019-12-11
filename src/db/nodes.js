@@ -17,6 +17,10 @@ GROUP BY
 ORDER BY
 	nodes.create_date DESC`;
 
+export async function getNodes() {
+	return performQuery(getNodesQuery);
+}
+
 const getNodeQuery = `SELECT
 	nodes.*,
 	to_json(buildings) AS building,
@@ -32,13 +36,6 @@ GROUP BY
 	buildings.id,
 	members.id`;
 
-const createNodeQuery = `INSERT INTO nodes (lat, lng, alt, name, notes, create_date, abandoned)
-	VALUES($1, $2, $3, $4, $5, $6, $7)`;
-
-export async function getNodes() {
-	return performQuery(getNodesQuery);
-}
-
 export async function getNode(id) {
 	if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
 	const [node] = await performQuery(getNodeQuery, [id]);
@@ -46,11 +43,15 @@ export async function getNode(id) {
 	return node;
 }
 
-async function createNode(node) {
-	const { lat, lng, alt, name, notes, create_date, abandoned } = node;
-	const create_date_date = new Date(create_date);
-	const abandon_date = abandoned ? new Date(abandoned) : null;
-	const values = [lat, lng, alt, name, notes, create_date_date, abandon_date];
-	await performQuery(createNodeQuery, values);
-	return getNode(event.body.id);
+const createNodeQuery = `INSERT INTO nodes (lat, lng, alt, name, notes, create_date, building_id, member_id)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+	RETURNING
+		*`;
+
+export async function createNode(node) {
+	const { lat, lng, alt, name, notes, building_id, member_id } = node;
+	const now = new Date();
+	const values = [lat, lng, alt, name, notes, now, building_id, member_id];
+	const newNode = await performQuery(createNodeQuery, values);
+	return newNode;
 }

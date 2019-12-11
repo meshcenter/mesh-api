@@ -5,8 +5,6 @@ const ProgressBar = require("./ProgressBar");
 
 checkLOS().then(() => process.exit(0));
 
-const QUEUE_SIZE = 5;
-
 let bar;
 let processed = 0;
 let notFound = 0;
@@ -17,20 +15,12 @@ async function checkLOS() {
 	bar = new ProgressBar(requests.length);
 	bar.render();
 
-	await Promise.all(
-		new Array(QUEUE_SIZE).fill("asdf").map(async () => {
-			try {
-				let nextRequest;
-				while ((nextRequest = requests.pop())) {
-					await handleRequest(nextRequest);
-					bar.curr = ++total;
-					bar.render();
-				}
-			} catch (error) {
-				console.log(error.message);
-			}
-		})
-	);
+	for (var i = 0; i < requests.length; i++) {
+		const request = requests[i];
+		await handleRequest(request);
+		bar.curr = ++total;
+		bar.render();
+	}
 
 	console.log("\n");
 	console.log(`${processed} buildings processed`);
@@ -95,7 +85,7 @@ FROM
 	LEFT JOIN devices ON devices.node_id = nodes.id
 	LEFT JOIN device_types ON devices.device_type_id = device_types.id
 WHERE
-	requests.status = 'active'
+	requests.status = 'open'
 GROUP BY
 	requests.id,
 	buildings.id

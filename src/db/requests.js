@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
-import { performQuery } from ".";
 import { getLos } from "./los";
+import { requestMessage } from "../slack";
+import { performQuery } from ".";
 
 const getRequestsQuery = `SELECT
 	requests.*,
@@ -85,12 +86,12 @@ export async function createRequest(request) {
 	}
 	const [building] = buildings;
 
-	const date = new Date();
+	const now = new Date();
 
 	// Insert request
 	const [newRequest] = await performQuery(
 		"INSERT INTO requests (date, roof_access, member_id, building_id) VALUES ($1, $2, $3, $4) RETURNING *",
-		[date, roofAccess, member.id, building.id]
+		[now, roofAccess, member.id, building.id]
 	);
 
 	// This doesn't work because osTicket returns the external ticket id
@@ -102,7 +103,7 @@ export async function createRequest(request) {
 	// 		[ticketId, newRequest.id]
 	// 	);
 
-	await createSlackPost(request, newRequest, building, member);
+	await requestMessage(request, newRequest, building, member);
 
 	return newRequest;
 }
@@ -138,61 +139,4 @@ async function createTicket(request, building, member) {
 	}
 
 	return text; // external ticket id of the newly-created ticket
-}
-
-// TODO: Simplify
-async function createSlackPost(userRequest, request, building, member) {
-	const { address, lat, lng, alt } = building;
-	const { bin, spreadsheetId } = userRequest;
-	const { id, roof_access } = request;
-
-	let losString;
-	try {
-		const los = await getLos(bin);
-		const { visibleSectors = [], visibleOmnis = [] } = los;
-		const visibleNodes = [...visibleSectors, ...visibleOmnis];
-
-		const notUnknown = device => device.type.name !== "Unknown";
-		const hasDevice = node => node.devices.filter(notUnknown).length;
-		const nodeNames = visibleNodes
-			.filter(hasDevice)
-			.map(node => node.name || node.id)
-			.join(", ");
-
-		losString = visibleNodes.length ? nodeNames : "No LoS";
-	} catch (error) {
-		losString = "LoS failed";
-	}
-
-	const mapURL = `https://www.nycmesh.net/map/nodes/${spreadsheetId || id}`;
-	const roofString = roof_access ? "Roof access" : "No roof access";
-	const earthAddress = address.replace(/,/g, "").replace(/ /g, "+");
-	const earthURL = `https://earth.google.com/web/search/${earthAddress}/@${lat},${lng},${alt}a,300d,40y,0.6h,65t,0r`;
-	const uriAddress = encodeURIComponent(address);
-	const losURL = `https://los.nycmesh.net/search?address=${uriAddress}&bin=${bin}&lat=${lat}&lng=${lng}`;
-
-	const title = `*<${mapURL}|${address}>*`;
-	const info = `${alt}m · ${roofString} · ${losString}`;
-	const links = `<${earthURL}|View Earth →>\t<${losURL}|View LoS →>`;
-	const text = `${title}\n${info}\n${links}`;
-
-	const blocks = [
-		{
-			type: "section",
-			text: {
-				type: "mrkdwn",
-				text
-			}
-		}
-	];
-
-	await fetch(process.env.SLACK_WEBHOOK_URL, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json"
-		},
-		body: JSON.stringify({
-			blocks
-		})
-	});
 }
