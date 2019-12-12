@@ -1,28 +1,29 @@
 import fetch from "node-fetch";
 
 // TODO: Simplify
-export async function requestMessage(userRequest, request, building, member) {
+export async function requestMessage(
+	userRequest,
+	request,
+	building,
+	member,
+	visibleNodes
+) {
 	const { address, lat, lng, alt } = building;
 	const { bin, spreadsheetId } = userRequest;
 	const { id, roof_access } = request;
 
-	let losString;
-	try {
-		const los = await getLos(bin);
-		const { visibleSectors = [], visibleOmnis = [] } = los;
-		const visibleNodes = [...visibleSectors, ...visibleOmnis];
+	const notUnknown = device => device.type.name !== "Unknown";
+	const hasDevice = node => node.devices.filter(notUnknown).length;
+	const nodeNames = (visibleNodes || [])
+		.filter(hasDevice)
+		.map(node => node.name || node.id)
+		.join(", ");
 
-		const notUnknown = device => device.type.name !== "Unknown";
-		const hasDevice = node => node.devices.filter(notUnknown).length;
-		const nodeNames = visibleNodes
-			.filter(hasDevice)
-			.map(node => node.name || node.id)
-			.join(", ");
-
-		losString = visibleNodes.length ? nodeNames : "No LoS";
-	} catch (error) {
-		losString = "LoS failed";
-	}
+	const losString = visibleNodes
+		? visibleNodes.length
+			? nodeNames
+			: "No LoS"
+		: "LoS Failed";
 
 	const mapURL = `https://www.nycmesh.net/map/nodes/${spreadsheetId || id}`;
 	const roofString = roof_access ? "Roof access" : "No roof access";
@@ -46,15 +47,7 @@ export async function requestMessage(userRequest, request, building, member) {
 		}
 	];
 
-	await fetch(process.env.SLACK_WEBHOOK_URL, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json"
-		},
-		body: JSON.stringify({
-			blocks
-		})
-	});
+	await sendMessage(blocks);
 }
 
 export async function panoMessage(pano) {
@@ -97,7 +90,11 @@ export async function panoMessage(pano) {
 		}
 	];
 
-	await fetch(process.env.SLACK_WEBHOOK_URL, {
+	await sendMessage(blocks);
+}
+
+async function sendMessage(blocks) {
+	return fetch(process.env.SLACK_WEBHOOK_URL, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json"
@@ -107,4 +104,3 @@ export async function panoMessage(pano) {
 		})
 	});
 }
-
