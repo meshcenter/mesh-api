@@ -62,7 +62,7 @@ FROM
 	requests
 	JOIN buildings ON requests.building_id = buildings.id
 WHERE
-	requests.id IN (3946, 1932, 1933, 1084)
+	requests.id IN (3946, 1932, 1933)
 GROUP BY
 	requests.id,
 	buildings.bin,
@@ -135,9 +135,9 @@ export async function getLos(bin) {
 		const saved = {};
 		for (let j = 0; j < allVisible.length; j++) {
 			const visibleNode = allVisible[j];
-			if (!saved[visibleNode.id]) {
+			if (!saved[visibleNode.building_id]) {
 				await saveLOS(building, visibleNode);
-				saved[visibleNode.id] = true;
+				saved[visibleNode.building_id] = true;
 			}
 		}
 	}

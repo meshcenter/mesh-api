@@ -56,8 +56,6 @@ export async function createRequest(request) {
 		address,
 		lat = 0,
 		lng = 0,
-		alt = 0,
-		bin,
 		roofAccess
 	} = request;
 
@@ -73,11 +71,31 @@ export async function createRequest(request) {
 	}
 	const [member] = members;
 
+	// Fetch BIN from address
+	let bin,
+		los,
+		alt = 0,
+		visibleNodes;
+	try {
+		bin = request.bin || (await getBIN(address, lat, lng));
+		los = await getLos(bin);
+		alt = los.buildingHeight;
+		visibleNodes = [...los.visibleSectors, ...los.visibleOmnis];
+	} catch (error) {
+		console.log(error);
+	}
+
 	// Look up or create building
 	let buildings = await performQuery(
-		"SELECT * FROM buildings WHERE address = $1",
-		[address]
+		"SELECT * FROM buildings WHERE bin = $1",
+		[bin]
 	);
+	if (!buildings.length) {
+		buildings = await performQuery(
+			"SELECT * FROM buildings WHERE address = $1",
+			[address]
+		);
+	}
 	if (!buildings.length) {
 		buildings = await performQuery(
 			"INSERT INTO buildings (address, lat, lng, alt, bin) VALUES ($1, $2, $3, $4, $5) RETURNING *",
@@ -103,7 +121,7 @@ export async function createRequest(request) {
 	// 		[ticketId, newRequest.id]
 	// 	);
 
-	await requestMessage(request, newRequest, building, member);
+	await requestMessage(request, newRequest, building, member, visibleNodes);
 
 	return newRequest;
 }
@@ -139,4 +157,32 @@ async function createTicket(request, building, member) {
 	}
 
 	return text; // external ticket id of the newly-created ticket
+}
+
+async function getBIN(address, lat = 0, lng = 0) {
+	const URIaddress = encodeURIComponent(address);
+	const url =
+		"https://geosearch.planninglabs.nyc/v1/search?text=" + URIaddress;
+	const binRes = await fetch(url);
+	const { features } = await binRes.json();
+	if (!features.length) {
+		return;
+	}
+
+	features.sort(sortByDistance);
+
+	return features[0].properties.pad_bin;
+
+	function sortByDistance(a, b) {
+		return (
+			distance(a.geometry.coordinates, [lng, lat]) -
+			distance(b.geometry.coordinates, [lng, lat])
+		);
+	}
+
+	function distance(a, b) {
+		const xDiff = a[0] - b[0];
+		const yDiff = a[1] - b[1];
+		return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
+	}
 }
