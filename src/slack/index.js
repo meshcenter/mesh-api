@@ -31,10 +31,11 @@ export async function requestMessage(
 	const earthURL = `https://earth.google.com/web/search/${earthAddress}/@${lat},${lng},${alt}a,300d,40y,0.6h,65t,0r`;
 	const uriAddress = encodeURIComponent(address);
 	const losURL = `https://los.nycmesh.net/search?address=${uriAddress}&bin=${bin}&lat=${lat}&lng=${lng}`;
+	const ticketURL = `https://support.nycmesh.net/scp/tickets.php?a=search&query=${id}`;
 
 	const title = `*<${mapURL}|${address}>*`;
 	const info = `${alt}m · ${roofString} · ${losString}`;
-	const links = `<${earthURL}|View Earth →>\t<${losURL}|View LoS →>`;
+	const links = `<${earthURL}|Earth →>\t<${losURL}|LoS →>\t<${ticketURL}|Ticket →>`;
 	const text = `${title}\n${info}\n${links}`;
 
 	const blocks = [
