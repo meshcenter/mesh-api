@@ -36,19 +36,20 @@ export async function requestMessage(
 	const title = `*<${mapURL}|${address}>*`;
 	const info = `${alt}m · ${roofString} · ${losString}`;
 	const links = `<${earthURL}|Earth →>\t<${losURL}|LoS →>\t<${ticketURL}|Ticket →>`;
-	const text = `${title}\n${info}\n${links}`;
+	const sectionText = `${title}\n${info}\n${links}`;
+	const fallbackText = `${address} · ${info}`;
 
 	const blocks = [
 		{
 			type: "section",
 			text: {
 				type: "mrkdwn",
-				text
+				text: sectionText
 			}
 		}
 	];
 
-	await sendMessage(blocks);
+	await sendMessage(blocks, fallbackText);
 }
 
 export async function panoMessage(pano) {
@@ -94,13 +95,14 @@ export async function panoMessage(pano) {
 	await sendMessage(blocks);
 }
 
-async function sendMessage(blocks) {
+async function sendMessage(blocks, text) {
 	return fetch(process.env.SLACK_WEBHOOK_URL, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json"
 		},
 		body: JSON.stringify({
+			text,
 			blocks
 		})
 	});
