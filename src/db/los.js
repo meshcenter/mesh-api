@@ -1,8 +1,8 @@
 import { performQuery, performLosQuery } from ".";
 
 const OMNI_RANGE = 0.4 * 5280;
-const SECTOR_RANGE = 1.5 * 5280;
-const REQUEST_RANGE = 4 * 5280;
+const SECTOR_RANGE = 1 * 5280;
+const REQUEST_RANGE = 1 * 5280;
 
 const getOmnisQuery = `SELECT
 	nodes.id,
@@ -174,7 +174,14 @@ export async function getLos(bin) {
 				intersection => intersection.bin !== bin
 			);
 			if (!filteredIntersections.length) {
-				visible.push(node);
+				const distance = await getDistance(
+					buildingMidpoint,
+					nodeMidpoint
+				);
+				visible.push({
+					...node,
+					distance
+				});
 			}
 		}
 	}
@@ -258,7 +265,9 @@ async function getDistance(point1, point2) {
 	const res = await performLosQuery(text);
 	if (!res.length) throw new Error("Failed to calculate distance");
 	const { st_distance } = res[0];
-	return st_distance;
+	const distanceFeet = st_distance;
+	const distanceMeters = Math.round(distanceFeet * 0.3048);
+	return distanceMeters;
 }
 
 async function getBuildingFromBIN(bin) {
