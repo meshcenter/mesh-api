@@ -8,9 +8,9 @@ export async function requestMessage(
 	member,
 	visibleNodes
 ) {
-	const { address, lat, lng, alt } = building;
-	const { bin, spreadsheetId } = userRequest;
+	const { spreadsheetId } = userRequest; // Temp hack to keep in sync with spreadsheet
 	const { id, roof_access } = request;
+	const { address, lat, lng, alt, bin } = building;
 
 	const notUnknown = device => device.type.name !== "Unknown";
 	const hasDevice = node => node.devices.filter(notUnknown).length;
