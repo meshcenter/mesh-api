@@ -155,7 +155,7 @@ async function createTicket(request, building, member) {
 	return text; // external ticket id of the newly-created ticket
 }
 
-async function getBuildingInfo(address, lat = 0, lng = 0) {
+async function getBuildingInfo(address, buildingLat = 0, buildingLng = 0) {
 	const URIaddress = encodeURIComponent(address);
 	const URL = `https://geosearch.planninglabs.nyc/v1/search?text=${URIaddress}`;
 	const binRes = await fetch(URL);
@@ -166,20 +166,21 @@ async function getBuildingInfo(address, lat = 0, lng = 0) {
 	}
 
 	const [feature] = features.sort(sortByDistance);
-	const [lng, lat] = feature.geometry.coordinates;
-	const { pad_bin } = feature.properties;
+	const { properties, coordinates } = feature;
+	const bin = feature.properties.pad_bin;
+	const [lng, lat] = coordinates;
 
 	return {
 		lat,
 		lng,
-		bin: pad_bin
+		bin
 	};
 
 	function sortByDistance(a, b) {
-		return (
-			distance(a.geometry.coordinates, [lng, lat]) -
-			distance(b.geometry.coordinates, [lng, lat])
-		);
+		const buildingLatLng = [buildingLng, buildingLat];
+		const distanceA = distance(a.geometry.coordinates, buildingLatLng);
+		const distanceB = distance(b.geometry.coordinates, buildingLatLng);
+		return distanceA - distanceB;
 	}
 
 	function distance(a, b) {
