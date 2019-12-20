@@ -1,8 +1,9 @@
 import { performQuery, performLosQuery } from ".";
 
-const OMNI_RANGE = 0.4 * 5280;
-const SECTOR_RANGE = 1 * 5280;
-const REQUEST_RANGE = 1 * 5280;
+const KM = 3280.84; // feet
+const OMNI_RANGE = 0.75 * KM;
+const SECTOR_RANGE = 3 * KM;
+const REQUEST_RANGE = 3 * KM;
 
 const getOmnisQuery = `SELECT
 	nodes.id,
@@ -50,9 +51,10 @@ GROUP BY
 	buildings.bin,
 	buildings.id`;
 
+// Get hardcoded requests and requests with scheduled appointments
 const getRequestsQuery = `SELECT
 	requests.*,
-	buildings.id as building_id,
+	buildings.id AS building_id,
 	buildings.bin,
 	buildings.address,
 	buildings.lat,
@@ -61,12 +63,17 @@ const getRequestsQuery = `SELECT
 FROM
 	requests
 	JOIN buildings ON requests.building_id = buildings.id
+	LEFT JOIN appointments ON appointments.request_id = requests.id
 WHERE
-	requests.id IN (3946, 1932, 1933)
+	requests.id IN(3946, 1932, 1933)
+	OR(
+		SELECT
+			id FROM appointments
+		WHERE
+			appointments.request_id = requests.id
+			AND appointments.type = 'install') IS NOT NULL
 GROUP BY
-	requests.id,
-	buildings.bin,
-	buildings.id`;
+	requests.id, buildings.bin, buildings.id, appointments.id`;
 
 const getLosQuery = `SELECT
 	bldg_bin as bin,
@@ -171,8 +178,10 @@ export async function getLos(bin) {
 			// Ignore intersections with the target building
 			// TODO: do this better (in sql?)
 			const filteredIntersections = intersections.filter(
-				intersection => intersection.bin !== bin
+				intersection =>
+					parseInt(intersection.bin) !== parseInt(node.bin)
 			);
+
 			if (!filteredIntersections.length) {
 				const distance = await getDistance(
 					buildingMidpoint,
@@ -200,7 +209,7 @@ async function getBuildingMidpoint(bin) {
 	return [parseFloat(lat), parseFloat(lng)];
 }
 
-async function getBuildingHeight(bin) {
+export async function getBuildingHeight(bin) {
 	const text = "SELECT ST_ZMax((SELECT geom FROM ny WHERE bldg_bin = $1))";
 	const values = [bin];
 	const res = await performLosQuery(text, values);

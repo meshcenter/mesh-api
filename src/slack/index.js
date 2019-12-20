@@ -1,14 +1,7 @@
 import fetch from "node-fetch";
 
 // TODO: Simplify
-export async function requestMessage(
-	userRequest,
-	request,
-	building,
-	member,
-	visibleNodes
-) {
-	const { spreadsheetId } = userRequest; // Temp hack to keep in sync with spreadsheet
+export async function requestMessage(request, building, member, visibleNodes) {
 	const { id, roof_access } = request;
 	const { address, lat, lng, alt, bin } = building;
 
@@ -25,7 +18,7 @@ export async function requestMessage(
 			: "No LoS"
 		: "LoS Failed";
 
-	const mapURL = `https://www.nycmesh.net/map/nodes/${spreadsheetId || id}`;
+	const mapURL = `https://www.nycmesh.net/map/nodes/${id}`;
 	const roofString = roof_access ? "Roof access" : "No roof access";
 	const earthAddress = address.replace(/,/g, "").replace(/ /g, "+");
 	const earthURL = `https://earth.google.com/web/search/${earthAddress}/@${lat},${lng},${alt}a,300d,40y,0.6h,65t,0r`;

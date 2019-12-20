@@ -171,6 +171,8 @@ async function createDatabase() {
 				notes			TEXT,
 				acuity_id		INTEGER NOT NULL,
 				member_id		INTEGER REFERENCES members(id) NOT NULL,
+				request_id		INTEGER REFERENCES requests(id),
+				node_id			INTEGER REFERENCES nodes(id),
 				building_id		INTEGER REFERENCES buildings(id)
 			)`
 		);

@@ -25,7 +25,7 @@ function requestPlacemark(request) {
 		${data("Date", request.date.toDateString())}
 		${data("Roof", request.roof_access ? "Yes" : "No")}
 		${data("Links", `${dashboardLink} ${ticketLink}`)}
-		${(panoramas || []).map(panoData)}
+		${panoData(panoramas || [])}
 	</ExtendedData>
 	<Point>
 		<altitudeMode>absolute</altitudeMode>
