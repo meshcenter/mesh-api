@@ -36,23 +36,24 @@ export async function getNodesKML() {
 }
 
 function nodePlacemark(node) {
+	const dashboardLink = `<a href="https://dashboard.nycmesh.net/requests/${node.id}" style="margin-right: 1rem;">Dashboard →</a>`;
+	const ticketLink = `<a href="https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=${node.id}" style="margin-right: 1rem;">Tickets →</a>`;
 	return `<Placemark>
-    <name>${node.name || node.id}</name>
-    <ExtendedData>
-    	${data("ID", node.id)}
-    	${node.name ? data("Name", node.name) : ""}
-    	${data("Status", node.status)}
-    	${data("Installed", node.create_date.toDateString())}
-    	${node.notes ? data("Notes", node.notes) : ""}
-    	${data("Devices", node.device_types.map(d => d.name).join(", "))}
-    	${data("Links", `https://dashboard.nycmesh.net/nodes/${node.id}`)}
-		${(node.panoramas.filter(p => p) || []).map(panoData)}
-    </ExtendedData>
-    <Point>
-        <altitudeMode>absolute</altitudeMode>
-        <coordinates>${node.lng},${node.lat},${node.alt || 20}</coordinates>
-    </Point>
-    <styleUrl>${nodeStyleId(node)}</styleUrl>
+	<name>${node.name || `Node ${node.id}`}</name>
+		<ExtendedData>
+		${node.name ? data("Name", node.name) : ""}
+		${data("Status", node.status)}
+		${data("Installed", node.create_date.toDateString())}
+		${data("Devices", node.device_types.map(d => d.name).join(", "))}
+		${node.notes ? data("Notes", node.notes) : ""}
+		${data("Links", `${dashboardLink} ${ticketLink}`)}
+		${panoData(node.panoramas.filter(p => p) || [])}
+	</ExtendedData>
+	<Point>
+		<altitudeMode>absolute</altitudeMode>
+		<coordinates>${node.lng},${node.lat},${node.alt || 20}</coordinates>
+	</Point>
+	<styleUrl>${nodeStyleId(node)}</styleUrl>
 </Placemark>`;
 }
 
@@ -68,18 +69,18 @@ function linkPlacemark(link) {
 			? "Unknown Device"
 			: device_type_b.name;
 	return `<Placemark>
-    <name>Link</name>
-    <ExtendedData>
-    	${data("ID", link.id)}
-    	${data("Status", link.status)}
-    	${data("From", `${node_a.name || node_a.id} ${deviceNameA}`)}
-    	${data("To", `${node_b.name || node_b.id} ${deviceNameB}`)}
-    </ExtendedData>
-    <LineString>
-        <altitudeMode>absolute</altitudeMode>
-        <coordinates>${coordinates}</coordinates>
-    </LineString>
-    <styleUrl>${linkStyleId(link)}</styleUrl>
+	<name>Link</name>
+	<ExtendedData>
+		${data("ID", link.id)}
+		${data("Status", link.status)}
+		${data("From", `${node_a.name || node_a.id} ${deviceNameA}`)}
+		${data("To", `${node_b.name || node_b.id} ${deviceNameB}`)}
+	</ExtendedData>
+	<LineString>
+		<altitudeMode>absolute</altitudeMode>
+		<coordinates>${coordinates}</coordinates>
+	</LineString>
+	<styleUrl>${linkStyleId(link)}</styleUrl>
 </Placemark>
 `;
 }

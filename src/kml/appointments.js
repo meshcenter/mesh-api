@@ -25,6 +25,7 @@ function appointmentKML(appointment) {
         timeZone: "America/New_York"
     });
     const coordinates = `${appointment.lng},${appointment.lat},${appointment.alt}`;
+    const ticketURL = `<a href="https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=${appointment.request_id}" style="margin-right: 1rem;">Ticket →</a>`;
     return `
 <Placemark>
     <name>${capitalizedType} - ${dateString}</name>
@@ -32,6 +33,7 @@ function appointmentKML(appointment) {
         ${data("Type", capitalizedType)}
         ${data("Date", dateString)}
         ${data("Hour", hourString)}
+        ${data("Links", ticketURL)}
     </ExtendedData>
     <Point>
         <altitudeMode>absolute</altitudeMode>
@@ -51,7 +53,7 @@ FROM
     appointments
     JOIN buildings ON buildings.id = appointments.building_id
 WHERE
-    appointments.date > now() - INTERVAL '1 DAY'
+    appointments.date > now() - INTERVAL '7 DAY'
 ORDER BY
     date`;
 

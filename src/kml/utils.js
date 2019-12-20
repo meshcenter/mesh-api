@@ -27,9 +27,16 @@ export function data(name, value) {
 </Data>`;
 }
 
-export function panoData(panorama) {
-    const img = `<img src="${panorama.url}" style="max-width: 32rem;" />`;
-    return data("Pano", img);
+export function panoData(panoramas) {
+    return data(
+        "Panos",
+        panoramas
+            .map(
+                panorama =>
+                    `<img src="${panorama.url}" style="width: 32rem; display: block;" />`
+            )
+            .join("")
+    );
 }
 
 export function iconStyle(id, scale, icon) {
