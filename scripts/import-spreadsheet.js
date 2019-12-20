@@ -242,7 +242,7 @@ async function importDevices(devices) {
 	);
 }
 
-const getLinksQuery = `SELECT
+const getDevicesQuery = `SELECT
 	devices.*,
 	device_types.name AS type
 FROM
@@ -250,7 +250,7 @@ FROM
 	JOIN device_types ON device_types.id = devices.device_type_id`;
 
 async function importLinks(links) {
-	const devices = await performQuery(getLinksQuery);
+	const devices = await performQuery(getDevicesQuery);
 	const devicesMap = devices.reduce((acc, cur) => {
 		if (cur.type === "Unknown" && acc[cur.node_id]) return acc;
 		acc[cur.node_id] = cur;
@@ -486,22 +486,34 @@ async function importAppointments() {
 	for (var i = 0; i < appointments.length; i++) {
 		const appointment = appointments[i];
 		const { id, email, phone, type, datetime } = appointment;
-		const [form] = appointment.forms;
-		const nodeId = (
-			form.values.filter(value => value.name === "Node Number")[0] || {}
-		).value;
-		const address = (
-			form.values.filter(
-				value => value.name === "Address and Apartment #"
-			)[0] || {}
-		).value;
-		const notes = form.values.filter(value => value.name === "Notes")[0]
-			.value;
+
+		// Seach all forms for values
+		let nodeId, address, notes;
+		appointment.forms.forEach(form => {
+			nodeId =
+				(
+					form.values.filter(
+						value =>
+							value.name === "Node Number" ||
+							value.name === "Request Number"
+					)[0] || {}
+				).value || nodeId;
+
+			address =
+				(
+					form.values.filter(
+						value => value.name === "Address and Apartment #"
+					)[0] || {}
+				).value || address;
+
+			(form.values.filter(value => value.name === "Notes")[0] || {})
+				.value || notes;
+		});
 
 		// Get Member
 		let [member] = await performQuery(
 			"SELECT * FROM members WHERE email = $1",
-			[email]
+			[email.replace(/\n/g, "")]
 		);
 
 		if (!member) {
@@ -531,11 +543,39 @@ GROUP BY buildings.id`,
 			console.log(email);
 		} else if (buildings.length > 1) {
 			const [buildingNumber] = address.split(" ");
-			[building] = buildings.filter(
+			const matchingAddress = buildings.filter(
 				b => b.address.split(" ")[0] === buildingNumber
 			);
+			if (matchingAddress.length) {
+				building = matchingAddress[0];
+			}
 		} else {
 			[building] = buildings;
+		}
+
+		if (!building) {
+			building = {};
+		}
+
+		let request = {};
+		let sanitizedNodeId = parseInt(nodeId.replace(/[^0-9]/g, ""));
+		sanitizedNodeId = Number.isInteger(sanitizedNodeId)
+			? sanitizedNodeId
+			: null;
+		if (sanitizedNodeId > 100000) sanitizedNodeId = null;
+		if (sanitizedNodeId) {
+			const [memberBuildingRequest] = await performQuery(
+				"SELECT * FROM requests WHERE member_id = $1 AND building_id = $2",
+				[member.id, building.id]
+			);
+			request = memberBuildingRequest;
+			if (!request) {
+				const [dbRequest] = await performQuery(
+					"SELECT * FROM requests WHERE id = $1",
+					[sanitizedNodeId]
+				);
+				request = dbRequest || request;
+			}
 		}
 
 		const typeMap = {
@@ -550,13 +590,22 @@ GROUP BY buildings.id`,
 			notes,
 			id,
 			member.id,
-			(building || {}).id
+			building.id,
+			request.id || sanitizedNodeId
 		]);
 	}
 
 	await insertBulk(
 		"appointments",
-		["type", "date", "notes", "acuity_id", "member_id", "building_id"],
+		[
+			"type",
+			"date",
+			"notes",
+			"acuity_id",
+			"member_id",
+			"building_id",
+			"request_id"
+		],
 		newAppointments,
 		appointment => appointment
 	);
