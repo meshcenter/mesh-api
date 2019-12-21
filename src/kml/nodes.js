@@ -1,4 +1,112 @@
 import { performQuery } from "../db";
+import { iconStyle, lineStyle, data, panoData, kml } from "./utils";
+
+export async function getNodesKML() {
+	const nodes = await getNodes();
+	const links = await getLinks();
+
+	const linksByNode = links.reduce((acc, cur) => {
+		acc[cur.node_a.id] = acc[cur.node_a.id] || [];
+		acc[cur.node_a.id].push(cur);
+		return acc;
+	}, {});
+
+	const nodesKml = nodes
+		.sort((a, b) => a.id - b.id)
+		.map(
+			node => `<Folder>
+					<name>${node.id}</name>
+					${nodePlacemark(node)}
+					${(linksByNode[node.id] || []).map(linkPlacemark)}
+				</Folder>`
+		);
+
+	const elements = [
+		iconStyle("supernode", 0.6, "https://i.imgur.com/GFd364p.png"),
+		iconStyle("hub", 0.6, "https://i.imgur.com/dsizT9e.png"),
+		iconStyle("omni", 0.6, "https://i.imgur.com/dsizT9e.png"),
+		iconStyle("node", 0.5, "https://i.imgur.com/OBBZi9E.png"),
+		lineStyle("hubLink", "ff00ffff", 2.5),
+		lineStyle("backboneLink", "ff00ffff", 2.5),
+		lineStyle("activeLink", "ff0000ff", 2.5),
+		nodesKml
+	];
+
+	return kml(elements);
+}
+
+function nodePlacemark(node) {
+	const dashboardLink = `<a href="https://dashboard.nycmesh.net/requests/${node.id}" style="margin-right: 1rem;">Dashboard →</a>`;
+	const ticketLink = `<a href="https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=${node.id}" style="margin-right: 1rem;">Tickets →</a>`;
+	return `<Placemark>
+	<name>${node.name || `Node ${node.id}`}</name>
+		<ExtendedData>
+		${node.name ? data("Name", node.name) : ""}
+		${data("Status", node.status)}
+		${data("Installed", node.create_date.toDateString())}
+		${data("Devices", node.device_types.map(d => d.name).join(", "))}
+		${node.notes ? data("Notes", node.notes) : ""}
+		${data("Links", `${dashboardLink} ${ticketLink}`)}
+		${panoData(node.panoramas.filter(p => p) || [])}
+	</ExtendedData>
+	<Point>
+		<altitudeMode>absolute</altitudeMode>
+		<coordinates>${node.lng},${node.lat},${node.alt || 20}</coordinates>
+	</Point>
+	<styleUrl>${nodeStyleId(node)}</styleUrl>
+</Placemark>`;
+}
+
+function linkPlacemark(link) {
+	const { node_a, node_b, device_type_a, device_type_b } = link;
+	const coordinates = `${node_a.lng},${node_a.lat},${node_a.alt} ${node_b.lng},${node_b.lat},${node_b.alt}`;
+	const deviceNameA =
+		device_type_a.name === "Unknown"
+			? "Unknown Device"
+			: device_type_a.name;
+	const deviceNameB =
+		device_type_b.name === "Unknown"
+			? "Unknown Device"
+			: device_type_b.name;
+	return `<Placemark>
+	<name>Link</name>
+	<ExtendedData>
+		${data("ID", link.id)}
+		${data("Status", link.status)}
+		${data("From", `${node_a.name || node_a.id} ${deviceNameA}`)}
+		${data("To", `${node_b.name || node_b.id} ${deviceNameB}`)}
+	</ExtendedData>
+	<LineString>
+		<altitudeMode>absolute</altitudeMode>
+		<coordinates>${coordinates}</coordinates>
+	</LineString>
+	<styleUrl>${linkStyleId(link)}</styleUrl>
+</Placemark>
+`;
+}
+
+const isOmni = device_type => device_type.name === "Omni";
+const isSupernode = node => node.name && node.name.includes("Supernode");
+const isHub = node => node.notes && node.notes.includes("hub");
+const isBackbone = (node, device_type) =>
+	isSupernode(node) || isHub(node) || isOmni(device_type);
+
+function nodeStyleId(node) {
+	const { name, notes, device_types } = node;
+	if (isSupernode(node)) return "#supernode";
+	if (isHub(node)) return "#hub";
+	if (device_types.filter(isOmni).length) return "#omni";
+	return "#node";
+}
+
+// TODO: Need to check all devices on each node to determine color.
+function linkStyleId(link) {
+	const { node_a, node_b, device_type_a, device_type_b } = link;
+	if (isHub(node_a) && isHub(node_b)) return "#hubLink";
+	if (isBackbone(node_a, device_type_a) && isBackbone(node_b, device_type_b))
+		return "#backboneLink";
+	return "#activeLink";
+}
 
 const getNodesQuery = `SELECT
 	nodes.*,
@@ -20,6 +128,10 @@ GROUP BY
 	buildings.id
 ORDER BY
 	nodes.create_date DESC`;
+
+async function getNodes() {
+	return performQuery(getNodesQuery);
+}
 
 const getLinksQuery = `SELECT
 	links.*,
@@ -78,181 +190,6 @@ WHERE
 	links.status = 'active'
 GROUP BY
 	links.id`;
-
-export async function getNodesKML() {
-	const nodes = await getNodes();
-	const links = await getLinks();
-
-	const nodesById = nodes.map((acc, cur) => {
-		acc[cur.id] = cur;
-		return acc;
-	}, {});
-
-	const linksByNode = links.reduce((acc, cur) => {
-		acc[cur.node_a.id] = acc[cur.node_a.id] || [];
-		acc[cur.node_a.id].push(cur);
-
-		acc[cur.node_b.id] = acc[cur.node_b.id] || [];
-		acc[cur.node_b.id].push(cur);
-		return acc;
-	}, {});
-
-	const nodesKml = nodes
-		.sort((a, b) => a.id - b.id)
-		.map(
-			node => `<Folder>
-					<name>${node.id}</name>
-					${nodePlacemark(node)}
-					${(linksByNode[node.id] || []).map(linkPlacemark)}
-				</Folder>`
-		);
-
-	const kml = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-	<Document>
-		${linkStyle("hubLink", "aa00ffff", 2.5)}
-		${linkStyle("backboneLink", "aa00ffff", 2.5)}
-		${linkStyle("activeLink", "66552dff", 2.5)}
-		${nodeStyle("supernode", 0.6, "https://i.imgur.com/GFd364p.png")}
-		${nodeStyle("hub", 0.6, "https://i.imgur.com/dsizT9e.png")}
-		${nodeStyle("omni", 0.6, "https://i.imgur.com/dsizT9e.png")}
-		${nodeStyle("node", 0.5, "https://i.imgur.com/OBBZi9E.png")}
-        ${nodesKml}
-	</Document>
-</kml>`;
-
-	return kml;
-}
-
-function nodePlacemark(node) {
-	return `<Placemark>
-			    <name>${node.name || node.id}</name>
-			    <ExtendedData>
-			        <Data name="id">
-			            <value>${node.id}</value>
-			        </Data>
-			        ${
-						node.name
-							? `<Data name="name">
-			            <value>${node.name}</value>
-			        </Data>`
-							: ""
-					}
-			        <Data name="status">
-			            <value>${node.status}</value>
-			        </Data>
-			        <Data name="devices">
-			            <value>${node.device_types.map(d => d.name).join(", ")}</value>
-			        </Data>
-			        <Data name="installed">
-			            <value>${node.create_date.toDateString()}</value>
-			        </Data>
-			        ${(node.panoramas || [])
-						.filter(p => p)
-						.map(
-							(panorama, index) =>
-								`<Data name="panorama ${index + 1}">
-						            <value>${panorama.url}</value>
-							     </Data>`
-						)}
-			    </ExtendedData>
-			    <Point>
-			        <altitudeMode>absolute</altitudeMode>
-			        <coordinates>${node.lng},${node.lat},${node.alt}</coordinates>
-			    </Point>
-			    <styleUrl>${nodeStyleId(node)}</styleUrl>
-			</Placemark>`;
-}
-
-function linkPlacemark(link) {
-	const { node_a, node_b, device_type_a, device_type_b } = link;
-	const coordinates = `${node_a.lng},${node_a.lat},${node_a.alt} ${node_b.lng},${node_b.lat},${node_b.alt}`;
-	const deviceNameA =
-		device_type_a.name === "Unknown"
-			? "Unknown Device"
-			: device_type_a.name;
-	const deviceNameB =
-		device_type_b.name === "Unknown"
-			? "Unknown Device"
-			: device_type_b.name;
-	return `<Placemark>
-    <name>${node_a.id} - ${node_b.id}</name>
-    <ExtendedData>
-        <Data name="id">
-            <value>${link.id}</value>
-        </Data>
-        <Data name="status">
-            <value>${link.status}</value>
-        </Data>
-        <Data name="from">
-            <value>${node_a.name || node_a.id} ${deviceNameA}</value>
-        </Data>
-        <Data name="to">
-            <value>${node_b.name || node_b.id} ${deviceNameB}</value>
-        </Data>
-    </ExtendedData>
-    <LineString>
-        <altitudeMode>absolute</altitudeMode>
-        <coordinates>${coordinates}</coordinates>
-    </LineString>
-    <styleUrl>${linkStyleId(link)}</styleUrl>
-</Placemark>
-`;
-}
-
-const isOmni = device_type => device_type.name === "Omni";
-const isSupernode = node => node.name && node.name.includes("Supernode");
-const isHub = node => node.notes && node.notes.includes("hub");
-const isBackbone = (node, device_type) =>
-	isSupernode(node) || isHub(node) || isOmni(device_type);
-
-function nodeStyleId(node) {
-	const { name, notes, device_types } = node;
-	if (isSupernode(node)) return "#supernode";
-	if (isHub(node)) return "#hub";
-	if (device_types.filter(isOmni).length) return "#omni";
-	return "#node";
-}
-
-// TODO: Need to check all devices on each node to determine color.
-function linkStyleId(link) {
-	const { node_a, node_b, device_type_a, device_type_b } = link;
-	if (isHub(node_a) && isHub(node_b)) return "#hubLink";
-	if (isBackbone(node_a, device_type_a) && isBackbone(node_b, device_type_b))
-		return "#backboneLink";
-	return "#activeLink";
-}
-
-function linkStyle(id, color, width) {
-	return `<Style id="${id}">
-	<LineStyle>
-		<color>${color}</color>
-		<width>${width}</width>
-	</LineStyle>
-	<PolyStyle>
-		<color>00000000</color>
-	</PolyStyle>
-</Style>`;
-}
-
-function nodeStyle(id, scale, icon) {
-	return `<Style id="${id}">
-    <IconStyle>
-        <scale>${scale}</scale> 
-    	<Icon>
-    		<href>${icon}</href>
-    	</Icon>
-        <hotSpot xunits="fraction" yunits="fraction" x="0.5" y="0.5"></hotSpot>
-    </IconStyle>
-    <LabelStyle>
-    	<scale>0</scale>
-	</LabelStyle>
-</Style>`;
-}
-
-async function getNodes() {
-	return performQuery(getNodesQuery);
-}
 
 async function getLinks() {
 	return performQuery(getLinksQuery);
