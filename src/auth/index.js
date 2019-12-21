@@ -30,8 +30,7 @@ async function verifyToken(token) {
 		});
 	}
 
-	return new Promise((resolve, reject) => {
-		jwt.verify(
+	return jwt.verify(
 			token,
 			getKey,
 			{
@@ -40,9 +39,8 @@ async function verifyToken(token) {
 				algorithm: "RS256"
 			},
 			(err, decoded) => {
-				if (err) return reject(err);
-				resolve(decoded);
+				if (err) throw err;
+				return decoded;
 			}
 		);
-	});
 }
