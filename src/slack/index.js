@@ -4,6 +4,7 @@ import fetch from "node-fetch";
 export async function requestMessage(request, building, member, visibleNodes) {
 	const { id, roof_access } = request;
 	const { address, lat, lng, alt, bin } = building;
+	const altMeters = alt * 0.328;
 
 	const notUnknown = device => device.type.name !== "Unknown";
 	const hasDevice = node => node.devices.filter(notUnknown).length;
@@ -27,7 +28,7 @@ export async function requestMessage(request, building, member, visibleNodes) {
 	const ticketURL = `https://support.nycmesh.net/scp/tickets.php?a=search&query=${id}`;
 
 	const title = `*<${mapURL}|${address}>*`;
-	const info = `${alt}m · ${roofString} · ${losString}`;
+	const info = `${altMeters}m · ${roofString} · ${losString}`;
 	const links = `<${earthURL}|Earth →>\t<${losURL}|LoS →>\t<${ticketURL}|Ticket →>`;
 	const sectionText = `${title}\n${info}\n${links}`;
 	const fallbackText = `${address} · ${info}`;
