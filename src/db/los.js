@@ -210,13 +210,19 @@ async function getBuildingMidpoint(bin) {
 }
 
 export async function getBuildingHeight(bin) {
-	const text = "SELECT ST_ZMax((SELECT geom FROM ny WHERE bldg_bin = $1))";
-	const values = [bin];
-	const res = await performLosQuery(text, values);
-	if (!res.length) throw new Error("Not found");
-	const { st_zmax } = res[0];
-	const offset = 4;
-	return parseInt(st_zmax) + offset;
+	try {
+		const text =
+			"SELECT ST_ZMax((SELECT geom FROM ny WHERE bldg_bin = $1))";
+		const values = [bin];
+		const res = await performLosQuery(text, values);
+		if (!res.length) throw new Error("Not found");
+		const { st_zmax } = res[0];
+		const offset = 4;
+		return parseInt(st_zmax) + offset;
+	} catch (error) {
+		console.log(error);
+		return -1;
+	}
 }
 
 async function getNodesInRange(nodes, bin, range, isRequests) {

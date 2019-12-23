@@ -62,11 +62,18 @@ export async function createRequest(request) {
 		console.log(error);
 	}
 
+	const buildingHeight = await getBuildingHeight(bin);
+
 	// Look up building by bin
-	let [building] = await performQuery(
-		"SELECT * FROM buildings WHERE bin = $1",
-		[request.bin]
-	);
+	let building;
+	try {
+		[building] = await performQuery(
+			"SELECT * FROM buildings WHERE bin = $1",
+			[request.bin]
+		);
+	} catch (error) {
+		console.log(error);
+	}
 
 	// Look up building by address
 	if (!building) {
@@ -78,8 +85,7 @@ export async function createRequest(request) {
 
 	// Create building if new
 	if (!building) {
-		const buildingHeight = await getBuildingHeight(bin);
-		const [building] = await performQuery(
+		[building] = await performQuery(
 			"INSERT INTO buildings (address, lat, lng, alt, bin) VALUES ($1, $2, $3, $4, $5) RETURNING *",
 			[address, lat, lng, buildingHeight, bin]
 		);
@@ -166,9 +172,9 @@ async function getBuildingInfo(address, buildingLat = 0, buildingLng = 0) {
 	}
 
 	const [feature] = features.sort(sortByDistance);
-	const { properties, coordinates } = feature;
-	const bin = feature.properties.pad_bin;
-	const [lng, lat] = coordinates;
+	const { properties, geometry } = feature;
+	const bin = properties.pad_bin;
+	const [lng, lat] = geometry.coordinates;
 
 	return {
 		lat,
