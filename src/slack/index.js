@@ -4,7 +4,7 @@ import fetch from "node-fetch";
 export async function requestMessage(request, building, member, visibleNodes) {
 	const { id, roof_access } = request;
 	const { address, lat, lng, alt, bin } = building;
-	const altMeters = alt * 0.328;
+	const altMeters = Math.round(alt * 0.328);
 
 	const notUnknown = device => device.type.name !== "Unknown";
 	const hasDevice = node => node.devices.filter(notUnknown).length;
