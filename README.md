@@ -359,6 +359,13 @@ python2 ./scripts/gml_to_pgsql.py ./data/DA_WISE_GMLs/DA12_3D_Buildings_Merged.g
 python2 ./scripts/gml_to_pgsql.py ./data/DA_WISE_GMLs/DA13_3D_Buildings_Merged.gml ny | psql db
 ```
 
+Create indices:
+
+```sql
+CREATE INDEX geom_index ON ny
+USING GIST (geom)
+```
+
 Now we are ready to make queries!
 
 ### Making Queries
