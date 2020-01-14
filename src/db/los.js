@@ -71,9 +71,13 @@ WHERE
 			id FROM appointments
 		WHERE
 			appointments.request_id = requests.id
-			AND appointments.type = 'install') IS NOT NULL
+			AND appointments.type = 'install'
+		LIMIT 1) IS NOT NULL
 GROUP BY
-	requests.id, buildings.bin, buildings.id, appointments.id`;
+	requests.id,
+	buildings.bin,
+	buildings.id,
+	appointments.id`;
 
 const getLosQuery = `SELECT
 	bldg_bin as bin,

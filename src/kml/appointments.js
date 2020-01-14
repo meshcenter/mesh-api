@@ -53,7 +53,7 @@ FROM
     appointments
     JOIN buildings ON buildings.id = appointments.building_id
 WHERE
-    appointments.date > now() - INTERVAL '7 DAY'
+    appointments.date > now() - INTERVAL '1 DAY'
 ORDER BY
     date`;
 
