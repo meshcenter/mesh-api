@@ -93,6 +93,11 @@ def run_psql(filename, table_name):
             if attribute.attrib.get("name") == "BIN":
                 bldg_bin = attribute[0].text
 
+        # Some files use 2.0 for some reason...
+        for attribute in building.iter("{http://www.opengis.net/citygml/generics/2.0}stringAttribute"):
+            if attribute.attrib.get("name") == "BIN":
+                bldg_bin = attribute[0].text
+
         # Get the polygons for this building
         polys = [polygon_to_wkt(p) for p in building.iter(insert_namespace('Polygon', building))]
 
