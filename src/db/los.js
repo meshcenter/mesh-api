@@ -65,7 +65,7 @@ FROM
 	JOIN buildings ON requests.building_id = buildings.id
 	LEFT JOIN appointments ON appointments.request_id = requests.id
 WHERE
-	requests.id IN(3946, 1932, 1933)
+	requests.id IN(3946, 1933)
 	OR(
 		SELECT
 			id FROM appointments
