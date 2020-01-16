@@ -524,6 +524,8 @@ async function importAppointments() {
 			if (!member) continue;
 		}
 
+		if (!nodeId) continue;
+
 		// Get Buillding
 		const buildings = await performQuery(
 			`SELECT
