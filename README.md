@@ -1,4 +1,6 @@
-# NYC Mesh API
+# Mesh API
+
+![Screenshot of Google Earth showing data from Mesh API. There are blue dots showing nodes on buildings and green and yellow lines showing links between nodes.](/image.png?raw=true "Screenshot")
 
 🚧 Work in progress!
 
