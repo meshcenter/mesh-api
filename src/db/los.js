@@ -221,7 +221,7 @@ export async function getBuildingHeight(bin) {
 		const res = await performLosQuery(text, values);
 		if (!res.length) throw new Error("Not found");
 		const { st_zmax } = res[0];
-		const offset = 4;
+		const offset = 2;
 		return parseInt(st_zmax) + offset;
 	} catch (error) {
 		console.log(error);
