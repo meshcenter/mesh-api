@@ -17,12 +17,12 @@ https://api.nycmesh.net/v1/kml
 
 ## Architecture
 
-- Netlify Functions for hosting
-- Express for handling requests
-- PostgreSQL for main db
-- PostGIS for line of sight db
-- DigitalOcean Spaces (S3) for storing panorama images
-- Auth0 for access control
+-   Netlify Functions for hosting
+-   Express for handling requests
+-   PostgreSQL for main db
+-   PostGIS for line of sight db
+-   DigitalOcean Spaces (S3) for storing panorama images
+-   Auth0 for access control
 
 ## Running locally
 
@@ -31,6 +31,7 @@ Install dependencies: `yarn install`
 Run the local server: `yarn start`
 
 You'll need a `.env` file with the following values:
+
 ```
 DB_USER=
 DB_PASS=
@@ -69,8 +70,8 @@ A physical location.
 -   id
 -   address
 -   lat
--	lng
--	alt
+-   lng
+-   alt
 -   bin (optional) // NYC Building ID Number
 -   notes (optional)
 
@@ -89,9 +90,9 @@ A specific location on the network. Typically one per building.
 
 -   id
 -   lat
--	lng
--	alt
--	status (active, dead)
+-   lng
+-   alt
+-   status (active, dead)
 -   name (optional) // e.g. "Saratoga", "SN1"
 -   location (optional) // Human readable location, e.g. "Roof", "Basement"
 -   notes (optional)
@@ -132,13 +133,13 @@ A unit of hardware. Routers, radios, servers, etc.
 -   name (optional)
 -   ssid (optional)
 -   notes (optional)
--	lat
--	lng
--	alt
+-   lat
+-   lng
+-   alt
 -   azimuth (direction in degrees, default 0)
 -   create_date
 -   abandon_date (optional)
--	device_type_id
+-   device_type_id
 -   node_id
 
 ### Link
@@ -146,8 +147,8 @@ A unit of hardware. Routers, radios, servers, etc.
 A connection between two devices. For example, an ethernet cable or wireless connection.
 
 -   id
--	status (active, dead)
--	create_date
+-   status (active, dead)
+-   create_date
 -   device_a_id
 -   device_b_id
 
@@ -364,8 +365,8 @@ python2 ./scripts/gml_to_pgsql.py ./data/DA_WISE_GMLs/DA13_3D_Buildings_Merged.g
 Create indices:
 
 ```sql
-CREATE INDEX geom_index ON ny
-USING GIST (geom)
+CREATE INDEX geom_index ON ny USING GIST (geom);
+CREATE INDEX bin_index ON ny (bldg_bin);
 ```
 
 Now we are ready to make queries!
