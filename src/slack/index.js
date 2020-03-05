@@ -30,7 +30,7 @@ export async function requestMessage(request, building, member, visibleNodes) {
 	const title = `*<${mapURL}|${address}>*`;
 	const info = `${altMeters}m · ${roofString} · ${losString}`;
 	const links = `<${earthURL}|Earth →>\t<${losURL}|LoS →>\t<${ticketURL}|Ticket →>`;
-	const sectionText = `${title}\n${info}\n${links}`;
+	const text = `${title}\n${info}\n${links}`;
 	const fallbackText = `${address} · ${info}`;
 
 	const blocks = [
@@ -38,7 +38,7 @@ export async function requestMessage(request, building, member, visibleNodes) {
 			type: "section",
 			text: {
 				type: "mrkdwn",
-				text: sectionText
+				text
 			}
 		}
 	];
@@ -83,6 +83,22 @@ export async function panoMessage(pano) {
 					value: "click_me_123"
 				}
 			]
+		}
+	];
+
+	await sendMessage(blocks);
+}
+
+export async function installMessage(install) {
+	const text = "New install!";
+
+	const blocks = [
+		{
+			type: "section",
+			text: {
+				type: "mrkdwn",
+				text
+			}
 		}
 	];
 

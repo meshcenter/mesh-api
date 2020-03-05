@@ -20,11 +20,14 @@ import { getLosKML } from "./kml/los";
 import { getNodesKML } from "./kml/nodes";
 import { getRequestsKML } from "./kml/requests";
 
+import { acuityWebhook } from "./webhooks/acuity";
+
 const ROOT = "/v1";
 const app = express(ROOT);
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.set("etag", false);
 app.disable("x-powered-by");
 
@@ -208,6 +211,14 @@ router.get(
 	handleErrors(async (req, res, next) => {
 		const kml = await getKML();
 		res.set("Content-Type", "text/xml").send(kml);
+	})
+);
+
+router.post(
+	"/webhooks/acuity",
+	handleErrors(async (req, res, next) => {
+		acuityWebhook(req.body);
+		res.send({});
 	})
 );
 
