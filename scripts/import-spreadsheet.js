@@ -511,16 +511,18 @@ async function importAppointments() {
 		});
 
 		// Get Member
-		let [member] = await performQuery(
-			"SELECT * FROM members WHERE email = $1",
-			[email.replace(/\n/g, "")]
-		);
+		let [
+			member
+		] = await performQuery("SELECT * FROM members WHERE email = $1", [
+			email.replace(/\n/g, "")
+		]);
 
 		if (!member) {
-			[member] = await performQuery(
-				"SELECT * FROM members WHERE phone = $1",
-				[phone]
-			);
+			[
+				member
+			] = await performQuery("SELECT * FROM members WHERE phone = $1", [
+				phone
+			]);
 			if (!member) continue;
 		}
 
@@ -566,16 +568,19 @@ GROUP BY buildings.id`,
 			: null;
 		if (sanitizedNodeId > 100000) sanitizedNodeId = null;
 		if (sanitizedNodeId) {
-			const [memberBuildingRequest] = await performQuery(
+			const [
+				memberBuildingRequest
+			] = await performQuery(
 				"SELECT * FROM requests WHERE member_id = $1 AND building_id = $2",
 				[member.id, building.id]
 			);
 			request = memberBuildingRequest;
 			if (!request) {
-				const [dbRequest] = await performQuery(
-					"SELECT * FROM requests WHERE id = $1",
-					[sanitizedNodeId]
-				);
+				const [
+					dbRequest
+				] = await performQuery("SELECT * FROM requests WHERE id = $1", [
+					sanitizedNodeId
+				]);
 				request = dbRequest || request;
 			}
 		}
