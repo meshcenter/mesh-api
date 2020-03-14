@@ -169,11 +169,11 @@ async function createDatabase() {
 				type			appointment_type NOT NULL,
 				date			TIMESTAMP WITH TIME ZONE NOT NULL,
 				notes			TEXT,
-				acuity_id		INTEGER NOT NULL,
+				request_id		INTEGER REFERENCES requests(id) NOT NULL,
 				member_id		INTEGER REFERENCES members(id) NOT NULL,
-				request_id		INTEGER REFERENCES requests(id),
+				building_id		INTEGER REFERENCES buildings(id) NOT NULL,
 				node_id			INTEGER REFERENCES nodes(id),
-				building_id		INTEGER REFERENCES buildings(id)
+				acuity_id		INTEGER
 			)`
 		);
 	} catch (error) {
