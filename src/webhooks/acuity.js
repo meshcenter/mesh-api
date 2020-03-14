@@ -2,21 +2,9 @@ import { installMessage } from "../slack";
 import fetch from "node-fetch";
 
 export async function acuityWebhook(body) {
-	console.log(body);
 	const { action, id, calendarID } = body;
 
-	const appointmentRes = await fetch(
-		`https://acuityscheduling.com/api/v1/appointments/${id}`,
-		{
-			headers: {
-				Authorization: `Basic ${new Buffer(
-					`${process.env.ACUITY_USER_ID}:${process.env.ACUITY_API_KEY}`
-				).toString("base64")}`
-			}
-		}
-	);
-
-	const appointment = await appointmentRes.json();
+	const appointment = await getAppointment(id);
 
 	if (action === "scheduled") {
 		// Save appointment to db
@@ -37,9 +25,11 @@ export async function acuityWebhook(body) {
 	}
 }
 
-async function asyncAcuityRequest() {
-	acuity.request("/appointments", function(err, res, appointments) {
-		if (err) reject(err);
-		resolve(appointments);
-	});
+async function getAppointment(id) {
+	const URL = `https://acuityscheduling.com/api/v1/appointments/${id}`;
+	const userPass = `${process.env.ACUITY_USER_ID}:${process.env.ACUITY_API_KEY}`;
+	const auth = `Basic ${new Buffer(userPass).toString("base64")}`;
+	const headers = { Authorization: auth };
+	const res = await fetch(URL, { headers });
+	return res.json();
 }
