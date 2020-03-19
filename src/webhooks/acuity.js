@@ -19,16 +19,16 @@ export async function acuityWebhook(body) {
 	const request = await getRequest(requestId);
 
 	if (action === "scheduled") {
-		// Sanitize type
 		const typeMap = {
 			Install: "install",
 			Support: "support",
 			"Site survey": "survey"
 		};
+		const sanitizedType = typeMap[acuityAppointment.type];
 
 		// Create appointment in db
 		const newApointment = await createAppointment({
-			type: typeMap[acuityAppointment.type],
+			type: sanitizedType,
 			date: acuityAppointment.date,
 			notes,
 			request_id: request.id,
