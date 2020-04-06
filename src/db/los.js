@@ -5,6 +5,8 @@ const OMNI_RANGE = 0.75 * KM;
 const SECTOR_RANGE = 3 * KM;
 const REQUEST_RANGE = 3 * KM;
 
+const MAX_CORNERS = 5;
+
 const getOmnisQuery = `SELECT
 	nodes.id,
 	nodes.name,
@@ -108,6 +110,7 @@ export async function getLos(bin) {
 
 	const building = await getBuildingFromBIN(bin);
 	const buildingMidpoint = await getBuildingMidpoint(bin);
+	const buildingCorners = await getBuildingCorners(bin);
 	const buildingHeight = await getBuildingHeight(bin);
 	const buildingHeightMeters = parseInt(buildingHeight * 0.3048);
 
@@ -172,13 +175,35 @@ export async function getLos(bin) {
 			const [lat, lng] = coordinates;
 			const nodeMidpoint = [lat, lng];
 			const nodeHieght = await getBuildingHeight(node.bin);
-			const intersections = await getIntersections(
+			let intersections = await getIntersections(
 				buildingMidpoint,
 				buildingHeight,
 				nodeMidpoint,
 				nodeHieght
 			);
 
+      const midDistance = await getDistance(
+        buildingMidpoint,
+        nodeMidpoint
+      );
+
+      let minDistance = midDistance;
+      for (let corner in buildingCorners) {
+        const cornerIntersections = await getIntersections(
+          corner,
+          buildingHeight,
+          nodeMidpoint,
+          nodeHieght
+        );
+
+				const cDistance= await getDistance(
+					corner,
+					nodeMidpoint
+				);
+
+        minDistance = minDistance < cDistance ? minDistance : cDistance;
+        intersections.concat(cornerIntersections);
+      }
 			// Ignore intersections with the target building
 			// TODO: do this better (in sql?)
 			const filteredIntersections = intersections.filter(
@@ -187,13 +212,9 @@ export async function getLos(bin) {
 			);
 
 			if (!filteredIntersections.length) {
-				const distance = await getDistance(
-					buildingMidpoint,
-					nodeMidpoint
-				);
 				visible.push({
 					...node,
-					distance
+					minDistance
 				});
 			}
 		}
@@ -211,6 +232,30 @@ async function getBuildingMidpoint(bin) {
 	const rawText = st_astext.replace("POINT(", "").replace(")", ""); // Do this better
 	const [lat, lng] = rawText.split(" ");
 	return [parseFloat(lat), parseFloat(lng)];
+}
+
+async function getBuildingCorners(bin) {
+	const text =
+		"SELECT ST_AsText(ST_Envelope((SELECT geom FROM ny WHERE bldg_bin = $1)))";
+	const values = [bin];
+	const res = await performLosQuery(text, values);
+	if (!res.length) throw new Error("Not found");
+	const { st_astext } = res[0];
+	if (!st_astext) throw new Error("Not found");
+
+  // (MINX MINY), (MINX MAXY), (MAXX MAXY), (MAXX MINY), (MINX MINY), (ZMIN ZMAX)
+	const rawText = st_astext.replace("POLYGON(", "").replace("(", "").replace(")", "");
+	const points = rawText.split(",");
+
+  let corners = [];
+  if (points.length > MAX_CORNERS) throw new Error("Cannot build proper bounding box over building");
+  for (let i = 0; i < points.legnth - 1; i++) { // we don't care about the last one since it repeats
+	  const [lat, lng] = points[i].split(" ");
+    const point = [parseFloat(lat), parseFloat(lng)];
+    corners.push(point)
+  }
+
+  return corners;
 }
 
 export async function getBuildingHeight(bin) {
