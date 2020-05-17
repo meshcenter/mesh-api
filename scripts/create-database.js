@@ -82,6 +82,7 @@ async function createDatabase() {
 			`CREATE TABLE "requests" (
 				id				SERIAL PRIMARY KEY,
 				status			request_status NOT NULL DEFAULT 'open',
+				apartment		VARCHAR(10),
 				roof_access		bool NOT NULL,
 				date			TIMESTAMP WITH TIME ZONE NOT NULL,
 				osticket_id		INTEGER,
@@ -173,7 +174,8 @@ async function createDatabase() {
 				member_id		INTEGER REFERENCES members(id) NOT NULL,
 				building_id		INTEGER REFERENCES buildings(id) NOT NULL,
 				node_id			INTEGER REFERENCES nodes(id),
-				acuity_id		INTEGER
+				acuity_id		INTEGER,
+				slack_ts		VARCHAR(256)
 			)`
 		);
 	} catch (error) {
