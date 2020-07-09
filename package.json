@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
+    "@slack/web-api": "^5.8.0",
     "aws-sdk": "^2.575.0",
-    "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "date-fns": "^2.8.1",
     "encoding": "^0.1.12",
@@ -12,7 +12,7 @@
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^1.6.0",
     "node-fetch": "^2.6.0",
-    "pg": "^7.12.0",
+    "pg": "^8.0.0",
     "serverless-http": "^2.3.0"
   },
   "devDependencies": {
