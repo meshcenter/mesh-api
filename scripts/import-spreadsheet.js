@@ -364,8 +364,8 @@ async function importJoinRequests(nodes) {
 				membersByEmail[(node.memberEmail || "").toLowerCase()];
 			if (!member) {
 				console.log(
-					`Member not found: ${(
-						node.memberEmail || ""
+					`Member not found: ${node.id} ${(
+						node.memberEmail || "no email"
 					).toLowerCase()}`
 				);
 				continue;
@@ -418,7 +418,7 @@ async function importJoinRequests(nodes) {
 
 	const joinRequests = await performQuery("SELECT * FROM requests");
 	const joinRequestsByDate = joinRequests.reduce((acc, cur) => {
-		acc[cur.date.getTime() / 1000] = cur;
+		acc[parseInt(cur.date.getTime() / 1000)] = cur;
 		return acc;
 	}, {});
 
@@ -426,9 +426,9 @@ async function importJoinRequests(nodes) {
 		.filter(node => node.panoramas)
 		.reduce((acc, cur) => {
 			const curDate = new Date(cur.requestDate);
-			const joinRequest = joinRequestsByDate[curDate.getTime() / 1000];
+			const joinRequest = joinRequestsByDate[parseInt(curDate.getTime() / 1000)];
 			if (!joinRequest) {
-				console.log("Join request not found", curDate.getTime() / 1000);
+				console.log("Join request not found", parseInt(curDate.getTime() / 1000));
 				return acc;
 			}
 			acc.push(
