@@ -1,6 +1,5 @@
 import express, { Router } from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
 import serverless from "serverless-http";
 
 import { checkAuth } from "./auth";
@@ -26,13 +25,13 @@ const ROOT = "/v1";
 const app = express(ROOT);
 
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.set("etag", false);
 app.disable("x-powered-by");
 
 const router = Router({
-	caseSensitive: true
+	caseSensitive: true,
 });
 
 router.get(
@@ -148,7 +147,11 @@ router.post(
 	"/requests",
 	handleErrors(async (req, res, next) => {
 		const request = await createRequest(req.body);
-		res.json(request);
+		if (req.body.success_url) {
+			res.redirect(200, success_url);
+		} else {
+			res.json(request);
+		}
 	})
 );
 
@@ -169,7 +172,7 @@ router.get(
 		const kml = await getKML();
 		res.set({
 			"Content-Type": "text/xml",
-			"Content-Disposition": `attachment; filename="nycmesh.kml"`
+			"Content-Disposition": `attachment; filename="nycmesh.kml"`,
 		}).send(kml);
 	})
 );
@@ -235,7 +238,12 @@ app.use(function(error, req, res, next) {
 	} else {
 		status = 500;
 	}
-	res.status(status).json({ error: error.message });
+
+	if (req.body.failure_url) {
+		res.redirect(303, req.body.failure_url);
+	} else {
+		res.status(status).json({ error: error.message });
+	}
 });
 
 export const handler = serverless(app);
