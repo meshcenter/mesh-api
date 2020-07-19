@@ -1,30 +1,28 @@
-import { installMessage } from "../slack";
 import fetch from "node-fetch";
-import { getAppointment, createAppointment } from "../db/appointments";
+import {
+	getAppointment,
+	getAppointmentByAcuityId,
+	createAppointment,
+	updateAppointment,
+} from "../db/appointments";
 import { getRequest } from "../db/requests";
+import { installMessage } from "../slack";
 
 export async function acuityWebhook(body) {
 	const { action, id } = body;
 
 	const acuityAppointment = await getAcuityAppointment(id);
 
-	console.log(acuityAppointment);
-
 	const { values } = acuityAppointment.forms[0];
-	const [requestIdValue] = values.filter(v => v.name === "Node Number");
-	const [notesValue] = values.filter(v => v.name === "Notes");
+	const [requestIdValue] = values.filter((v) => v.name === "Node Number");
+	const [notesValue] = values.filter((v) => v.name === "Notes");
 	const requestId = parseInt(requestIdValue.value);
 	const notes = String(notesValue.value);
 
 	const request = await getRequest(requestId);
 
 	if (action === "scheduled") {
-		const typeMap = {
-			Install: "install",
-			Support: "support",
-			"Site survey": "survey"
-		};
-		const sanitizedType = typeMap[acuityAppointment.type];
+		const sanitizedType = sanitizeType(acuityAppointment.type);
 
 		// Create appointment in db
 		const newApointment = await createAppointment({
@@ -34,15 +32,27 @@ export async function acuityWebhook(body) {
 			request_id: request.id,
 			member_id: request.member.id,
 			building_id: request.building.id,
-			acuity_id: id
+			acuity_id: id,
 		});
 
+		const fullAppointment = await getAppointment(newApointment.id);
+
 		// Send message to slack
-		// Save slack message id to db
+		const slackRes = await installMessage(fullAppointment);
+
+		// Save slack message ts to db
+		await updateAppointment({ ...fullAppointment, slack_ts: slackRes.ts });
 	} else if (action === "rescheduled") {
-		// Fetch slack message id from db
-		// Update slack message
-		// Post update to thread + channel
+		const appointment = await getAppointmentByAcuityId(id);
+		await updateAppointment({
+			...appointment,
+			date: acuityAppointment.date,
+			notes,
+		});
+		const updatedAppointment = await getAppointmentByAcuityId(id);
+
+		// Update slack message, post to thread + channel
+		await installMessage(updatedAppointment, updatedAppointment.slack_ts);
 	} else if (action === "canceled") {
 		// Fetch slack message id from db
 		// Update slack message
@@ -63,4 +73,13 @@ async function getAcuityAppointment(id) {
 	const headers = { Authorization: auth };
 	const res = await fetch(URL, { headers });
 	return res.json();
+}
+
+function sanitizeType(type) {
+	const typeMap = {
+		Install: "install",
+		Support: "support",
+		"Site survey": "survey",
+	};
+	return typeMap[type];
 }
