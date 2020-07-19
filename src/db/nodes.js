@@ -3,7 +3,14 @@ import { performQuery } from ".";
 const getNodesQuery = `SELECT
 	nodes.*,
 	buildings.address AS building,
-	json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
+	(
+		SELECT
+			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
+		FROM
+			devices
+		LEFT JOIN device_types ON device_types.id IN(devices.device_type_id)
+	WHERE
+		devices.node_id = nodes.id) AS devices
 FROM
 	nodes
 	LEFT JOIN buildings ON nodes.building_id = buildings.id
@@ -24,11 +31,23 @@ export async function getNodes() {
 const getNodeQuery = `SELECT
 	nodes.*,
 	to_json(buildings) AS building,
-	to_json(members) AS member
+	to_json(members) AS member,
+	json_agg(DISTINCT requests) AS requests,
+	(
+		SELECT
+			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
+		FROM
+			devices
+		LEFT JOIN device_types ON device_types.id IN(devices.device_type_id)
+	WHERE
+		devices.node_id = nodes.id) AS devices,
+	json_agg(DISTINCT panoramas) AS panoramas
 FROM
 	nodes
 	LEFT JOIN buildings ON nodes.building_id = buildings.id
 	LEFT JOIN members ON nodes.member_id = members.id
+	LEFT JOIN requests ON requests.building_id = buildings.id
+	LEFT JOIN panoramas ON panoramas.request_id = requests.id
 WHERE
 	nodes.id = $1
 GROUP BY
