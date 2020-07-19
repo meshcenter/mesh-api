@@ -428,7 +428,7 @@ async function importJoinRequests(nodes) {
 			const curDate = new Date(cur.requestDate);
 			const joinRequest = joinRequestsByDate[parseInt(curDate.getTime() / 1000)];
 			if (!joinRequest) {
-				console.log("Join request not found", parseInt(curDate.getTime() / 1000));
+				console.log("Join request not found", cur.id, parseInt(curDate.getTime() / 1000));
 				return acc;
 			}
 			acc.push(
