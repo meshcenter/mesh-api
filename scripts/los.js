@@ -34,7 +34,7 @@ async function handleRequest(request) {
 	if (request.bin < 0 || request.bin % 1000000 === 0) skip = true;
 	if (
 		request.device_types.filter(
-			device_type =>
+			(device_type) =>
 				device_type &&
 				["Omni", "LBE120", "SN1Sector1", "SN1Sector2"].indexOf(
 					device_type.name
@@ -54,7 +54,7 @@ async function handleRequest(request) {
 		visibleOmnis,
 		visibleSectors,
 		visibleRequests,
-		error
+		error,
 	} = await losResponse.json();
 	if (error) {
 		if (error === "Not found") {
