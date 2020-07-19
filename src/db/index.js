@@ -11,6 +11,7 @@ async function createPool() {
 		password: process.env.DB_PASS,
 		port: process.env.DB_PORT,
 		ssl: {
+			rejectUnauthorized: false,
 			mode: "require"
 		}
 	});
@@ -24,6 +25,7 @@ async function createLosPool() {
 		password: process.env.LOS_DB_PASS,
 		port: process.env.LOS_DB_PORT,
 		ssl: {
+			rejectUnauthorized: false,
 			mode: "require"
 		}
 	});
