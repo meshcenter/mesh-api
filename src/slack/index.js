@@ -1,28 +1,72 @@
-import fetch from "node-fetch";
 import { WebClient } from "@slack/web-api";
 import { format } from "date-fns";
 
 const slack = new WebClient(process.env.SLACK_TOKEN);
 
-// TODO: Simplify
+const requestChannel   = "join-requests-test";
+const panoChannel = "panoramas-test";
+const installChannel = "install-team-test";
+
+const dateFmtString = "EEEE, MMM d h:mm aa";
+
 export async function requestMessage(request, building, member, visibleNodes) {
+	return sendMessage(requestChannel, requestMessageContent(request, building, member, visibleNodes));
+}
+
+export async function panoMessage(pano) {
+	return sendMessage(panoChannel, panoMessageContent(pano));
+}
+
+export async function installMessage(appointment) {
+	return sendMessage(installChannel, installMessageContent(appointment))
+}
+
+export async function rescheduleMessage(appointment, slack_ts) {
+	const channel = await getChannel(installChannel);
+	if (!channel) {
+		console.log(`#${channelName} not found`);
+		return;
+	}
+
+	const { text, blocks } = installMessageContent(appointment);
+	const formattedDate = format(appointment.date, dateFmtString)
+
+	const res = await slack.chat.update({
+		channel: channel.id,
+		ts: slack_ts,
+		text,
+		blocks,
+	});
+
+	return slack.chat.postMessage({
+		channel: channel.id,
+		thread_ts: slack_ts,
+		reply_broadcast: true,
+		text: `Rescheduled to ${formattedDate}`,
+	});
+}
+
+async function sendMessage(channelName, messageContent, slack_ts) {
+	const channel = await getChannel(channelName);
+	if (!channel) {
+		console.log(`#${channelName} not found`);
+		return;
+	}
+
+	const { text, blocks } = messageContent;
+
+	return slack.chat.postMessage({
+		channel: channel.id,
+		text,
+		blocks,
+	});
+}
+
+function requestMessageContent(request, building, member, visibleNodes) {
 	const { id, roof_access } = request;
 	const { address, lat, lng, alt, bin } = building;
 	const altMeters = Math.round(alt * 0.328);
-
-	const notUnknown = (device) => device.type.name !== "Unknown";
-	const hasDevice = (node) => node.devices.filter(notUnknown).length;
-	const nodeNames = (visibleNodes || [])
-		.filter(hasDevice)
-		.map((node) => node.name || node.id)
-		.join(", ");
-
-	const losString = visibleNodes
-		? visibleNodes.length
-			? nodeNames
-			: "No LoS"
-		: "LoS Failed";
-
+	const losString = getLoSString(visibleNodes);
 	const roofString = roof_access ? "Roof access" : "No roof access";
 	const mapURL = getMapURL(id);
 	const earthURL = getEarthURL(building);
@@ -35,24 +79,13 @@ export async function requestMessage(request, building, member, visibleNodes) {
 	const text = `${title}\n${info}\n${links}`;
 	const fallbackText = `${address} · ${info}`;
 
-	const blocks = [markdownSection(text)];
-
-	const channelName = "join-requests-test";
-	const channel = await getChannel(channelName);
-
-	if (!channel) {
-		console.log(`#${channelName} not found`);
-		return;
-	}
-
-	return slack.chat.postMessage({
-		channel: channel.id,
+	return {
+		blocks: [markdownSection(text)],
 		text: fallbackText,
-		blocks,
-	});
+	}
 }
 
-export async function panoMessage(pano) {
+export async function panoMessageContent(pano) {
 	const blocks = [
 		{
 			type: "image",
@@ -92,42 +125,29 @@ export async function panoMessage(pano) {
 
 	const fallbackText = `New pano for ${pano.node_id}!`;
 
-	const channelName = "panoramas-test";
-	const channel = await getChannel(channelName);
-
-	if (!channel) {
-		console.log(`#${channelName} not found`);
-		return;
-	}
-
-	return slack.chat.postMessage({
-		channel: channel.id,
-		text: fallbackText,
+	return {
 		blocks,
-	});
+		text: fallbackText,
+	}
 }
 
 // If slack_ts, update existing message and post in thread
-export async function installMessage(appointment, slack_ts) {
+export async function installMessageContent(appointment, slack_ts) {
 	const { building, member } = appointment;
-
 	const formattedDate = format(appointment.date, "EEEE, MMM d h:mm aa");
-
-	const introText = `New ${appointment.type}:\n*${building.address}*\n${formattedDate}`;
-
 	const mapURL = getMapURL(appointment.request_id);
 	const earthURL = getEarthURL(building);
 	const losURL = getLosURL(building);
 	const ticketURL = getTicketURL(appointment.request_id);
 
-	const nameText = `*Name:* ${member.name}\n`;
-	const phoneText = `*Phone:* <tel:${member.phone}|${member.phone}>\n`;
-	const emailText = `*Email:* ${member.email}\n`;
-	const nodeText = `*Node:* <${mapURL}|${appointment.node_id}>\n`;
-	const notesText = appointment.notes ? `*Notes:* ${appointment.notes}` : "";
+	const introText = `New ${appointment.type}:\n*${building.address}*\n${formattedDate}`;
+	const nameText = `*Name:*\t${member.name}\n`;
+	const phoneText = `*Phone:*\t<tel:${member.phone}|${member.phone}>\n`;
+	const emailText = `*Email:*\t${member.email}\n`;
+	const nodeText = `*Node:*\t<${mapURL}|${appointment.node_id}>\n`;
+	const notesText = appointment.notes ? `*Notes:*\t${appointment.notes}` : "";
 	const infoText = `${nameText}${phoneText}${emailText}${nodeText}${notesText}`;
-
-	const linksText = `<https://google.com|Google> | <https://google.com|Apple> | <${earthURL}|Earth> | <${losURL}|LoS> | <${ticketURL}|Ticket>`;
+	const linksText = `<${earthURL}|Earth →>\t<${losURL}|LoS →>\t<${ticketURL}|Ticket →>`;
 
 	const fallbackText = `New ${appointment.type}:\n${building.address}\n${formattedDate}`;
 
@@ -138,30 +158,10 @@ export async function installMessage(appointment, slack_ts) {
 		markdownSection("Are you available? Thread here"),
 	];
 
-	const channelName = "install-team-test";
-	const channel = await getChannel(channelName);
-
-	if (slack_ts) {
-		const res = await slack.chat.update({
-			channel: channel.id,
-			ts: slack_ts,
-			text: fallbackText,
-			blocks,
-		});
-
-		return slack.chat.postMessage({
-			channel: channel.id,
-			thread_ts: slack_ts,
-			reply_broadcast: true,
-			text: `Rescheduled to ${formattedDate}`,
-		});
-	}
-
-	return slack.chat.postMessage({
-		channel: channel.id,
-		text: fallbackText,
+	return {
 		blocks,
-	});
+		text: fallbackText,
+	}
 }
 
 async function getChannel(channelName) {
@@ -181,6 +181,22 @@ function markdownSection(text) {
 			text,
 		},
 	};
+}
+
+function getLoSString(visibleNodes) {
+	if (!visibleNodes) {
+		return "LoS Failed";
+	}
+
+	if (!visibleNodes.length) {
+		return "No LoS";
+	}
+
+	const isKnownDevice = (device) => device.type.name !== "Unknown";
+	const hasDevice = (node) => node.devices.filter(isKnownDevice).length;
+	const toIdentifier = (node) => node.name || node.id
+
+	return visibleNodes.filter(hasDevice).map(toIdentifier).join(", ")
 }
 
 function getMapURL(id) {
