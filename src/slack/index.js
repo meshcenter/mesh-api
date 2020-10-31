@@ -1,7 +1,4 @@
-import { WebClient } from "@slack/web-api";
 import { format } from "date-fns";
-
-const slack = new WebClient(process.env.SLACK_TOKEN);
 
 const requestChannel   = "join-requests-test";
 const panoChannel = "panoramas-test";
@@ -9,20 +6,20 @@ const installChannel = "install-team-test";
 
 const dateFmtString = "EEEE, MMM d h:mm aa";
 
-export async function requestMessage(request, building, member, visibleNodes) {
-	return sendMessage(requestChannel, requestMessageContent(request, building, member, visibleNodes));
+export async function requestMessage(client, request, building, member, visibleNodes) {
+	return sendMessage(client, requestChannel, requestMessageContent(request, building, member, visibleNodes));
 }
 
-export async function panoMessage(pano) {
-	return sendMessage(panoChannel, panoMessageContent(pano));
+export async function panoMessage(client, pano) {
+	return sendMessage(client, panoChannel, panoMessageContent(pano));
 }
 
-export async function installMessage(appointment) {
-	return sendMessage(installChannel, installMessageContent(appointment))
+export async function installMessage(client, appointment) {
+	return sendMessage(client, installChannel, installMessageContent(appointment));
 }
 
-export async function rescheduleMessage(appointment, slack_ts) {
-	const channel = await getChannel(installChannel);
+export async function rescheduleMessage(client, appointment, slackTS) {
+	const channel = await client.getChannel(installChannel);
 	if (!channel) {
 		console.log(`#${channelName} not found`);
 		return;
@@ -31,14 +28,14 @@ export async function rescheduleMessage(appointment, slack_ts) {
 	const { text, blocks } = installMessageContent(appointment);
 	const formattedDate = format(appointment.date, dateFmtString)
 
-	const res = await slack.chat.update({
+	const res = await client.update({
 		channel: channel.id,
 		ts: slack_ts,
 		text,
 		blocks,
 	});
 
-	return slack.chat.postMessage({
+	return client.postMessage({
 		channel: channel.id,
 		thread_ts: slack_ts,
 		reply_broadcast: true,
@@ -46,8 +43,8 @@ export async function rescheduleMessage(appointment, slack_ts) {
 	});
 }
 
-async function sendMessage(channelName, messageContent, slack_ts) {
-	const channel = await getChannel(channelName);
+async function sendMessage(client, channelName, messageContent) {
+	const channel = await client.getChannel(channelName);
 	if (!channel) {
 		console.log(`#${channelName} not found`);
 		return;
@@ -55,7 +52,7 @@ async function sendMessage(channelName, messageContent, slack_ts) {
 
 	const { text, blocks } = messageContent;
 
-	return slack.chat.postMessage({
+	return client.postMessage({
 		channel: channel.id,
 		text,
 		blocks,
@@ -162,15 +159,6 @@ export async function installMessageContent(appointment, slack_ts) {
 		blocks,
 		text: fallbackText,
 	}
-}
-
-async function getChannel(channelName) {
-	const { channels } = await slack.conversations.list({
-		types: "public_channel,private_channel",
-		limit: 1000, // TODO: Cursor support
-	});
-	const [channel] = channels.filter((c) => c.name === channelName);
-	return channel;
 }
 
 function markdownSection(text) {

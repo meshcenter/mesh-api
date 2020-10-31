@@ -19,10 +19,14 @@ import { getLosKML } from "./kml/los";
 import { getNodesKML } from "./kml/nodes";
 import { getRequestsKML } from "./kml/requests";
 
+import SlackClient from "./slack/client";
+
 import { acuityWebhook } from "./webhooks/acuity";
 
 const ROOT = "/v1";
 const app = express(ROOT);
+
+const slackClient = new SlackClient(process.env.SLACK_TOKEN);
 
 app.use(cors());
 app.use(express.json());
@@ -220,7 +224,7 @@ router.get(
 router.post(
 	"/webhooks/acuity",
 	handleErrors(async (req, res, next) => {
-		acuityWebhook(req.body);
+		acuityWebhook(slackClient, req.body);
 		res.send({});
 	})
 );
