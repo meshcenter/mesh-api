@@ -82,7 +82,7 @@ function requestMessageContent(request, building, member, visibleNodes) {
 	}
 }
 
-export async function panoMessageContent(pano) {
+function panoMessageContent(pano) {
 	const blocks = [
 		{
 			type: "image",
@@ -129,7 +129,7 @@ export async function panoMessageContent(pano) {
 }
 
 // If slack_ts, update existing message and post in thread
-export async function installMessageContent(appointment, slack_ts) {
+function installMessageContent(appointment, slack_ts) {
 	const { building, member } = appointment;
 	const formattedDate = format(appointment.date, "EEEE, MMM d h:mm aa");
 	const mapURL = getMapURL(appointment.request_id);
