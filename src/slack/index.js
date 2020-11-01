@@ -6,8 +6,8 @@ const installChannel = "install-team-test";
 
 const dateFmtString = "EEEE, MMM d h:mm aa";
 
-export async function requestMessage(client, request, building, member, visibleNodes) {
-	return sendMessage(client, requestChannel, requestMessageContent(request, building, member, visibleNodes));
+export async function requestMessage(client, request, building, visibleNodes) {
+	return sendMessage(client, requestChannel, requestMessageContent(request, building, visibleNodes));
 }
 
 export async function panoMessage(client, pano) {
@@ -28,16 +28,16 @@ export async function rescheduleMessage(client, appointment, slackTS) {
 	const { text, blocks } = installMessageContent(appointment);
 	const formattedDate = format(appointment.date, dateFmtString)
 
-	const res = await client.update({
+	await client.update({
 		channel: channel.id,
-		ts: slack_ts,
+		ts: slackTS,
 		text,
 		blocks,
 	});
 
 	return client.postMessage({
 		channel: channel.id,
-		thread_ts: slack_ts,
+		thread_ts: slackTS,
 		reply_broadcast: true,
 		text: `Rescheduled to ${formattedDate}`,
 	});
@@ -59,9 +59,9 @@ async function sendMessage(client, channelName, messageContent) {
 	});
 }
 
-function requestMessageContent(request, building, member, visibleNodes) {
+function requestMessageContent(request, building, visibleNodes) {
 	const { id, roof_access } = request;
-	const { address, lat, lng, alt, bin } = building;
+	const { address, alt } = building;
 	const altMeters = Math.round(alt * 0.328);
 	const losString = getLoSString(visibleNodes);
 	const roofString = roof_access ? "Roof access" : "No roof access";
@@ -128,10 +128,9 @@ function panoMessageContent(pano) {
 	}
 }
 
-// If slack_ts, update existing message and post in thread
-function installMessageContent(appointment, slack_ts) {
+function installMessageContent(appointment) {
 	const { building, member } = appointment;
-	const formattedDate = format(appointment.date, "EEEE, MMM d h:mm aa");
+	const formattedDate = format(appointment.date, dateFmtString);
 	const mapURL = getMapURL(appointment.request_id);
 	const earthURL = getEarthURL(building);
 	const losURL = getLosURL(building);
@@ -142,7 +141,7 @@ function installMessageContent(appointment, slack_ts) {
 	const phoneText = `*Phone:*\t<tel:${member.phone}|${member.phone}>\n`;
 	const emailText = `*Email:*\t${member.email}\n`;
 	const nodeText = `*Node:*\t<${mapURL}|${appointment.node_id}>\n`;
-	const notesText = appointment.notes ? `*Notes:*\t${appointment.notes}` : "";
+	const notesText = appointment.notes ? `*Notes:*\t${appointment.notes}\n` : "";
 	const infoText = `${nameText}${phoneText}${emailText}${nodeText}${notesText}`;
 	const linksText = `<${earthURL}|Earth →>\t<${losURL}|LoS →>\t<${ticketURL}|Ticket →>`;
 
@@ -183,8 +182,10 @@ function getLoSString(visibleNodes) {
 	const isKnownDevice = (device) => device.type.name !== "Unknown";
 	const hasDevice = (node) => node.devices.filter(isKnownDevice).length;
 	const toIdentifier = (node) => node.name || node.id
+	const visible = visibleNodes.filter(hasDevice).map(toIdentifier).join(", ")
+	const nodesString = visible.length !== 1 ? "nodes" : "node";
 
-	return visibleNodes.filter(hasDevice).map(toIdentifier).join(", ")
+	return `LoS to ${nodesString} ${visible}`;
 }
 
 function getMapURL(id) {
