@@ -27,6 +27,6 @@
     "build": "netlify-lambda build src -c webpack.functions.js",
     "reset-db": "node scripts/create-database && node scripts/import-spreadsheet.js",
     "los": "node scripts/los.js",
-    "test": "jest"
+    "test": "TZ=UTC jest"
   }
 }
