@@ -8,7 +8,7 @@ import {
 import { getRequest } from "../db/requests";
 import { installMessage } from "../slack";
 
-export async function acuityWebhook(body) {
+export async function acuityWebhook(slackClient, body) {
 	const { action, id } = body;
 
 	const acuityAppointment = await getAcuityAppointment(id);
@@ -38,7 +38,7 @@ export async function acuityWebhook(body) {
 		const fullAppointment = await getAppointment(newApointment.id);
 
 		// Send message to slack
-		const slackRes = await installMessage(fullAppointment);
+		const slackRes = await installMessage(slackClient, fullAppointment);
 
 		// Save slack message ts to db
 		await updateAppointment({ ...fullAppointment, slack_ts: slackRes.ts });
@@ -52,7 +52,7 @@ export async function acuityWebhook(body) {
 		const updatedAppointment = await getAppointmentByAcuityId(id);
 
 		// Update slack message, post to thread + channel
-		await installMessage(updatedAppointment, updatedAppointment.slack_ts);
+		await rescheduleMessage(slackClient, updatedAppointment, updatedAppointment.slack_ts);
 	} else if (action === "canceled") {
 		// Fetch slack message id from db
 		// Update slack message

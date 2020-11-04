@@ -1,28 +1,69 @@
-import fetch from "node-fetch";
-import { WebClient } from "@slack/web-api";
 import { format } from "date-fns";
 
-const slack = new WebClient(process.env.SLACK_TOKEN);
+const requestChannel   = "join-requests-test";
+const panoChannel = "panoramas-test";
+const installChannel = "install-team-test";
 
-// TODO: Simplify
-export async function requestMessage(request, building, member, visibleNodes) {
+const dateFmtString = "EEEE, MMM d h:mm aa";
+
+export async function requestMessage(client, request, building, visibleNodes) {
+	return sendMessage(client, requestChannel, requestMessageContent(request, building, visibleNodes));
+}
+
+export async function panoMessage(client, pano) {
+	return sendMessage(client, panoChannel, panoMessageContent(pano));
+}
+
+export async function installMessage(client, appointment) {
+	return sendMessage(client, installChannel, installMessageContent(appointment));
+}
+
+export async function rescheduleMessage(client, appointment, slackTS) {
+	const channel = await client.getChannel(installChannel);
+	if (!channel) {
+		console.log(`#${channelName} not found`);
+		return;
+	}
+
+	const { text, blocks } = installMessageContent(appointment);
+	const formattedDate = format(appointment.date, dateFmtString)
+
+	await client.update({
+		channel: channel.id,
+		ts: slackTS,
+		text,
+		blocks,
+	});
+
+	return client.postMessage({
+		channel: channel.id,
+		thread_ts: slackTS,
+		reply_broadcast: true,
+		text: `Rescheduled to ${formattedDate}`,
+	});
+}
+
+async function sendMessage(client, channelName, messageContent) {
+	const channel = await client.getChannel(channelName);
+	if (!channel) {
+		console.log(`#${channelName} not found`);
+		return;
+	}
+
+	const { text, blocks } = messageContent;
+
+	return client.postMessage({
+		channel: channel.id,
+		text,
+		blocks,
+	});
+}
+
+function requestMessageContent(request, building, visibleNodes) {
 	const { id, roof_access } = request;
-	const { address, lat, lng, alt, bin } = building;
+	const { address, alt } = building;
 	const altMeters = Math.round(alt * 0.328);
-
-	const notUnknown = (device) => device.type.name !== "Unknown";
-	const hasDevice = (node) => node.devices.filter(notUnknown).length;
-	const nodeNames = (visibleNodes || [])
-		.filter(hasDevice)
-		.map((node) => node.name || node.id)
-		.join(", ");
-
-	const losString = visibleNodes
-		? visibleNodes.length
-			? nodeNames
-			: "No LoS"
-		: "LoS Failed";
-
+	const losString = getLoSString(visibleNodes);
 	const roofString = roof_access ? "Roof access" : "No roof access";
 	const mapURL = getMapURL(id);
 	const earthURL = getEarthURL(building);
@@ -35,24 +76,13 @@ export async function requestMessage(request, building, member, visibleNodes) {
 	const text = `${title}\n${info}\n${links}`;
 	const fallbackText = `${address} · ${info}`;
 
-	const blocks = [markdownSection(text)];
-
-	const channelName = "join-requests-test";
-	const channel = await getChannel(channelName);
-
-	if (!channel) {
-		console.log(`#${channelName} not found`);
-		return;
-	}
-
-	return slack.chat.postMessage({
-		channel: channel.id,
+	return {
+		blocks: [markdownSection(text)],
 		text: fallbackText,
-		blocks,
-	});
+	}
 }
 
-export async function panoMessage(pano) {
+function panoMessageContent(pano) {
 	const blocks = [
 		{
 			type: "image",
@@ -92,42 +122,28 @@ export async function panoMessage(pano) {
 
 	const fallbackText = `New pano for ${pano.node_id}!`;
 
-	const channelName = "panoramas-test";
-	const channel = await getChannel(channelName);
-
-	if (!channel) {
-		console.log(`#${channelName} not found`);
-		return;
-	}
-
-	return slack.chat.postMessage({
-		channel: channel.id,
-		text: fallbackText,
+	return {
 		blocks,
-	});
+		text: fallbackText,
+	}
 }
 
-// If slack_ts, update existing message and post in thread
-export async function installMessage(appointment, slack_ts) {
+function installMessageContent(appointment) {
 	const { building, member } = appointment;
-
-	const formattedDate = format(appointment.date, "EEEE, MMM d h:mm aa");
-
-	const introText = `New ${appointment.type}:\n*${building.address}*\n${formattedDate}`;
-
+	const formattedDate = format(appointment.date, dateFmtString);
 	const mapURL = getMapURL(appointment.request_id);
 	const earthURL = getEarthURL(building);
 	const losURL = getLosURL(building);
 	const ticketURL = getTicketURL(appointment.request_id);
 
-	const nameText = `*Name:* ${member.name}\n`;
-	const phoneText = `*Phone:* <tel:${member.phone}|${member.phone}>\n`;
-	const emailText = `*Email:* ${member.email}\n`;
-	const nodeText = `*Node:* <${mapURL}|${appointment.node_id}>\n`;
-	const notesText = appointment.notes ? `*Notes:* ${appointment.notes}` : "";
+	const introText = `New ${appointment.type}:\n*${building.address}*\n${formattedDate}`;
+	const nameText = `*Name:*\t${member.name}\n`;
+	const phoneText = `*Phone:*\t<tel:${member.phone}|${member.phone}>\n`;
+	const emailText = `*Email:*\t${member.email}\n`;
+	const nodeText = `*Node:*\t<${mapURL}|${appointment.node_id}>\n`;
+	const notesText = appointment.notes ? `*Notes:*\t${appointment.notes}\n` : "";
 	const infoText = `${nameText}${phoneText}${emailText}${nodeText}${notesText}`;
-
-	const linksText = `<https://google.com|Google> | <https://google.com|Apple> | <${earthURL}|Earth> | <${losURL}|LoS> | <${ticketURL}|Ticket>`;
+	const linksText = `<${earthURL}|Earth →>\t<${losURL}|LoS →>\t<${ticketURL}|Ticket →>`;
 
 	const fallbackText = `New ${appointment.type}:\n${building.address}\n${formattedDate}`;
 
@@ -138,39 +154,10 @@ export async function installMessage(appointment, slack_ts) {
 		markdownSection("Are you available? Thread here"),
 	];
 
-	const channelName = "install-team-test";
-	const channel = await getChannel(channelName);
-
-	if (slack_ts) {
-		const res = await slack.chat.update({
-			channel: channel.id,
-			ts: slack_ts,
-			text: fallbackText,
-			blocks,
-		});
-
-		return slack.chat.postMessage({
-			channel: channel.id,
-			thread_ts: slack_ts,
-			reply_broadcast: true,
-			text: `Rescheduled to ${formattedDate}`,
-		});
-	}
-
-	return slack.chat.postMessage({
-		channel: channel.id,
-		text: fallbackText,
+	return {
 		blocks,
-	});
-}
-
-async function getChannel(channelName) {
-	const { channels } = await slack.conversations.list({
-		types: "public_channel,private_channel",
-		limit: 1000, // TODO: Cursor support
-	});
-	const [channel] = channels.filter((c) => c.name === channelName);
-	return channel;
+		text: fallbackText,
+	}
 }
 
 function markdownSection(text) {
@@ -181,6 +168,24 @@ function markdownSection(text) {
 			text,
 		},
 	};
+}
+
+function getLoSString(visibleNodes) {
+	if (!visibleNodes) {
+		return "LoS Failed";
+	}
+
+	if (!visibleNodes.length) {
+		return "No LoS";
+	}
+
+	const isKnownDevice = (device) => device.type.name !== "Unknown";
+	const hasDevice = (node) => node.devices.filter(isKnownDevice).length;
+	const toIdentifier = (node) => node.name || node.id
+	const visible = visibleNodes.filter(hasDevice).map(toIdentifier).join(", ")
+	const nodesString = visible.length !== 1 ? "nodes" : "node";
+
+	return `LoS to ${nodesString} ${visible}`;
 }
 
 function getMapURL(id) {
