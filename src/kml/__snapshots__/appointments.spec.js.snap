@@ -1,0 +1,109 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getAppointmentsKML renders KML for the retrieved list of appointments 1`] = `
+"<?xml version=\\"1.0\\" encoding=\\"UTF-8\\"?>
+<kml xmlns=\\"http://www.opengis.net/kml/2.2\\">
+    <Document>
+        <Style id=\\"install\\">
+    <IconStyle>
+        <scale>0.75</scale> 
+        <Icon>
+            <href>https://i.imgur.com/4baif2L.png</href>
+        </Icon>
+        <hotSpot xunits=\\"fraction\\" yunits=\\"fraction\\" x=\\"0.5\\" y=\\"0.5\\"></hotSpot>
+    </IconStyle>
+    <LabelStyle>
+        <scale>0</scale>
+    </LabelStyle>
+</Style>,<Style id=\\"support\\">
+    <IconStyle>
+        <scale>0.75</scale> 
+        <Icon>
+            <href>https://i.imgur.com/qVRzBlS.png</href>
+        </Icon>
+        <hotSpot xunits=\\"fraction\\" yunits=\\"fraction\\" x=\\"0.5\\" y=\\"0.5\\"></hotSpot>
+    </IconStyle>
+    <LabelStyle>
+        <scale>0</scale>
+    </LabelStyle>
+</Style>,<Style id=\\"survey\\">
+    <IconStyle>
+        <scale>0.75</scale> 
+        <Icon>
+            <href>https://i.imgur.com/4baif2L.png</href>
+        </Icon>
+        <hotSpot xunits=\\"fraction\\" yunits=\\"fraction\\" x=\\"0.5\\" y=\\"0.5\\"></hotSpot>
+    </IconStyle>
+    <LabelStyle>
+        <scale>0</scale>
+    </LabelStyle>
+</Style>,
+<Placemark>
+    <name>Install - Sat, Jan 1</name>
+    <ExtendedData>
+        <Data name=\\"Type\\">
+    <value>Install</value>
+</Data>
+        <Data name=\\"Date\\">
+    <value>Sat, Jan 1</value>
+</Data>
+        <Data name=\\"Hour\\">
+    <value>8:00 AM</value>
+</Data>
+        <Data name=\\"Links\\">
+    <value><a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=1111\\" style=\\"margin-right: 1rem;\\">Ticket →</a></value>
+</Data>
+    </ExtendedData>
+    <Point>
+        <altitudeMode>absolute</altitudeMode>
+        <coordinates>133.2211,91.1442,300</coordinates>
+    </Point>
+    <styleUrl>#install</styleUrl>
+</Placemark>,
+<Placemark>
+    <name>Install - Sat, Jan 1</name>
+    <ExtendedData>
+        <Data name=\\"Type\\">
+    <value>Install</value>
+</Data>
+        <Data name=\\"Date\\">
+    <value>Sat, Jan 1</value>
+</Data>
+        <Data name=\\"Hour\\">
+    <value>5:28 AM</value>
+</Data>
+        <Data name=\\"Links\\">
+    <value><a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=2222\\" style=\\"margin-right: 1rem;\\">Ticket →</a></value>
+</Data>
+    </ExtendedData>
+    <Point>
+        <altitudeMode>absolute</altitudeMode>
+        <coordinates>133.291,91.1423,100</coordinates>
+    </Point>
+    <styleUrl>#install</styleUrl>
+</Placemark>,
+<Placemark>
+    <name>Install - Sat, Jan 1</name>
+    <ExtendedData>
+        <Data name=\\"Type\\">
+    <value>Install</value>
+</Data>
+        <Data name=\\"Date\\">
+    <value>Sat, Jan 1</value>
+</Data>
+        <Data name=\\"Hour\\">
+    <value>10:23 AM</value>
+</Data>
+        <Data name=\\"Links\\">
+    <value><a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=3333\\" style=\\"margin-right: 1rem;\\">Ticket →</a></value>
+</Data>
+    </ExtendedData>
+    <Point>
+        <altitudeMode>absolute</altitudeMode>
+        <coordinates>133.2401,91.1401,250</coordinates>
+    </Point>
+    <styleUrl>#install</styleUrl>
+</Placemark>
+    </Document>
+</kml>"
+`;

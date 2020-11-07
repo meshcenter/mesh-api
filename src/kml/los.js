@@ -1,7 +1,7 @@
 import { performQuery } from "../db";
 import { lineStyle, kml } from "./utils";
 
-export async function getLosKML(params) {
+export async function getLosKML() {
 	const los = await getLos();
 
 	const losByRequest = los.reduce((acc, cur) => {

@@ -1,7 +1,7 @@
 import { performQuery } from "../db";
 import { iconStyle, data, panoData, kml } from "./utils";
 
-export async function getRequestsKML(params) {
+export async function getRequestsKML() {
 	const requests = await getRequests();
 
 	const elements = [

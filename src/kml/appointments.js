@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { performQuery } from "../db";
 import { iconStyle, data, kml } from "./utils";
 
-export async function getAppointmentsKML(params) {
+export async function getAppointmentsKML() {
     const appointments = await getAppointments();
     const appointmentsKML = appointments.map(appointmentKML);
 

@@ -1,0 +1,82 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getRequestsKML renders KML for current install requests 1`] = `
+"<?xml version=\\"1.0\\" encoding=\\"UTF-8\\"?>
+<kml xmlns=\\"http://www.opengis.net/kml/2.2\\">
+    <Document>
+        <Style id=\\"request\\">
+    <IconStyle>
+        <scale>0.5</scale> 
+        <Icon>
+            <href>https://i.imgur.com/oVFMyJU.png</href>
+        </Icon>
+        <hotSpot xunits=\\"fraction\\" yunits=\\"fraction\\" x=\\"0.5\\" y=\\"0.5\\"></hotSpot>
+    </IconStyle>
+    <LabelStyle>
+        <scale>0</scale>
+    </LabelStyle>
+</Style>,<Style id=\\"panoRequest\\">
+    <IconStyle>
+        <scale>0.5</scale> 
+        <Icon>
+            <href>https://i.imgur.com/uj6HMxZ.png</href>
+        </Icon>
+        <hotSpot xunits=\\"fraction\\" yunits=\\"fraction\\" x=\\"0.5\\" y=\\"0.5\\"></hotSpot>
+    </IconStyle>
+    <LabelStyle>
+        <scale>0</scale>
+    </LabelStyle>
+</Style>,
+<Placemark>
+	<name>8142</name>
+	<ExtendedData>
+		<Data name=\\"ID\\">
+    <value>8142</value>
+</Data>
+		<Data name=\\"Date\\">
+    <value>Sat Nov 07 2020</value>
+</Data>
+		<Data name=\\"Roof\\">
+    <value>Yes</value>
+</Data>
+		<Data name=\\"Links\\">
+    <value><a href=\\"https://dashboard.nycmesh.net/requests/8142\\" style=\\"margin-right: 1rem;\\">Dashboard →</a> <a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=8142\\" style=\\"margin-right: 1rem;\\">Tickets →</a></value>
+</Data>
+		<Data name=\\"Panos\\">
+    <value></value>
+</Data>
+	</ExtendedData>
+	<Point>
+		<altitudeMode>absolute</altitudeMode>
+		<coordinates>34.51423,-71.31241,50m</coordinates>
+	</Point>
+	<styleUrl>#panoRequest</styleUrl>
+</Placemark>,
+<Placemark>
+	<name>9133</name>
+	<ExtendedData>
+		<Data name=\\"ID\\">
+    <value>9133</value>
+</Data>
+		<Data name=\\"Date\\">
+    <value>Sat Nov 07 2020</value>
+</Data>
+		<Data name=\\"Roof\\">
+    <value>No</value>
+</Data>
+		<Data name=\\"Links\\">
+    <value><a href=\\"https://dashboard.nycmesh.net/requests/9133\\" style=\\"margin-right: 1rem;\\">Dashboard →</a> <a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=9133\\" style=\\"margin-right: 1rem;\\">Tickets →</a></value>
+</Data>
+		<Data name=\\"Panos\\">
+    <value><img src=\\"https://pano.rama\\" style=\\"width: 32rem; display: block;\\" /></value>
+</Data>
+	</ExtendedData>
+	<Point>
+		<altitudeMode>absolute</altitudeMode>
+		<coordinates>34.51423,-71.31241,50m</coordinates>
+	</Point>
+	<styleUrl>#panoRequest</styleUrl>
+</Placemark>
+    </Document>
+</kml>"
+`;

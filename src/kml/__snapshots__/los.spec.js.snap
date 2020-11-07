@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getLosKML renders KML for line-of-sight from a request to other nodes 1`] = `
+"<?xml version=\\"1.0\\" encoding=\\"UTF-8\\"?>
+<kml xmlns=\\"http://www.opengis.net/kml/2.2\\">
+    <Document>
+        <Style id=\\"losLink\\">
+    <LineStyle>
+        <color>7700ff00</color>
+        <width>2.5</width>
+    </LineStyle>
+    <PolyStyle>
+        <color>00000000</color>
+    </PolyStyle>
+</Style>,<Folder><name>5111</name>
+<Placemark>
+    <name>Line of Sight</name>
+    <LineString>
+        <altitudeMode>absolute</altitudeMode>
+        <coordinates>-74.0152093,40.645353,100m -73.9123421,40.6123248,150m</coordinates>
+    </LineString>
+    <styleUrl>#losLink</styleUrl>
+</Placemark>
+	</Folder>,<Folder><name>6111</name>
+<Placemark>
+    <name>Line of Sight</name>
+    <LineString>
+        <altitudeMode>absolute</altitudeMode>
+        <coordinates>-75.120532,39.114023,50m -73.144110,41.001234,90m</coordinates>
+    </LineString>
+    <styleUrl>#losLink</styleUrl>
+</Placemark>
+	</Folder>
+    </Document>
+</kml>"
+`;

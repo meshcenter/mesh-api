@@ -1,0 +1,216 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getNodesKML generates KML for all the nodes 1`] = `
+"<?xml version=\\"1.0\\" encoding=\\"UTF-8\\"?>
+<kml xmlns=\\"http://www.opengis.net/kml/2.2\\">
+    <Document>
+        <Style id=\\"supernode\\">
+    <IconStyle>
+        <scale>0.6</scale> 
+        <Icon>
+            <href>https://i.imgur.com/GFd364p.png</href>
+        </Icon>
+        <hotSpot xunits=\\"fraction\\" yunits=\\"fraction\\" x=\\"0.5\\" y=\\"0.5\\"></hotSpot>
+    </IconStyle>
+    <LabelStyle>
+        <scale>0</scale>
+    </LabelStyle>
+</Style>,<Style id=\\"hub\\">
+    <IconStyle>
+        <scale>0.6</scale> 
+        <Icon>
+            <href>https://i.imgur.com/dsizT9e.png</href>
+        </Icon>
+        <hotSpot xunits=\\"fraction\\" yunits=\\"fraction\\" x=\\"0.5\\" y=\\"0.5\\"></hotSpot>
+    </IconStyle>
+    <LabelStyle>
+        <scale>0</scale>
+    </LabelStyle>
+</Style>,<Style id=\\"omni\\">
+    <IconStyle>
+        <scale>0.6</scale> 
+        <Icon>
+            <href>https://i.imgur.com/dsizT9e.png</href>
+        </Icon>
+        <hotSpot xunits=\\"fraction\\" yunits=\\"fraction\\" x=\\"0.5\\" y=\\"0.5\\"></hotSpot>
+    </IconStyle>
+    <LabelStyle>
+        <scale>0</scale>
+    </LabelStyle>
+</Style>,<Style id=\\"node\\">
+    <IconStyle>
+        <scale>0.5</scale> 
+        <Icon>
+            <href>https://i.imgur.com/OBBZi9E.png</href>
+        </Icon>
+        <hotSpot xunits=\\"fraction\\" yunits=\\"fraction\\" x=\\"0.5\\" y=\\"0.5\\"></hotSpot>
+    </IconStyle>
+    <LabelStyle>
+        <scale>0</scale>
+    </LabelStyle>
+</Style>,<Style id=\\"hubLink\\">
+    <LineStyle>
+        <color>ff00ffff</color>
+        <width>3</width>
+    </LineStyle>
+    <PolyStyle>
+        <color>00000000</color>
+    </PolyStyle>
+</Style>,<Style id=\\"backboneLink\\">
+    <LineStyle>
+        <color>ff00ffff</color>
+        <width>3</width>
+    </LineStyle>
+    <PolyStyle>
+        <color>00000000</color>
+    </PolyStyle>
+</Style>,<Style id=\\"activeLink\\">
+    <LineStyle>
+        <color>ff0000ff</color>
+        <width>3</width>
+    </LineStyle>
+    <PolyStyle>
+        <color>00000000</color>
+    </PolyStyle>
+</Style>,<Folder>
+					<name>1013</name>
+					<Placemark>
+	<name>Node 1013</name>
+		<ExtendedData>
+		
+		<Data name=\\"Status\\">
+    <value>inactive</value>
+</Data>
+		<Data name=\\"Installed\\">
+    <value>Fri Aug 15 2014</value>
+</Data>
+		<Data name=\\"Devices\\">
+    <value></value>
+</Data>
+		<Data name=\\"Notes\\">
+    <value>hub node</value>
+</Data>
+		<Data name=\\"Links\\">
+    <value><a href=\\"https://dashboard.nycmesh.net/requests/1013\\" style=\\"margin-right: 1rem;\\">Dashboard →</a> <a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=1013\\" style=\\"margin-right: 1rem;\\">Tickets →</a></value>
+</Data>
+		<Data name=\\"Panos\\">
+    <value><img src=\\"https://imgur.com/1013/1\\" style=\\"width: 32rem; display: block;\\" /><img src=\\"https://imgur.com/1013/2\\" style=\\"width: 32rem; display: block;\\" /></value>
+</Data>
+	</ExtendedData>
+	<Point>
+		<altitudeMode>absolute</altitudeMode>
+		<coordinates>-75.934582,31.234524,122m</coordinates>
+	</Point>
+	<styleUrl>#hub</styleUrl>
+</Placemark>
+					<Placemark>
+	<name>Link</name>
+	<ExtendedData>
+		<Data name=\\"ID\\">
+    <value>92</value>
+</Data>
+		<Data name=\\"Status\\">
+    <value>inactive</value>
+</Data>
+		<Data name=\\"From\\">
+    <value>1013 Unknown Device</value>
+</Data>
+		<Data name=\\"To\\">
+    <value>Saratoga LiteAP</value>
+</Data>
+	</ExtendedData>
+	<LineString>
+		<altitudeMode>absolute</altitudeMode>
+		<coordinates>-75.934582,31.234524,122m -74.123410,33.953245,80m</coordinates>
+	</LineString>
+	<styleUrl>#activeLink</styleUrl>
+</Placemark>
+
+				</Folder>,<Folder>
+					<name>9123</name>
+					<Placemark>
+	<name>Saratoga</name>
+		<ExtendedData>
+		<Data name=\\"Name\\">
+    <value>Saratoga</value>
+</Data>
+		<Data name=\\"Status\\">
+    <value>active</value>
+</Data>
+		<Data name=\\"Installed\\">
+    <value>Mon Feb 01 2016</value>
+</Data>
+		<Data name=\\"Devices\\">
+    <value>LiteAP, AF24</value>
+</Data>
+		
+		<Data name=\\"Links\\">
+    <value><a href=\\"https://dashboard.nycmesh.net/requests/9123\\" style=\\"margin-right: 1rem;\\">Dashboard →</a> <a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=9123\\" style=\\"margin-right: 1rem;\\">Tickets →</a></value>
+</Data>
+		<Data name=\\"Panos\\">
+    <value></value>
+</Data>
+	</ExtendedData>
+	<Point>
+		<altitudeMode>absolute</altitudeMode>
+		<coordinates>-74.123410,33.953245,80m</coordinates>
+	</Point>
+	<styleUrl>#node</styleUrl>
+</Placemark>
+					
+				</Folder>,<Folder>
+					<name>9999</name>
+					<Placemark>
+	<name>Node 9999</name>
+		<ExtendedData>
+		
+		<Data name=\\"Status\\">
+    <value>active</value>
+</Data>
+		<Data name=\\"Installed\\">
+    <value>Sat Dec 21 2019</value>
+</Data>
+		<Data name=\\"Devices\\">
+    <value>Omni, LBE</value>
+</Data>
+		
+		<Data name=\\"Links\\">
+    <value><a href=\\"https://dashboard.nycmesh.net/requests/9999\\" style=\\"margin-right: 1rem;\\">Dashboard →</a> <a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=9999\\" style=\\"margin-right: 1rem;\\">Tickets →</a></value>
+</Data>
+		<Data name=\\"Panos\\">
+    <value><img src=\\"https://imgur.com/9999\\" style=\\"width: 32rem; display: block;\\" /></value>
+</Data>
+	</ExtendedData>
+	<Point>
+		<altitudeMode>absolute</altitudeMode>
+		<coordinates>-71.123413,33.123414,230m</coordinates>
+	</Point>
+	<styleUrl>#omni</styleUrl>
+</Placemark>
+					<Placemark>
+	<name>Link</name>
+	<ExtendedData>
+		<Data name=\\"ID\\">
+    <value>91</value>
+</Data>
+		<Data name=\\"Status\\">
+    <value>active</value>
+</Data>
+		<Data name=\\"From\\">
+    <value>9999 LBE</value>
+</Data>
+		<Data name=\\"To\\">
+    <value>Saratoga LiteAP</value>
+</Data>
+	</ExtendedData>
+	<LineString>
+		<altitudeMode>absolute</altitudeMode>
+		<coordinates>-71.123413,33.123414,230m -74.123410,33.953245,80m</coordinates>
+	</LineString>
+	<styleUrl>#activeLink</styleUrl>
+</Placemark>
+
+				</Folder>
+    </Document>
+</kml>"
+`;

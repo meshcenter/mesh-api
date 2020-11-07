@@ -1,0 +1,35 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getKML renders KML for appointments, LoS, nodes, and requests 1`] = `
+"<?xml version=\\"1.0\\" encoding=\\"UTF-8\\"?>
+<kml xmlns=\\"http://www.opengis.net/kml/2.2\\" xmlns:gx=\\"http://www.google.com/kml/ext/2.2\\" xmlns:kml=\\"http://www.opengis.net/kml/2.2\\" xmlns:atom=\\"http://www.w3.org/2005/Atom\\">
+<Document>
+	<name>NYC Mesh API</name>
+	<NetworkLink>
+    <name>Appointments</name>
+    <Link>
+        <href>http://localhost:9000/v1/kml/appointments</href>
+    </Link>
+</NetworkLink>
+	<NetworkLink>
+    <name>LoS</name>
+    <Link>
+        <href>http://localhost:9000/v1/kml/los</href>
+    </Link>
+</NetworkLink>
+	<NetworkLink>
+    <name>Nodes</name>
+    <Link>
+        <href>http://localhost:9000/v1/kml/nodes</href>
+    </Link>
+</NetworkLink>
+	<NetworkLink>
+    <name>Requests</name>
+    <Link>
+        <href>http://localhost:9000/v1/kml/requests</href>
+    </Link>
+</NetworkLink>
+</Document>
+</kml>
+"
+`;
