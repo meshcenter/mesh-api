@@ -39,68 +39,46 @@ exports[`getAppointmentsKML renders KML for the retrieved list of appointments 1
     </LabelStyle>
 </Style>,
 <Placemark>
-    <name>Install - Sat, Jan 1</name>
+    <name>Install - Fri, Dec 4</name>
     <ExtendedData>
         <Data name=\\"Type\\">
     <value>Install</value>
 </Data>
         <Data name=\\"Date\\">
-    <value>Sat, Jan 1</value>
+    <value>Fri, Dec 4</value>
 </Data>
         <Data name=\\"Hour\\">
-    <value>8:00 AM</value>
+    <value>6:00 PM</value>
 </Data>
         <Data name=\\"Links\\">
-    <value><a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=1111\\" style=\\"margin-right: 1rem;\\">Ticket →</a></value>
+    <value><a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=1810\\" style=\\"margin-right: 1rem;\\">Ticket →</a></value>
 </Data>
     </ExtendedData>
     <Point>
         <altitudeMode>absolute</altitudeMode>
-        <coordinates>133.2211,91.1442,300</coordinates>
+        <coordinates>-73.9403011,40.7253199,25</coordinates>
     </Point>
     <styleUrl>#install</styleUrl>
 </Placemark>,
 <Placemark>
-    <name>Install - Sat, Jan 1</name>
+    <name>Install - Thu, Oct 1</name>
     <ExtendedData>
         <Data name=\\"Type\\">
     <value>Install</value>
 </Data>
         <Data name=\\"Date\\">
-    <value>Sat, Jan 1</value>
+    <value>Thu, Oct 1</value>
 </Data>
         <Data name=\\"Hour\\">
-    <value>5:28 AM</value>
+    <value>2:00 PM</value>
 </Data>
         <Data name=\\"Links\\">
-    <value><a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=2222\\" style=\\"margin-right: 1rem;\\">Ticket →</a></value>
+    <value><a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=1811\\" style=\\"margin-right: 1rem;\\">Ticket →</a></value>
 </Data>
     </ExtendedData>
     <Point>
         <altitudeMode>absolute</altitudeMode>
-        <coordinates>133.291,91.1423,100</coordinates>
-    </Point>
-    <styleUrl>#install</styleUrl>
-</Placemark>,
-<Placemark>
-    <name>Install - Sat, Jan 1</name>
-    <ExtendedData>
-        <Data name=\\"Type\\">
-    <value>Install</value>
-</Data>
-        <Data name=\\"Date\\">
-    <value>Sat, Jan 1</value>
-</Data>
-        <Data name=\\"Hour\\">
-    <value>10:23 AM</value>
-</Data>
-        <Data name=\\"Links\\">
-    <value><a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=3333\\" style=\\"margin-right: 1rem;\\">Ticket →</a></value>
-</Data>
-    </ExtendedData>
-    <Point>
-        <altitudeMode>absolute</altitudeMode>
-        <coordinates>133.2401,91.1401,250</coordinates>
+        <coordinates>-73.9404138,40.7253234,21</coordinates>
     </Point>
     <styleUrl>#install</styleUrl>
 </Placemark>
