@@ -73,143 +73,37 @@ exports[`getNodesKML generates KML for all the nodes 1`] = `
         <color>00000000</color>
     </PolyStyle>
 </Style>,<Folder>
-					<name>1013</name>
+					<name>7290</name>
 					<Placemark>
-	<name>Node 1013</name>
+	<name>Node 7290</name>
 		<ExtendedData>
 		
 		<Data name=\\"Status\\">
-    <value>inactive</value>
+    <value>active</value>
 </Data>
 		<Data name=\\"Installed\\">
-    <value>Fri Aug 15 2014</value>
+    <value>Sun Nov 08 2020</value>
 </Data>
 		<Data name=\\"Devices\\">
-    <value></value>
+    <value>Omni</value>
 </Data>
 		<Data name=\\"Notes\\">
-    <value>hub node</value>
+    <value>Omni port 3</value>
 </Data>
 		<Data name=\\"Links\\">
-    <value><a href=\\"https://dashboard.nycmesh.net/requests/1013\\" style=\\"margin-right: 1rem;\\">Dashboard →</a> <a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=1013\\" style=\\"margin-right: 1rem;\\">Tickets →</a></value>
+    <value><a href=\\"https://dashboard.nycmesh.net/requests/7290\\" style=\\"margin-right: 1rem;\\">Dashboard →</a> <a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=7290\\" style=\\"margin-right: 1rem;\\">Tickets →</a></value>
 </Data>
 		<Data name=\\"Panos\\">
-    <value><img src=\\"https://imgur.com/1013/1\\" style=\\"width: 32rem; display: block;\\" /><img src=\\"https://imgur.com/1013/2\\" style=\\"width: 32rem; display: block;\\" /></value>
+    <value><img src=\\"https://node-db.netlify.com/panoramas/5547.jpg\\" style=\\"width: 32rem; display: block;\\" /><img src=\\"https://node-db.netlify.com/panoramas/7347.jpg\\" style=\\"width: 32rem; display: block;\\" /><img src=\\"https://node-db.netlify.com/panoramas/7347a.jpg\\" style=\\"width: 32rem; display: block;\\" /></value>
 </Data>
 	</ExtendedData>
 	<Point>
 		<altitudeMode>absolute</altitudeMode>
-		<coordinates>-75.934582,31.234524,122m</coordinates>
-	</Point>
-	<styleUrl>#hub</styleUrl>
-</Placemark>
-					<Placemark>
-	<name>Link</name>
-	<ExtendedData>
-		<Data name=\\"ID\\">
-    <value>92</value>
-</Data>
-		<Data name=\\"Status\\">
-    <value>inactive</value>
-</Data>
-		<Data name=\\"From\\">
-    <value>1013 Unknown Device</value>
-</Data>
-		<Data name=\\"To\\">
-    <value>Saratoga LiteAP</value>
-</Data>
-	</ExtendedData>
-	<LineString>
-		<altitudeMode>absolute</altitudeMode>
-		<coordinates>-75.934582,31.234524,122m -74.123410,33.953245,80m</coordinates>
-	</LineString>
-	<styleUrl>#activeLink</styleUrl>
-</Placemark>
-
-				</Folder>,<Folder>
-					<name>9123</name>
-					<Placemark>
-	<name>Saratoga</name>
-		<ExtendedData>
-		<Data name=\\"Name\\">
-    <value>Saratoga</value>
-</Data>
-		<Data name=\\"Status\\">
-    <value>active</value>
-</Data>
-		<Data name=\\"Installed\\">
-    <value>Mon Feb 01 2016</value>
-</Data>
-		<Data name=\\"Devices\\">
-    <value>LiteAP, AF24</value>
-</Data>
-		
-		<Data name=\\"Links\\">
-    <value><a href=\\"https://dashboard.nycmesh.net/requests/9123\\" style=\\"margin-right: 1rem;\\">Dashboard →</a> <a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=9123\\" style=\\"margin-right: 1rem;\\">Tickets →</a></value>
-</Data>
-		<Data name=\\"Panos\\">
-    <value></value>
-</Data>
-	</ExtendedData>
-	<Point>
-		<altitudeMode>absolute</altitudeMode>
-		<coordinates>-74.123410,33.953245,80m</coordinates>
-	</Point>
-	<styleUrl>#node</styleUrl>
-</Placemark>
-					
-				</Folder>,<Folder>
-					<name>9999</name>
-					<Placemark>
-	<name>Node 9999</name>
-		<ExtendedData>
-		
-		<Data name=\\"Status\\">
-    <value>active</value>
-</Data>
-		<Data name=\\"Installed\\">
-    <value>Sat Dec 21 2019</value>
-</Data>
-		<Data name=\\"Devices\\">
-    <value>Omni, LBE</value>
-</Data>
-		
-		<Data name=\\"Links\\">
-    <value><a href=\\"https://dashboard.nycmesh.net/requests/9999\\" style=\\"margin-right: 1rem;\\">Dashboard →</a> <a href=\\"https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=9999\\" style=\\"margin-right: 1rem;\\">Tickets →</a></value>
-</Data>
-		<Data name=\\"Panos\\">
-    <value><img src=\\"https://imgur.com/9999\\" style=\\"width: 32rem; display: block;\\" /></value>
-</Data>
-	</ExtendedData>
-	<Point>
-		<altitudeMode>absolute</altitudeMode>
-		<coordinates>-71.123413,33.123414,230m</coordinates>
+		<coordinates>-73.9945616,40.7171001,35</coordinates>
 	</Point>
 	<styleUrl>#omni</styleUrl>
 </Placemark>
-					<Placemark>
-	<name>Link</name>
-	<ExtendedData>
-		<Data name=\\"ID\\">
-    <value>91</value>
-</Data>
-		<Data name=\\"Status\\">
-    <value>active</value>
-</Data>
-		<Data name=\\"From\\">
-    <value>9999 LBE</value>
-</Data>
-		<Data name=\\"To\\">
-    <value>Saratoga LiteAP</value>
-</Data>
-	</ExtendedData>
-	<LineString>
-		<altitudeMode>absolute</altitudeMode>
-		<coordinates>-71.123413,33.123414,230m -74.123410,33.953245,80m</coordinates>
-	</LineString>
-	<styleUrl>#activeLink</styleUrl>
-</Placemark>
-
+					
 				</Folder>
     </Document>
 </kml>"
