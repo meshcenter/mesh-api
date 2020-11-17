@@ -6,28 +6,44 @@ describe('getRequestsKML', () => {
   it('renders KML for current install requests', async () => {
     performQuery.mockResolvedValue([
       {
-        id: 8142,
-        building: {
-          lng: '34.51423',
-          lat: '-71.31241',
-          alt: '50m',
-        },
-        date: new Date(1604713833247),
+        id: 7059,
+        status: 'open',
+        apartment: null,
         roof_access: true,
-        panoramas: [],
+        date: new Date('2020-09-18T12:42:20.811Z'),
+        osticket_id: null,
+        member_id: 6087,
+        building_id: 5758,
+        building: {
+          id: 5758,
+          address: 'Redacted',
+          lat: 40.6604126,
+          lng: -73.9428339,
+          alt: 32,
+          bin: 3114902,
+          notes: null
+        },
+        panoramas: null
       },
       {
-        id: 9133,
-        building: {
-          lng: '34.51423',
-          lat: '-71.31241',
-          alt: '50m',
-        },
-        date: new Date(1604713833247),
+        id: 7060,
+        status: 'open',
+        apartment: null,
         roof_access: false,
-        panoramas: [
-          { url: 'https://pano.rama' }
-        ],
+        date: new Date('2020-10-18T12:42:20.811Z'),
+        osticket_id: null,
+        member_id: 6088,
+        building_id: 5759,
+        building: {
+          id: 5759,
+          address: 'Redacted',
+          lat: 41.6604126,
+          lng: -72.9428339,
+          alt: 33,
+          bin: 3114911,
+          notes: null
+        },
+        panoramas: null
       },
     ]);
 
