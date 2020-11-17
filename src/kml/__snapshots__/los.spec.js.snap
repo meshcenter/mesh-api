@@ -12,21 +12,12 @@ exports[`getLosKML renders KML for line-of-sight from a request to other nodes 1
     <PolyStyle>
         <color>00000000</color>
     </PolyStyle>
-</Style>,<Folder><name>5111</name>
+</Style>,<Folder><name>7059</name>
 <Placemark>
     <name>Line of Sight</name>
     <LineString>
         <altitudeMode>absolute</altitudeMode>
-        <coordinates>-74.0152093,40.645353,100m -73.9123421,40.6123248,150m</coordinates>
-    </LineString>
-    <styleUrl>#losLink</styleUrl>
-</Placemark>
-	</Folder>,<Folder><name>6111</name>
-<Placemark>
-    <name>Line of Sight</name>
-    <LineString>
-        <altitudeMode>absolute</altitudeMode>
-        <coordinates>-75.120532,39.114023,50m -73.144110,41.001234,90m</coordinates>
+        <coordinates>-74.0032029,40.7413549,95 -73.98809299999999,40.719778,72</coordinates>
     </LineString>
     <styleUrl>#losLink</styleUrl>
 </Placemark>
