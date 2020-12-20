@@ -123,18 +123,18 @@ export async function getLos(bin) {
 	// TODO: Dedupe code
 	const visibleOmnis1 = [];
 	await addVisible(omnisInRange, visibleOmnis1);
-	const visibleOmnis = visibleOmnis1.filter(node => node.bin !== bin);
+	const visibleOmnis = visibleOmnis1.filter((node) => node.bin !== bin);
 
 	// TODO: Dedupe code
 	let visibleSectors1 = [];
 	await addVisible(sectorsInRange, visibleSectors1);
-	const visibleSectors = visibleSectors1.filter(node => node.bin !== bin);
+	const visibleSectors = visibleSectors1.filter((node) => node.bin !== bin);
 
 	// TODO: Dedupe code
 	const visibleRequests1 = [];
 	await addVisible(requestsInRange, visibleRequests1);
 	const visibleRequests = visibleRequests1.filter(
-		request => request.bin !== bin
+		(request) => request.bin !== bin
 	);
 
 	// Only save los if building is in db... for now
@@ -142,7 +142,7 @@ export async function getLos(bin) {
 		const allVisible = [
 			...visibleOmnis,
 			...visibleSectors,
-			...visibleRequests
+			...visibleRequests,
 		];
 		const saved = {};
 		for (let j = 0; j < allVisible.length; j++) {
@@ -160,7 +160,7 @@ export async function getLos(bin) {
 		visibleSectors,
 		visibleRequests,
 		omnisInRange,
-		sectorsInRange
+		sectorsInRange,
 	};
 
 	async function addVisible(nodes, visible) {
@@ -175,25 +175,20 @@ export async function getLos(bin) {
 			const intersections = await getIntersections(
 				buildingMidpoint,
 				buildingHeight,
+				bin,
 				nodeMidpoint,
-				nodeHieght
+				nodeHieght,
+				node.bin
 			);
 
-			// Ignore intersections with the target building
-			// TODO: do this better (in sql?)
-			const filteredIntersections = intersections.filter(
-				intersection =>
-					parseInt(intersection.bin) !== parseInt(node.bin)
-			);
-
-			if (!filteredIntersections.length) {
+			if (!intersections.length) {
 				const distance = await getDistance(
 					buildingMidpoint,
 					nodeMidpoint
 				);
 				visible.push({
 					...node,
-					distance
+					distance,
 				});
 			}
 		}
@@ -231,8 +226,8 @@ export async function getBuildingHeight(bin) {
 
 async function getNodesInRange(nodes, bin, range, isRequests) {
 	const nodeBins = nodes
-		.map(node => node.bin)
-		.filter(bin => bin % 1000000 !== 0);
+		.map((node) => node.bin)
+		.filter((bin) => bin % 1000000 !== 0);
 	const getLosValues = [nodeBins, bin, range];
 	const losNodesInRange = await performLosQuery(getLosQuery, getLosValues);
 	const losNodesInRangeMap = losNodesInRange.reduce((acc, cur) => {
@@ -240,20 +235,27 @@ async function getNodesInRange(nodes, bin, range, isRequests) {
 		return acc;
 	}, {});
 
-	const nodesInRangeBins = losNodesInRange.map(node => node.bin);
+	const nodesInRangeBins = losNodesInRange.map((node) => node.bin);
 
-	const nodesInRange = nodes.filter(node =>
+	const nodesInRange = nodes.filter((node) =>
 		nodesInRangeBins.includes(String(node.bin))
 	);
-	const nodesInRangeWithMidpoint = nodesInRange.map(node => ({
+	const nodesInRangeWithMidpoint = nodesInRange.map((node) => ({
 		...node,
-		midpoint: losNodesInRangeMap[node.bin].midpoint
+		midpoint: losNodesInRangeMap[node.bin].midpoint,
 	}));
 
 	return nodesInRangeWithMidpoint;
 }
 
-async function getIntersections(midpoint1, height1, midpoint2, height2) {
+async function getIntersections(
+	midpoint1,
+	height1,
+	bin1,
+	midpoint2,
+	height2,
+	bin2
+) {
 	const [x1, y1] = midpoint1;
 	const [x2, y2] = midpoint2;
 	// const distance = await getDistance(midpoint1, midpoint2);
@@ -267,8 +269,10 @@ async function getIntersections(midpoint1, height1, midpoint2, height2) {
 				ny AS a
 			WHERE
 				ST_3DIntersects (a.geom, ST_SetSRID(ST_GeomFromText('LINESTRINGZ(${x1} ${y1} ${height1}, ${x2} ${y2} ${height2})'), 2263))
+				AND bldg_bin != $1
+				AND bldg_bin != $2
 			LIMIT 1`;
-	const res = await performLosQuery(text);
+	const res = await performLosQuery(text, [bin1, bin2]);
 	if (!res) throw new Error("Failed to get intersections");
 	return res;
 }
@@ -311,7 +315,7 @@ async function saveLOS(building, node) {
 		building.alt,
 		node.lat,
 		node.lng,
-		node.alt
+		node.alt,
 	];
 	return performQuery(query, values);
 }

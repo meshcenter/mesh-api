@@ -10,9 +10,7 @@ async function createPool() {
 		user: process.env.DB_USER,
 		password: process.env.DB_PASS,
 		port: process.env.DB_PORT,
-		ssl: {
-			mode: "require"
-		}
+		ssl: sslOptions(process.env.DB_HOST),
 	});
 }
 
@@ -23,10 +21,20 @@ async function createLosPool() {
 		user: process.env.LOS_DB_USER,
 		password: process.env.LOS_DB_PASS,
 		port: process.env.LOS_DB_PORT,
-		ssl: {
-			mode: "require"
-		}
+		ssl: sslOptions(process.env.LOS_DB_HOST),
 	});
+}
+
+// Hacky way to disable ssl when running locally
+// TODO: get ssl running locally
+// TODO: Figure out how to verify the key
+function sslOptions(host) {
+	// console.log(host);
+	if (host === "localhost" || host === "127.0.0.1") return false;
+	return {
+		rejectUnauthorized: false,
+		mode: "require",
+	};
 }
 
 export async function performQuery(text, values) {
@@ -43,4 +51,14 @@ export async function performLosQuery(text, values) {
 	const result = await client.query(text, values);
 	client.release();
 	return result.rows;
+}
+
+export async function end() {
+	if (pool) {
+		await pool.end();
+	}
+
+	if (losPool) {
+		await losPool.end();
+	}
 }

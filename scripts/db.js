@@ -9,10 +9,17 @@ async function createPool() {
 		user: process.env.DB_USER,
 		password: process.env.DB_PASS,
 		port: process.env.DB_PORT,
-		ssl: {
-			mode: "require"
-		}
+		ssl: sslOptions(process.env.DB_HOST),
 	});
+}
+
+// See src/db/index.js
+function sslOptions(host) {
+	if (host === "localhost" || host === "127.0.0.1") return false;
+	return {
+		rejectUnauthorized: false,
+		mode: "require",
+	};
 }
 
 async function performQuery(text, values) {
@@ -36,7 +43,7 @@ async function insertBulk(tableName, valueNames, items, valueExtractor) {
 		// "($1, $2, $3, $4, $5, $6)"
 		const oneToN = Array.from(Array(values.length), (e, i) => i + 1);
 		const offset = queryValues.length;
-		const indexVars = oneToN.map(i => `$${offset + i}`).join(", ");
+		const indexVars = oneToN.map((i) => `$${offset + i}`).join(", ");
 		const indexVarsText = `(${indexVars})`;
 
 		queryText += indexVarsText;

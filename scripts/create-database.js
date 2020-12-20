@@ -54,7 +54,7 @@ async function createDatabase() {
 		console.log("Creating tables...");
 
 		await performQuery(
-			`CREATE TYPE node_status AS ENUM ('planned', 'active', 'dead');`
+			`CREATE TYPE node_status AS ENUM ('active', 'inactive', 'potential');`
 		);
 
 		await performQuery(
@@ -63,7 +63,7 @@ async function createDatabase() {
 				lat				FLOAT NOT NULL,
 				lng				FLOAT NOT NULL,
 				alt				FLOAT NOT NULL,
-				status			node_status NOT NULL DEFAULT 'planned',
+				status			node_status NOT NULL,
 				location		VARCHAR(256),
 				name			VARCHAR(256),
 				notes			TEXT,
@@ -82,6 +82,7 @@ async function createDatabase() {
 			`CREATE TABLE "requests" (
 				id				SERIAL PRIMARY KEY,
 				status			request_status NOT NULL DEFAULT 'open',
+				apartment		VARCHAR(10),
 				roof_access		bool NOT NULL,
 				date			TIMESTAMP WITH TIME ZONE NOT NULL,
 				osticket_id		INTEGER,
@@ -110,7 +111,7 @@ async function createDatabase() {
 		);
 
 		await performQuery(
-			`CREATE TYPE device_status AS ENUM ('in stock', 'active', 'dead');`
+			`CREATE TYPE device_status AS ENUM ('active', 'inactive', 'potential');`
 		);
 
 		await performQuery(
@@ -132,7 +133,7 @@ async function createDatabase() {
 		);
 
 		await performQuery(
-			`CREATE TYPE link_status AS ENUM ('planned', 'active', 'dead');`
+			`CREATE TYPE link_status AS ENUM ('active', 'inactive', 'potential');`
 		);
 
 		await performQuery(
@@ -169,11 +170,12 @@ async function createDatabase() {
 				type			appointment_type NOT NULL,
 				date			TIMESTAMP WITH TIME ZONE NOT NULL,
 				notes			TEXT,
-				acuity_id		INTEGER NOT NULL,
+				request_id		INTEGER REFERENCES requests(id) NOT NULL,
 				member_id		INTEGER REFERENCES members(id) NOT NULL,
-				request_id		INTEGER REFERENCES requests(id),
+				building_id		INTEGER REFERENCES buildings(id) NOT NULL,
 				node_id			INTEGER REFERENCES nodes(id),
-				building_id		INTEGER REFERENCES buildings(id)
+				acuity_id		INTEGER,
+				slack_ts		VARCHAR(256)
 			)`
 		);
 	} catch (error) {

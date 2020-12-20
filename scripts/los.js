@@ -15,7 +15,7 @@ async function checkLOS() {
 	bar = new ProgressBar(requests.length);
 	bar.render();
 
-	for (var i = 0; i < requests.length; i++) {
+	for (var i = requests.length - 1; i >= 0; i--) {
 		const request = requests[i];
 		await handleRequest(request);
 		bar.curr = ++total;
@@ -34,7 +34,7 @@ async function handleRequest(request) {
 	if (request.bin < 0 || request.bin % 1000000 === 0) skip = true;
 	if (
 		request.device_types.filter(
-			device_type =>
+			(device_type) =>
 				device_type &&
 				["Omni", "LBE120", "SN1Sector1", "SN1Sector2"].indexOf(
 					device_type.name
@@ -54,7 +54,7 @@ async function handleRequest(request) {
 		visibleOmnis,
 		visibleSectors,
 		visibleRequests,
-		error
+		error,
 	} = await losResponse.json();
 	if (error) {
 		if (error === "Not found") {

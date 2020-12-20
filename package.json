@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
+    "@slack/web-api": "^5.8.0",
     "aws-sdk": "^2.575.0",
-    "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "date-fns": "^2.8.1",
     "encoding": "^0.1.12",
@@ -12,19 +12,22 @@
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^1.6.0",
     "node-fetch": "^2.6.0",
-    "pg": "^7.12.0",
+    "node-pg-migrate": "^5.9.0",
+    "pg": "^8.0.0",
     "serverless-http": "^2.3.0"
   },
   "devDependencies": {
     "colors": "^1.4.0",
     "dotenv": "^8.2.0",
     "dotenv-webpack": "^1.7.0",
+    "jest": "^26.4.0",
     "netlify-lambda": "^1.5.1"
   },
   "scripts": {
     "start": "NODE_ENV=development netlify-lambda serve src -c webpack.functions.js",
     "build": "netlify-lambda build src -c webpack.functions.js",
     "reset-db": "node scripts/create-database && node scripts/import-spreadsheet.js",
-    "los": "node scripts/los.js"
+    "los": "node scripts/los.js",
+    "test": "TZ=UTC jest --setupFiles dotenv/config"
   }
 }

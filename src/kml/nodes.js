@@ -14,7 +14,7 @@ export async function getNodesKML() {
 	const nodesKml = nodes
 		.sort((a, b) => a.id - b.id)
 		.map(
-			node => `<Folder>
+			(node) => `<Folder>
 					<name>${node.id}</name>
 					${nodePlacemark(node)}
 					${(linksByNode[node.id] || []).map(linkPlacemark)}
@@ -26,10 +26,10 @@ export async function getNodesKML() {
 		iconStyle("hub", 0.6, "https://i.imgur.com/dsizT9e.png"),
 		iconStyle("omni", 0.6, "https://i.imgur.com/dsizT9e.png"),
 		iconStyle("node", 0.5, "https://i.imgur.com/OBBZi9E.png"),
-		lineStyle("hubLink", "ff00ffff", 2.5),
-		lineStyle("backboneLink", "ff00ffff", 2.5),
-		lineStyle("activeLink", "ff0000ff", 2.5),
-		nodesKml
+		lineStyle("hubLink", "ff00ffff", 3),
+		lineStyle("backboneLink", "ff00ffff", 3),
+		lineStyle("activeLink", "ff0000ff", 3),
+		nodesKml,
 	];
 
 	return kml(elements);
@@ -44,10 +44,10 @@ function nodePlacemark(node) {
 		${node.name ? data("Name", node.name) : ""}
 		${data("Status", node.status)}
 		${data("Installed", node.create_date.toDateString())}
-		${data("Devices", node.device_types.map(d => d.name).join(", "))}
+		${data("Devices", node.device_types.map((d) => d.name).join(", "))}
 		${node.notes ? data("Notes", node.notes) : ""}
 		${data("Links", `${dashboardLink} ${ticketLink}`)}
-		${panoData(node.panoramas.filter(p => p) || [])}
+		${panoData(node.panoramas.filter((p) => p) || [])}
 	</ExtendedData>
 	<Point>
 		<altitudeMode>absolute</altitudeMode>
@@ -85,9 +85,9 @@ function linkPlacemark(link) {
 `;
 }
 
-const isOmni = device_type => device_type.name === "Omni";
-const isSupernode = node => node.name && node.name.includes("Supernode");
-const isHub = node => node.notes && node.notes.includes("hub");
+const isOmni = (device_type) => device_type.name === "Omni";
+const isSupernode = (node) => node.name && node.name.includes("Supernode");
+const isHub = (node) => node.notes && node.notes.includes("hub");
 const isBackbone = (node, device_type) =>
 	isSupernode(node) || isHub(node) || isOmni(device_type);
 

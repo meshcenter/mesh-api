@@ -29,14 +29,12 @@ export async function getRequest(id) {
 
 const getRequestsQuery = `SELECT
 	requests.*,
-	buildings.address AS address,
-	to_json(members) AS member,
-	json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas
+	to_json(buildings) AS building,
+	to_json(members) AS member
 FROM
 	requests
 	LEFT JOIN buildings ON requests.building_id = buildings.id
 	LEFT JOIN members ON requests.member_id = members.id
-	LEFT JOIN panoramas ON requests.id = panoramas.request_id
 GROUP BY
 	requests.id,
 	buildings.id,
@@ -48,8 +46,8 @@ export async function getRequests() {
 	return performQuery(getRequestsQuery);
 }
 
-export async function createRequest(request) {
-	const { name, email, phone, address, roofAccess } = request;
+export async function createRequest(request, slackClient) {
+	const { name, email, phone, address, apartment, roofAccess } = request;
 
 	// Geocode address
 	let { lat, lng, bin } = request;
@@ -67,25 +65,29 @@ export async function createRequest(request) {
 	// Look up building by bin
 	let building;
 	try {
-		[building] = await performQuery(
-			"SELECT * FROM buildings WHERE bin = $1",
-			[request.bin]
-		);
+		[
+			building,
+		] = await performQuery("SELECT * FROM buildings WHERE bin = $1", [
+			request.bin,
+		]);
 	} catch (error) {
 		console.log(error);
 	}
 
 	// Look up building by address
 	if (!building) {
-		[building] = await performQuery(
-			"SELECT * FROM buildings WHERE address = $1",
-			[address]
-		);
+		[
+			building,
+		] = await performQuery("SELECT * FROM buildings WHERE address = $1", [
+			address,
+		]);
 	}
 
 	// Create building if new
 	if (!building) {
-		[building] = await performQuery(
+		[
+			building,
+		] = await performQuery(
 			"INSERT INTO buildings (address, lat, lng, alt, bin) VALUES ($1, $2, $3, $4, $5) RETURNING *",
 			[address, lat, lng, buildingHeight, bin]
 		);
@@ -99,7 +101,9 @@ export async function createRequest(request) {
 
 	// Create member if new
 	if (!member) {
-		[member] = await performQuery(
+		[
+			member,
+		] = await performQuery(
 			"INSERT INTO members (name, email, phone) VALUES ($1, $2, $3) RETURNING *",
 			[name, email, phone]
 		);
@@ -107,20 +111,18 @@ export async function createRequest(request) {
 
 	// Insert request
 	const now = new Date();
-	const [dbRequest] = await performQuery(
-		"INSERT INTO requests (date, roof_access, member_id, building_id) VALUES ($1, $2, $3, $4) RETURNING *",
-		[now, roofAccess, member.id, building.id]
+	const [
+		dbRequest,
+	] = await performQuery(
+		"INSERT INTO requests (date, apartment, roof_access, member_id, building_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+		[now, apartment, roofAccess, member.id, building.id]
 	);
 
 	// Send Slack message
 	try {
 		const { visibleSectors, visibleOmnis } = await getLos(bin);
 		const visibleNodes = [...visibleSectors, ...visibleOmnis];
-		const slackRequest = {
-			...dbRequest,
-			id: request.spreadsheetId || dbRequest.id // Temp hack to keep in sync with spreadsheet
-		};
-		await requestMessage(slackRequest, building, member, visibleNodes);
+		await requestMessage(slackClient, dbRequest, building, visibleNodes);
 	} catch (error) {
 		console.log(error);
 	}
@@ -142,15 +144,15 @@ async function createTicket(request, building, member) {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
-			"X-API-Key": process.env.OSTICKET_API_KEY
+			"X-API-Key": process.env.OSTICKET_API_KEY,
 		},
 		body: JSON.stringify({
 			email,
 			name,
 			subject,
 			message,
-			phone
-		})
+			phone,
+		}),
 	});
 
 	const text = await response.text();
@@ -179,7 +181,7 @@ async function getBuildingInfo(address, buildingLat = 0, buildingLng = 0) {
 	return {
 		lat,
 		lng,
-		bin
+		bin,
 	};
 
 	function sortByDistance(a, b) {

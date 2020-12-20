@@ -1,6 +1,5 @@
 import express, { Router } from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
 import serverless from "serverless-http";
 
 import { checkAuth } from "./auth";
@@ -9,7 +8,7 @@ import { getBuildings, getBuilding } from "./db/buildings";
 import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
 import { getMembers, getMember } from "./db/members";
-import { getNodes, getNode, createNode } from "./db/nodes";
+import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest, createRequest } from "./db/requests";
 import { getSearch } from "./db/search";
@@ -20,16 +19,23 @@ import { getLosKML } from "./kml/los";
 import { getNodesKML } from "./kml/nodes";
 import { getRequestsKML } from "./kml/requests";
 
+import SlackClient from "./slack/client";
+
+import { acuityWebhook } from "./webhooks/acuity";
+
 const ROOT = "/v1";
 const app = express(ROOT);
 
+const slackClient = new SlackClient(process.env.SLACK_TOKEN);
+
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.set("etag", false);
 app.disable("x-powered-by");
 
 const router = Router({
-	caseSensitive: true
+	caseSensitive: true,
 });
 
 router.get(
@@ -93,7 +99,13 @@ router.get(
 router.get(
 	"/nodes/:id",
 	handleErrors(async (req, res, next) => {
-		const node = await getNode(req.params.id);
+		let node;
+		try {
+			await checkAuth(req.headers);
+			node = await getNode(req.params.id, true);
+		} catch (error) {
+			node = await getNode(req.params.id);
+		}
 		res.json(node);
 	})
 );
@@ -103,6 +115,15 @@ router.post(
 	handleErrors(async (req, res, next) => {
 		await checkAuth(req.headers);
 		const node = await createNode(req.body);
+		res.json(node);
+	})
+);
+
+router.post(
+	"/nodes/:id",
+	handleErrors(async (req, res, next) => {
+		await checkAuth(req.headers);
+		const node = await updateNode(req.params.id, req.body);
 		res.json(node);
 	})
 );
@@ -144,8 +165,12 @@ router.get(
 router.post(
 	"/requests",
 	handleErrors(async (req, res, next) => {
-		const request = await createRequest(req.body);
-		res.json(request);
+		const request = await createRequest(req.body, slackClient);
+		if (req.body.success_url) {
+			res.redirect(200, success_url);
+		} else {
+			res.json(request);
+		}
 	})
 );
 
@@ -166,7 +191,7 @@ router.get(
 		const kml = await getKML();
 		res.set({
 			"Content-Type": "text/xml",
-			"Content-Disposition": `attachment; filename="nycmesh.kml"`
+			"Content-Disposition": `attachment; filename="nycmesh.kml"`,
 		}).send(kml);
 	})
 );
@@ -211,9 +236,17 @@ router.get(
 	})
 );
 
+router.post(
+	"/webhooks/acuity",
+	handleErrors(async (req, res, next) => {
+		acuityWebhook(req.body, slackClient);
+		res.send({});
+	})
+);
+
 app.use(ROOT, router);
 
-app.use(function(error, req, res, next) {
+app.use(function (error, req, res, next) {
 	let status;
 	if (error.message === "Unauthorized") {
 		status = 401;
@@ -224,7 +257,12 @@ app.use(function(error, req, res, next) {
 	} else {
 		status = 500;
 	}
-	res.status(status).json({ error: error.message });
+
+	if (req.body.failure_url) {
+		res.redirect(303, req.body.failure_url);
+	} else {
+		res.status(status).json({ error: error.message });
+	}
 });
 
 export const handler = serverless(app);
