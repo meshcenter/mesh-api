@@ -11,7 +11,7 @@
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^1.6.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "node-pg-migrate": "^5.9.0",
     "pg": "^8.0.0",
     "serverless-http": "^2.3.0"
