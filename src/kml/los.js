@@ -12,11 +12,11 @@ export async function getLosKML(params) {
 	}, {});
 
 	const elements = [
-		lineStyle("losLink", "7700ff00", 2.5),
+		lineStyle("losLink", "9900ff00", 2.5),
 		Object.entries(losByRequest).map(([requestId, requestLos]) => {
 			const placemarks = requestLos.map(losPlacemark);
 			return `<Folder><name>${requestId}</name>${placemarks}</Folder>`;
-		})
+		}),
 	];
 
 	return kml(elements);
@@ -47,6 +47,21 @@ FROM
 	los
 	JOIN requests ON requests.building_id = los.building_a_id
 		AND requests.status = 'open'
+	LEFT JOIN nodes ON nodes.building_id = los.building_b_id
+		AND nodes.status = 'active'
+GROUP BY
+	los.id,
+	los.building_a_id`;
+
+const losPanoQuery = `SELECT
+	los.*,
+	json_agg(requests) AS requests,
+	json_agg(nodes) AS nodes
+FROM
+	los
+	JOIN requests ON requests.building_id = los.building_a_id
+		AND requests.status = 'open'
+	JOIN panoramas ON panoramas.request_id = requests.id
 	LEFT JOIN nodes ON nodes.building_id = los.building_b_id
 		AND nodes.status = 'active'
 GROUP BY

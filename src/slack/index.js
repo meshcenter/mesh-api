@@ -1,13 +1,17 @@
 import { format } from "date-fns";
 
-const requestChannel   = "join-requests-test";
+const requestChannel = "join-requests-test";
 const panoChannel = "panoramas-test";
 const installChannel = "install-team-test";
 
 const dateFmtString = "EEEE, MMM d h:mm aa";
 
 export async function requestMessage(client, request, building, visibleNodes) {
-	return sendMessage(client, requestChannel, requestMessageContent(request, building, visibleNodes));
+	return sendMessage(
+		client,
+		requestChannel,
+		requestMessageContent(request, building, visibleNodes)
+	);
 }
 
 export async function panoMessage(client, pano) {
@@ -15,18 +19,22 @@ export async function panoMessage(client, pano) {
 }
 
 export async function installMessage(client, appointment) {
-	return sendMessage(client, installChannel, installMessageContent(appointment));
+	return sendMessage(
+		client,
+		installChannel,
+		installMessageContent(appointment)
+	);
 }
 
 export async function rescheduleMessage(client, appointment, slackTS) {
 	const channel = await client.getChannel(installChannel);
 	if (!channel) {
-		console.log(`#${channelName} not found`);
+		// console.log(`#${channelName} not found`);
 		return;
 	}
 
 	const { text, blocks } = installMessageContent(appointment);
-	const formattedDate = format(appointment.date, dateFmtString)
+	const formattedDate = format(appointment.date, dateFmtString);
 
 	await client.update({
 		channel: channel.id,
@@ -46,7 +54,7 @@ export async function rescheduleMessage(client, appointment, slackTS) {
 async function sendMessage(client, channelName, messageContent) {
 	const channel = await client.getChannel(channelName);
 	if (!channel) {
-		console.log(`#${channelName} not found`);
+		// console.log(`#${channelName} not found`);
 		return;
 	}
 
@@ -79,7 +87,7 @@ function requestMessageContent(request, building, visibleNodes) {
 	return {
 		blocks: [markdownSection(text)],
 		text: fallbackText,
-	}
+	};
 }
 
 function panoMessageContent(pano) {
@@ -125,7 +133,7 @@ function panoMessageContent(pano) {
 	return {
 		blocks,
 		text: fallbackText,
-	}
+	};
 }
 
 function installMessageContent(appointment) {
@@ -141,7 +149,9 @@ function installMessageContent(appointment) {
 	const phoneText = `*Phone:*\t<tel:${member.phone}|${member.phone}>\n`;
 	const emailText = `*Email:*\t${member.email}\n`;
 	const nodeText = `*Node:*\t<${mapURL}|${appointment.node_id}>\n`;
-	const notesText = appointment.notes ? `*Notes:*\t${appointment.notes}\n` : "";
+	const notesText = appointment.notes
+		? `*Notes:*\t${appointment.notes}\n`
+		: "";
 	const infoText = `${nameText}${phoneText}${emailText}${nodeText}${notesText}`;
 	const linksText = `<${earthURL}|Earth →>\t<${losURL}|LoS →>\t<${ticketURL}|Ticket →>`;
 
@@ -157,7 +167,7 @@ function installMessageContent(appointment) {
 	return {
 		blocks,
 		text: fallbackText,
-	}
+	};
 }
 
 function markdownSection(text) {
@@ -181,8 +191,8 @@ function getLoSString(visibleNodes) {
 
 	const isKnownDevice = (device) => device.type.name !== "Unknown";
 	const hasDevice = (node) => node.devices.filter(isKnownDevice).length;
-	const toIdentifier = (node) => node.name || node.id
-	const visible = visibleNodes.filter(hasDevice).map(toIdentifier).join(", ")
+	const toIdentifier = (node) => node.name || node.id;
+	const visible = visibleNodes.filter(hasDevice).map(toIdentifier).join(", ");
 	const nodesString = visible.length !== 1 ? "nodes" : "node";
 
 	return `LoS to ${nodesString} ${visible}`;

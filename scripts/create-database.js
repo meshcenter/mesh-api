@@ -54,7 +54,7 @@ async function createDatabase() {
 		console.log("Creating tables...");
 
 		await performQuery(
-			`CREATE TYPE node_status AS ENUM ('planned', 'active', 'dead');`
+			`CREATE TYPE node_status AS ENUM ('active', 'inactive', 'potential');`
 		);
 
 		await performQuery(
@@ -63,7 +63,7 @@ async function createDatabase() {
 				lat				FLOAT NOT NULL,
 				lng				FLOAT NOT NULL,
 				alt				FLOAT NOT NULL,
-				status			node_status NOT NULL DEFAULT 'planned',
+				status			node_status NOT NULL,
 				location		VARCHAR(256),
 				name			VARCHAR(256),
 				notes			TEXT,
@@ -111,7 +111,7 @@ async function createDatabase() {
 		);
 
 		await performQuery(
-			`CREATE TYPE device_status AS ENUM ('in stock', 'active', 'dead');`
+			`CREATE TYPE device_status AS ENUM ('active', 'inactive', 'potential');`
 		);
 
 		await performQuery(
@@ -133,7 +133,7 @@ async function createDatabase() {
 		);
 
 		await performQuery(
-			`CREATE TYPE link_status AS ENUM ('planned', 'active', 'dead');`
+			`CREATE TYPE link_status AS ENUM ('active', 'inactive', 'potential');`
 		);
 
 		await performQuery(

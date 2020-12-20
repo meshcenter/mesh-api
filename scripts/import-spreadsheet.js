@@ -10,10 +10,10 @@ async function importSpreadsheet() {
 	const spreadsheetRes = await fetch(process.env.SPREADSHEET_URL);
 	const { nodes: rawNodes, links, sectors } = await spreadsheetRes.json();
 	const nodes = rawNodes
-		.filter(node => node.address)
-		.map(node => ({
+		.filter((node) => node.address)
+		.map((node) => ({
 			...node,
-			memberEmail: (node.memberEmail || "").toLowerCase().trim()
+			memberEmail: (node.memberEmail || "").toLowerCase().trim(),
 		}));
 
 	console.log("Importing spreadsheet...");
@@ -31,8 +31,8 @@ async function importBuildings(nodes) {
 	return insertBulk(
 		"buildings",
 		["address", "lat", "lng", "alt", "notes", "bin"],
-		clusteredNodes.filter(cluster => cluster[0].address),
-		cluster => {
+		clusteredNodes.filter((cluster) => cluster[0].address),
+		(cluster) => {
 			const { id, address, coordinates, notes, bin } = cluster[0]; // TODO: Something better than first node
 			const [lng, lat, alt] = coordinates;
 			return [
@@ -41,7 +41,7 @@ async function importBuildings(nodes) {
 				parseFloat(lng),
 				parseFloat(alt),
 				notes ? String(notes) : null,
-				bin
+				bin,
 			];
 		}
 	);
@@ -56,10 +56,10 @@ async function importNodes(nodes) {
 
 	const buildingsByNodeAddress = {};
 	const clusteredNodes = getClusteredNodes(nodes);
-	clusteredNodes.forEach(cluster => {
+	clusteredNodes.forEach((cluster) => {
 		const firstNode = cluster[0];
 		const clusterBuilding = buildingsByAddress[firstNode.address];
-		cluster.forEach(node => {
+		cluster.forEach((node) => {
 			buildingsByNodeAddress[node.address] = clusterBuilding;
 		});
 	});
@@ -71,16 +71,18 @@ async function importNodes(nodes) {
 	}, {});
 
 	const actualNodes = nodes.filter(
-		node =>
+		(node) =>
 			node.status === "Installed" ||
 			node.status === "Abandoned" ||
 			node.status === "Unsubscribe"
 	);
-	const installedNodes = actualNodes.filter(node => node.installDate);
+	const installedNodes = actualNodes.filter((node) => node.installDate);
 	const validNodes = installedNodes.filter(
-		node => node.address && buildingsByNodeAddress[node.address]
+		(node) => node.address && buildingsByNodeAddress[node.address]
 	);
-	const activeNodes = validNodes.filter(node => node.status === "Installed");
+	const activeNodes = validNodes.filter(
+		(node) => node.status === "Installed"
+	);
 
 	let maxNodeId = 1;
 	await insertBulk(
@@ -97,10 +99,10 @@ async function importNodes(nodes) {
 			"create_date",
 			"abandon_date",
 			"building_id",
-			"member_id"
+			"member_id",
 		],
 		validNodes,
-		node => {
+		(node) => {
 			if (
 				!node.memberEmail ||
 				!membersMap[node.memberEmail.toLowerCase()]
@@ -118,14 +120,14 @@ async function importNodes(nodes) {
 				node.coordinates[1],
 				node.coordinates[0],
 				node.coordinates[2],
-				node.status === "Installed" ? "active" : "dead",
+				node.status === "Installed" ? "active" : "inactive",
 				node.address,
 				node.name,
 				node.notes,
 				new Date(node.installDate),
 				node.abandonDate ? new Date(node.abandonDate) : null,
 				buildingsByNodeAddress[node.address].id,
-				membersMap[node.memberEmail.toLowerCase()].id
+				membersMap[node.memberEmail.toLowerCase()].id,
 			];
 		}
 	);
@@ -139,7 +141,7 @@ async function importDevices(devices) {
 		acc[cur.device] = {
 			name: cur.device,
 			range: cur.radius,
-			width: cur.width
+			width: cur.width,
 		};
 		return acc;
 	}, {});
@@ -150,14 +152,14 @@ async function importDevices(devices) {
 	await insertBulk(
 		"device_types",
 		["name", "range", "width"],
-		deviceTypes.filter(type => {
+		deviceTypes.filter((type) => {
 			if (!type.name || !type.range || !type.width) {
 				console.log(`Invalid device type:`, type);
 				// return false;
 			}
 			return true;
 		}),
-		type => [type.name, type.range, type.width]
+		(type) => [type.name, type.range, type.width]
 	);
 
 	const dbDeviceTypes = await performQuery("SELECT * FROM device_types");
@@ -166,35 +168,62 @@ async function importDevices(devices) {
 		return acc;
 	}, {});
 
-	// Add devices for nodes with no devices
-	const devicesMap = devices.reduce((acc, cur) => {
-		acc[cur.node_id] = cur;
-		return acc;
-	}, {});
 	const nodes = await performQuery("SELECT * FROM nodes");
 	const nodesMap = nodes.reduce((acc, cur) => {
 		acc[cur.id] = cur;
 		return acc;
 	}, {});
+
+	devices.forEach((device, index) => {
+		const node = nodesMap[device.nodeId];
+
+		if (!node) {
+			console.log("No node for device", device);
+			return;
+		}
+
+		if (device.status !== node.status) {
+			console.log("mismaatched status", device, node);
+		}
+
+		if (device.device === "Omni" && node.status === "active") {
+			devices[index].status = "active";
+		}
+
+		// if (node && node.notes && node.notes.toLowerCase().includes("omni")) {
+		// 	devices[index].device = "Omni";
+		// 	if (device.status !== node.status && node.status === "active") {
+		// 		console.log(node, device);
+		// 		devices[index].status = "active";
+		// 	}
+		// }
+	});
+
+	// Add devices for nodes with no devices
+	const nodeDevicesMap = devices.reduce((acc, cur) => {
+		acc[cur.nodeId] = cur;
+		return acc;
+	}, {});
+
 	const unknownDevices = nodes.reduce((acc, cur) => {
-		if (!devicesMap[cur.id]) {
+		if (!nodeDevicesMap[cur.id]) {
 			let device = "Unknown";
 			if (cur.notes && cur.notes.toLowerCase().includes("omni")) {
 				device = "Omni";
 			}
 			acc.push({
-				status: "active",
+				status: cur.status,
 				device,
-				nodeId: cur.id
+				nodeId: cur.id,
 			});
 		}
 		return acc;
 	}, []);
 
 	const allDevices = [
-		...devices.filter(device => nodesMap[device.nodeId]), // Only import devices on active nodes
-		...unknownDevices
-	].filter(device => device.status === "active");
+		...devices.filter((device) => nodesMap[device.nodeId]), // Only import devices on nodes
+		...unknownDevices,
+	];
 
 	// Import devices
 	await insertBulk(
@@ -211,14 +240,20 @@ async function importDevices(devices) {
 			"lat",
 			"lng",
 			"alt",
-			"azimuth"
+			"azimuth",
 		],
 		allDevices,
-		device => {
+		(device) => {
 			const deviceNode = nodesMap[device.nodeId];
+			if (device.status === "abandoned") {
+				device.status = "inactive";
+			}
 			let actualStatus = device.status;
-			if (deviceNode.status !== "active") {
-				actualStatus = "dead";
+			if (deviceNode.status === "abandoned") {
+				actualStatus = "inactive";
+			}
+			if (!device.status) {
+				console.log(device);
 			}
 			return [
 				actualStatus,
@@ -236,7 +271,7 @@ async function importDevices(devices) {
 				deviceNode.lat,
 				deviceNode.lng,
 				deviceNode.alt,
-				device.azimuth || 0
+				device.azimuth || 0,
 			];
 		}
 	);
@@ -260,8 +295,8 @@ async function importLinks(links) {
 	await insertBulk(
 		"links",
 		["device_a_id", "device_b_id", "status", "create_date"],
-		links.filter(link => link.status === "active"),
-		link => {
+		links.filter((link) => link.status === "active"),
+		(link) => {
 			const deviceA = devicesMap[link.from];
 			const deviceB = devicesMap[link.to];
 			if (!deviceA || !deviceB) {
@@ -278,7 +313,7 @@ async function importLinks(links) {
 
 			let actualStatus = link.status;
 			if (deviceA.status !== "active" || deviceB.status !== "active") {
-				actualStatus = "dead";
+				actualStatus = "inactive";
 			}
 
 			return [deviceA.id, deviceB.id, actualStatus, create_date];
@@ -299,8 +334,8 @@ async function importMembers(nodes) {
 
 	// Use first node from each cluster + filter nodes with missing member info
 	const clusteredNodes = Object.values(emailMap)
-		.map(email => email[0]) // TODO: Something better
-		.filter(node => {
+		.map((email) => email[0]) // TODO: Something better
+		.filter((node) => {
 			if (!node.memberEmail) {
 				console.log(`Node ${node.id} missing email`);
 				return false;
@@ -312,10 +347,10 @@ async function importMembers(nodes) {
 		"members",
 		["name", "email", "phone"],
 		clusteredNodes,
-		node => [
+		(node) => [
 			node.memberName,
 			node.memberEmail.toLowerCase(),
-			node.memberPhone
+			node.memberPhone,
 		]
 	);
 }
@@ -373,7 +408,7 @@ async function importJoinRequests(nodes) {
 			nodesWithIDs.push({
 				...node,
 				buildingId: building.id,
-				memberId: member.id
+				memberId: member.id,
 			});
 		}
 	}
@@ -382,7 +417,7 @@ async function importJoinRequests(nodes) {
 	await insertBulk(
 		"requests",
 		["id", "status", "date", "roof_access", "building_id", "member_id"],
-		nodesWithIDs.filter(node => {
+		nodesWithIDs.filter((node) => {
 			if (!node.requestDate) {
 				console.log(`Node ${node.id} missing request date`);
 				return false;
@@ -390,7 +425,7 @@ async function importJoinRequests(nodes) {
 			maxRequestId = Math.max(maxRequestId, node.id);
 			return true;
 		}),
-		node => {
+		(node) => {
 			const status =
 				node.status === "Installed"
 					? "closed"
@@ -408,7 +443,7 @@ async function importJoinRequests(nodes) {
 				new Date(node.requestDate),
 				node.roofAccess,
 				node.buildingId,
-				node.memberId
+				node.memberId,
 			];
 		}
 	);
@@ -423,19 +458,24 @@ async function importJoinRequests(nodes) {
 	}, {});
 
 	const panoramas = panoNodes
-		.filter(node => node.panoramas)
+		.filter((node) => node.panoramas)
 		.reduce((acc, cur) => {
 			const curDate = new Date(cur.requestDate);
-			const joinRequest = joinRequestsByDate[parseInt(curDate.getTime() / 1000)];
+			const joinRequest =
+				joinRequestsByDate[parseInt(curDate.getTime() / 1000)];
 			if (!joinRequest) {
-				console.log("Join request not found", cur.id, parseInt(curDate.getTime() / 1000));
+				console.log(
+					"Join request not found",
+					cur.id,
+					parseInt(curDate.getTime() / 1000)
+				);
 				return acc;
 			}
 			acc.push(
-				...cur.panoramas.map(file => ({
+				...cur.panoramas.map((file) => ({
 					url: `https://node-db.netlify.com/panoramas/${file}`,
 					date: new Date(cur.requestDate), // Should be date submitted
-					joinRequestId: joinRequest.id
+					joinRequestId: joinRequest.id,
 				}))
 			);
 			return acc;
@@ -445,18 +485,18 @@ async function importJoinRequests(nodes) {
 		"panoramas",
 		["url", "date", "request_id"],
 		panoramas,
-		panorama => [panorama.url, panorama.date, panorama.joinRequestId]
+		(panorama) => [panorama.url, panorama.date, panorama.joinRequestId]
 	);
 }
 
 async function importPanoramas(node) {
 	const panoramas = nodes
-		.filter(node => node.panoramas)
+		.filter((node) => node.panoramas)
 		.reduce((acc, cur) => {
 			acc.push(
-				...cur.panoramas.map(file => ({
+				...cur.panoramas.map((file) => ({
 					url: `https://node-db.netlify.com/panoramas/${file}`,
-					date: new Date(cur.requestDate) // Should be date submitted
+					date: new Date(cur.requestDate), // Should be date submitted
 				}))
 			);
 			return acc;
@@ -465,7 +505,7 @@ async function importPanoramas(node) {
 		"panoramas",
 		["url", "date"],
 		panoramas,
-		panorama => [panorama.url, panorama.date]
+		(panorama) => [panorama.url, panorama.date]
 	);
 }
 
@@ -476,8 +516,8 @@ async function importAppointments() {
 			headers: {
 				Authorization: `Basic ${Buffer.from(
 					`${process.env.ACUITY_USER_ID}:${process.env.ACUITY_API_KEY}`
-				).toString("base64")}`
-			}
+				).toString("base64")}`,
+			},
 		}
 	);
 	const appointments = await appointmentsRes.json();
@@ -489,11 +529,11 @@ async function importAppointments() {
 
 		// Seach all forms for values
 		let nodeId, address, notes;
-		appointment.forms.forEach(form => {
+		appointment.forms.forEach((form) => {
 			nodeId =
 				(
 					form.values.filter(
-						value =>
+						(value) =>
 							value.name === "Node Number" ||
 							value.name === "Request Number"
 					)[0] || {}
@@ -502,26 +542,26 @@ async function importAppointments() {
 			address =
 				(
 					form.values.filter(
-						value => value.name === "Address and Apartment #"
+						(value) => value.name === "Address and Apartment #"
 					)[0] || {}
 				).value || address;
 
-			(form.values.filter(value => value.name === "Notes")[0] || {})
+			(form.values.filter((value) => value.name === "Notes")[0] || {})
 				.value || notes;
 		});
 
 		// Get Member
 		let [
-			member
+			member,
 		] = await performQuery("SELECT * FROM members WHERE email = $1", [
-			email.replace(/\n/g, "")
+			email.replace(/\n/g, ""),
 		]);
 
 		if (!member) {
 			[
-				member
+				member,
 			] = await performQuery("SELECT * FROM members WHERE phone = $1", [
-				phone
+				phone,
 			]);
 			if (!member) continue;
 		}
@@ -548,7 +588,7 @@ GROUP BY buildings.id`,
 		} else if (buildings.length > 1) {
 			const [buildingNumber] = address.split(" ");
 			const matchingAddress = buildings.filter(
-				b => b.address.split(" ")[0] === buildingNumber
+				(b) => b.address.split(" ")[0] === buildingNumber
 			);
 			if (matchingAddress.length) {
 				building = matchingAddress[0];
@@ -569,7 +609,7 @@ GROUP BY buildings.id`,
 		if (sanitizedNodeId > 100000) sanitizedNodeId = null;
 		if (sanitizedNodeId) {
 			const [
-				memberBuildingRequest
+				memberBuildingRequest,
 			] = await performQuery(
 				"SELECT * FROM requests WHERE member_id = $1 AND building_id = $2",
 				[member.id, building.id]
@@ -577,9 +617,9 @@ GROUP BY buildings.id`,
 			request = memberBuildingRequest;
 			if (!request) {
 				const [
-					dbRequest
+					dbRequest,
 				] = await performQuery("SELECT * FROM requests WHERE id = $1", [
-					sanitizedNodeId
+					sanitizedNodeId,
 				]);
 				request = dbRequest || request;
 			}
@@ -588,7 +628,7 @@ GROUP BY buildings.id`,
 		const typeMap = {
 			Install: "install",
 			Support: "support",
-			"Site survey": "survey"
+			"Site survey": "survey",
 		};
 		const dbType = typeMap[type];
 		newAppointments.push([
@@ -598,7 +638,7 @@ GROUP BY buildings.id`,
 			id,
 			member.id,
 			building.id,
-			request.id || sanitizedNodeId
+			request.id || sanitizedNodeId,
 		]);
 	}
 
@@ -611,17 +651,17 @@ GROUP BY buildings.id`,
 			"acuity_id",
 			"member_id",
 			"building_id",
-			"request_id"
+			"request_id",
 		],
 		newAppointments,
-		appointment => appointment
+		(appointment) => appointment
 	);
 }
 
 function getClusteredNodes(nodes) {
 	// Cluster nodes by reducing lat/lng precision
 	const clusterMap = {};
-	nodes.forEach(node => {
+	nodes.forEach((node) => {
 		const key = geoKey(node);
 		if (!key) return;
 		clusterMap[key] = clusterMap[key] || [];

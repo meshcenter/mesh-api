@@ -8,7 +8,7 @@ import { getBuildings, getBuilding } from "./db/buildings";
 import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
 import { getMembers, getMember } from "./db/members";
-import { getNodes, getNode, createNode } from "./db/nodes";
+import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest, createRequest } from "./db/requests";
 import { getSearch } from "./db/search";
@@ -99,7 +99,13 @@ router.get(
 router.get(
 	"/nodes/:id",
 	handleErrors(async (req, res, next) => {
-		const node = await getNode(req.params.id);
+		let node;
+		try {
+			await checkAuth(req.headers);
+			node = await getNode(req.params.id, true);
+		} catch (error) {
+			node = await getNode(req.params.id);
+		}
 		res.json(node);
 	})
 );
@@ -109,6 +115,15 @@ router.post(
 	handleErrors(async (req, res, next) => {
 		await checkAuth(req.headers);
 		const node = await createNode(req.body);
+		res.json(node);
+	})
+);
+
+router.post(
+	"/nodes/:id",
+	handleErrors(async (req, res, next) => {
+		await checkAuth(req.headers);
+		const node = await updateNode(req.params.id, req.body);
 		res.json(node);
 	})
 );
@@ -150,7 +165,7 @@ router.get(
 router.post(
 	"/requests",
 	handleErrors(async (req, res, next) => {
-		const request = await createRequest(req.body);
+		const request = await createRequest(req.body, slackClient);
 		if (req.body.success_url) {
 			res.redirect(200, success_url);
 		} else {
@@ -224,14 +239,14 @@ router.get(
 router.post(
 	"/webhooks/acuity",
 	handleErrors(async (req, res, next) => {
-		acuityWebhook(slackClient, req.body);
+		acuityWebhook(req.body, slackClient);
 		res.send({});
 	})
 );
 
 app.use(ROOT, router);
 
-app.use(function(error, req, res, next) {
+app.use(function (error, req, res, next) {
 	let status;
 	if (error.message === "Unauthorized") {
 		status = 401;

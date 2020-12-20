@@ -9,22 +9,25 @@ export async function getSearch(query) {
 		nodes,
 		buildings,
 		members,
-		requests
+		requests,
 	};
 }
 
 function searchNodes(query) {
 	return performQuery(
 		`SELECT
-			*
+			nodes.*
 		FROM
 			nodes
+		JOIN members ON members.id = nodes.member_id
 		WHERE
-			CAST(id AS VARCHAR) = $1
-				OR name ILIKE $2
-				OR notes ILIKE $3
+			CAST(nodes.id AS VARCHAR) = $1
+				OR nodes.name ILIKE $2
+				OR nodes.notes ILIKE $3
+				OR members.name ILIKE $2
+				OR members.email ILIKE $2
 		GROUP BY
-			id
+			nodes.id
 		LIMIT 5`,
 		[query, `${query}%`, `%${query}%`]
 	);

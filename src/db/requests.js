@@ -46,7 +46,7 @@ export async function getRequests() {
 	return performQuery(getRequestsQuery);
 }
 
-export async function createRequest(request) {
+export async function createRequest(request, slackClient) {
 	const { name, email, phone, address, apartment, roofAccess } = request;
 
 	// Geocode address
@@ -122,7 +122,7 @@ export async function createRequest(request) {
 	try {
 		const { visibleSectors, visibleOmnis } = await getLos(bin);
 		const visibleNodes = [...visibleSectors, ...visibleOmnis];
-		await requestMessage(dbRequest, building, member, visibleNodes);
+		await requestMessage(slackClient, dbRequest, building, visibleNodes);
 	} catch (error) {
 		console.log(error);
 	}

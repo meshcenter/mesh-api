@@ -9,11 +9,17 @@ async function createPool() {
 		user: process.env.DB_USER,
 		password: process.env.DB_PASS,
 		port: process.env.DB_PORT,
-		ssl: {
-			rejectUnauthorized: false,
-			mode: "preferred",
-		},
+		ssl: sslOptions(process.env.DB_HOST),
 	});
+}
+
+// See src/db/index.js
+function sslOptions(host) {
+	if (host === "localhost" || host === "127.0.0.1") return false;
+	return {
+		rejectUnauthorized: false,
+		mode: "require",
+	};
 }
 
 async function performQuery(text, values) {

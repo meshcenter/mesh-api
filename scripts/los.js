@@ -15,7 +15,7 @@ async function checkLOS() {
 	bar = new ProgressBar(requests.length);
 	bar.render();
 
-	for (var i = 0; i < requests.length; i++) {
+	for (var i = requests.length - 1; i >= 0; i--) {
 		const request = requests[i];
 		await handleRequest(request);
 		bar.curr = ++total;
