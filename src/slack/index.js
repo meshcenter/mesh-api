@@ -1,27 +1,27 @@
 import { format } from "date-fns";
 
-const requestChannel = "join-requests-test";
-const panoChannel = "panoramas-test";
-const installChannel = "install-team-test";
-
 const dateFmtString = "EEEE, MMM d h:mm aa";
 
 export async function requestMessage(client, request, building, visibleNodes) {
 	return sendMessage(
 		client,
-		requestChannel,
+		process.env.SLACK_REQUEST_CHANNEL,
 		requestMessageContent(request, building, visibleNodes)
 	);
 }
 
 export async function panoMessage(client, pano) {
-	return sendMessage(client, panoChannel, panoMessageContent(pano));
+	return sendMessage(
+		client,
+		process.env.SLACK_PANO_CHANNEL,
+		panoMessageContent(pano)
+	);
 }
 
 export async function installMessage(client, appointment) {
 	return sendMessage(
 		client,
-		installChannel,
+		process.env.SLACK_INSTALL_CHANNEL,
 		installMessageContent(appointment)
 	);
 }
