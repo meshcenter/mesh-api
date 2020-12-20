@@ -5,7 +5,7 @@ export default class Client {
 		this.slack = new WebClient(token);
 	}
 
-	async getChannel(name) {
+	async getChannel(channelName) {
 		const { channels } = await this.slack.conversations.list({
 			types: "public_channel,private_channel",
 			limit: 1000, // TODO: Cursor support
@@ -15,10 +15,10 @@ export default class Client {
 	}
 
 	async postMessage() {
-		return this.slack.chat.postMessage(arguments);
+		return this.slack.chat.postMessage(...arguments);
 	}
 
 	async update() {
-		return this.slack.chat.update(arguments);
+		return this.slack.chat.update(...arguments);
 	}
 }
