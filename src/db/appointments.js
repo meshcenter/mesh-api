@@ -39,7 +39,7 @@ export async function getAppointment(id) {
 
 export async function getAppointmentByAcuityId(acuity_id) {
 	const [
-		idAppointment
+		idAppointment,
 	] = await performQuery(
 		"SELECT id FROM appointments WHERE appointments.acuity_id = $1",
 		[acuity_id]
@@ -60,8 +60,9 @@ export async function createAppointment(appointment) {
 			lat: building.lat,
 			lng: building.lng,
 			alt: building.alt,
+			status: "potential",
 			building_id: building.id,
-			member_id: appointment.member_id
+			member_id: appointment.member_id,
 		});
 		appointment.node_id = node.id;
 	} else {
@@ -77,7 +78,7 @@ export async function createAppointment(appointment) {
 		appointment.building_id,
 		appointment.request_id,
 		appointment.node_id,
-		appointment.acuity_id
+		appointment.acuity_id,
 	]);
 	return newAppointment;
 }
@@ -108,7 +109,7 @@ export async function updateAppointment(appointment) {
 		appointment.building_id,
 		appointment.request_id,
 		appointment.acuity_id,
-		appointment.slack_ts
+		appointment.slack_ts,
 	]);
 	return updatedAppointment;
 }
