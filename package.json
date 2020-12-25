@@ -31,6 +31,7 @@
     "precommit": "yarn format && yarn test",
     "reset-db": "node scripts/create-database && node scripts/import-spreadsheet.js",
     "los": "node scripts/los.js",
+    "migrate": "node-pg-migrate",
     "test": "TZ=UTC jest --setupFiles dotenv/config"
   }
 }
