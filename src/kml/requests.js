@@ -2,22 +2,22 @@ import { performQuery } from "../db";
 import { iconStyle, data, panoData, kml } from "./utils";
 
 export async function getRequestsKML(params) {
-	const requests = await getRequests();
+  const requests = await getRequests();
 
-	const elements = [
-		iconStyle("request", 0.5, "https://i.imgur.com/oVFMyJU.png"),
-		iconStyle("panoRequest", 0.5, "https://i.imgur.com/uj6HMxZ.png"),
-		requests.map(requestPlacemark)
-	];
+  const elements = [
+    iconStyle("request", 0.5, "https://i.imgur.com/oVFMyJU.png"),
+    iconStyle("panoRequest", 0.5, "https://i.imgur.com/uj6HMxZ.png"),
+    requests.map(requestPlacemark),
+  ];
 
-	return kml(elements);
+  return kml(elements);
 }
 
 function requestPlacemark(request) {
-	const { id, building, panoramas } = request;
-	const dashboardLink = `<a href="https://dashboard.nycmesh.net/requests/${id}" style="margin-right: 1rem;">Dashboard →</a>`;
-	const ticketLink = `<a href="https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=${id}" style="margin-right: 1rem;">Tickets →</a>`;
-	return `
+  const { id, building, panoramas } = request;
+  const dashboardLink = `<a href="https://dashboard.nycmesh.net/requests/${id}" style="margin-right: 1rem;">Dashboard →</a>`;
+  const ticketLink = `<a href="https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=${id}" style="margin-right: 1rem;">Tickets →</a>`;
+  return `
 <Placemark>
 	<name>${id}</name>
 	<ExtendedData>
@@ -50,5 +50,5 @@ ORDER BY
 	date DESC`;
 
 async function getRequests() {
-	return performQuery(getRequestsQuery);
+  return performQuery(getRequestsQuery);
 }

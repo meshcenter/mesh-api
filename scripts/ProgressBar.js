@@ -12,7 +12,7 @@ function ProgressBar(total) {
   this.curr = 0;
 }
 
-ProgressBar.prototype.tick = function() {
+ProgressBar.prototype.tick = function () {
   if (this.curr >= this.total) {
     return;
   }
@@ -25,7 +25,7 @@ ProgressBar.prototype.tick = function() {
   }
 };
 
-ProgressBar.prototype.stop = function() {
+ProgressBar.prototype.stop = function () {
   // "stop" by setting current to end so `tick` becomes noop
   this.curr = this.total;
 
@@ -35,7 +35,7 @@ ProgressBar.prototype.stop = function() {
   }
 };
 
-ProgressBar.prototype.render = function() {
+ProgressBar.prototype.render = function () {
   let ratio = this.curr / this.total;
   ratio = Math.min(Math.max(ratio, 0), 1);
 

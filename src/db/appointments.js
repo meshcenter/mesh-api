@@ -13,8 +13,8 @@ GROUP BY
 	buildings.id`;
 
 export async function getAppointments() {
-	const appointments = await performQuery(getAppointmentsQuery);
-	return appointments;
+  const appointments = await performQuery(getAppointmentsQuery);
+  return appointments;
 }
 
 const getAppointmentQuery = `SELECT
@@ -33,18 +33,18 @@ GROUP BY
 	members.id`;
 
 export async function getAppointment(id) {
-	const [appointment] = await performQuery(getAppointmentQuery, [id]);
-	return appointment;
+  const [appointment] = await performQuery(getAppointmentQuery, [id]);
+  return appointment;
 }
 
 export async function getAppointmentByAcuityId(acuity_id) {
-	const [
-		idAppointment,
-	] = await performQuery(
-		"SELECT id FROM appointments WHERE appointments.acuity_id = $1",
-		[acuity_id]
-	);
-	return getAppointment(idAppointment.id);
+  const [
+    idAppointment,
+  ] = await performQuery(
+    "SELECT id FROM appointments WHERE appointments.acuity_id = $1",
+    [acuity_id]
+  );
+  return getAppointment(idAppointment.id);
 }
 
 const createAppointmentQuery = `INSERT INTO appointments (type, date, notes, member_id, building_id, request_id, node_id, acuity_id)
@@ -53,34 +53,34 @@ RETURNING
 	*`;
 
 export async function createAppointment(appointment) {
-	// TODO: Allocate node if none in building
-	const building = await getBuilding(appointment.building_id);
-	if (!building.nodes.length) {
-		const node = await createNode({
-			lat: building.lat,
-			lng: building.lng,
-			alt: building.alt,
-			status: "potential",
-			building_id: building.id,
-			member_id: appointment.member_id,
-		});
-		appointment.node_id = node.id;
-	} else {
-		const [buildingNode] = building.nodes;
-		appointment.node_id = buildingNode.id;
-	}
+  // TODO: Allocate node if none in building
+  const building = await getBuilding(appointment.building_id);
+  if (!building.nodes.length) {
+    const node = await createNode({
+      lat: building.lat,
+      lng: building.lng,
+      alt: building.alt,
+      status: "potential",
+      building_id: building.id,
+      member_id: appointment.member_id,
+    });
+    appointment.node_id = node.id;
+  } else {
+    const [buildingNode] = building.nodes;
+    appointment.node_id = buildingNode.id;
+  }
 
-	const [newAppointment] = await performQuery(createAppointmentQuery, [
-		appointment.type,
-		appointment.date,
-		appointment.notes,
-		appointment.member_id,
-		appointment.building_id,
-		appointment.request_id,
-		appointment.node_id,
-		appointment.acuity_id,
-	]);
-	return newAppointment;
+  const [newAppointment] = await performQuery(createAppointmentQuery, [
+    appointment.type,
+    appointment.date,
+    appointment.notes,
+    appointment.member_id,
+    appointment.building_id,
+    appointment.request_id,
+    appointment.node_id,
+    appointment.acuity_id,
+  ]);
+  return newAppointment;
 }
 
 const updateAppointmentQuery = `UPDATE
@@ -100,16 +100,16 @@ RETURNING
 	*`;
 
 export async function updateAppointment(appointment) {
-	const [updatedAppointment] = await performQuery(updateAppointmentQuery, [
-		appointment.id,
-		appointment.type,
-		appointment.date,
-		appointment.notes,
-		appointment.member_id,
-		appointment.building_id,
-		appointment.request_id,
-		appointment.acuity_id,
-		appointment.slack_ts,
-	]);
-	return updatedAppointment;
+  const [updatedAppointment] = await performQuery(updateAppointmentQuery, [
+    appointment.id,
+    appointment.type,
+    appointment.date,
+    appointment.notes,
+    appointment.member_id,
+    appointment.building_id,
+    appointment.request_id,
+    appointment.acuity_id,
+    appointment.slack_ts,
+  ]);
+  return updatedAppointment;
 }

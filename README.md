@@ -4,6 +4,10 @@
 
 🚧 Work in progress!
 
+## Contributing
+
+Before committing code, please run `yarn precommit` to format your code and run the tests. Only commit your code when it's formatted and the tests pass. You can add it as a git [precommit hook](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks) if you like.
+
 ## Endpoints
 
 https://api.nycmesh.net/v1/nodes  
@@ -17,12 +21,12 @@ https://api.nycmesh.net/v1/kml
 
 ## Architecture
 
--   Netlify Functions for hosting
--   Express for handling requests
--   PostgreSQL for main db
--   PostGIS for line of sight db
--   DigitalOcean Spaces (S3) for storing panorama images
--   Auth0 for access control
+- Netlify Functions for hosting
+- Express for handling requests
+- PostgreSQL for main db
+- PostGIS for line of sight db
+- DigitalOcean Spaces (S3) for storing panorama images
+- Auth0 for access control
 
 ## Running locally
 
@@ -67,90 +71,90 @@ Currently, we use node numbers to represent join requests, members, and nodes. T
 
 A physical location.
 
--   id
--   address
--   lat
--   lng
--   alt
--   bin (optional) // NYC Building ID Number
--   notes (optional)
+- id
+- address
+- lat
+- lng
+- alt
+- bin (optional) // NYC Building ID Number
+- notes (optional)
 
 ### Member
 
 A person in the mesh community. For example, a node-owner, donor or installer.
 
--   id
--   name
--   email
--   phone
+- id
+- name
+- email
+- phone
 
 ### Node
 
 A specific location on the network. Typically one per building.
 
--   id
--   lat
--   lng
--   alt
--   status (active, dead)
--   name (optional) // e.g. "Saratoga", "SN1"
--   location (optional) // Human readable location, e.g. "Roof", "Basement"
--   notes (optional)
--   create_date
--   abandon_date (optional)
--   building_id
--   member_id
+- id
+- lat
+- lng
+- alt
+- status (active, dead)
+- name (optional) // e.g. "Saratoga", "SN1"
+- location (optional) // Human readable location, e.g. "Roof", "Basement"
+- notes (optional)
+- create_date
+- abandon_date (optional)
+- building_id
+- member_id
 
 ### Join Request
 
--   id
--   date
--   roof_access
--   member_id
--   building_id
+- id
+- date
+- roof_access
+- member_id
+- building_id
 
 ### Panorama
 
--   id
--   url
--   date
--   request_id
+- id
+- url
+- date
+- request_id
 
 ### Device Type
 
--   id
--   name
--   manufacturer
--   range
--   width
+- id
+- name
+- manufacturer
+- range
+- width
 
 ### Device
 
 A unit of hardware. Routers, radios, servers, etc.
 
--   id
--   status (in stock, active, dead)
--   name (optional)
--   ssid (optional)
--   notes (optional)
--   lat
--   lng
--   alt
--   azimuth (direction in degrees, default 0)
--   create_date
--   abandon_date (optional)
--   device_type_id
--   node_id
+- id
+- status (in stock, active, dead)
+- name (optional)
+- ssid (optional)
+- notes (optional)
+- lat
+- lng
+- alt
+- azimuth (direction in degrees, default 0)
+- create_date
+- abandon_date (optional)
+- device_type_id
+- node_id
 
 ### Link
 
 A connection between two devices. For example, an ethernet cable or wireless connection.
 
--   id
--   status (active, dead)
--   create_date
--   device_a_id
--   device_b_id
+- id
+- status (active, dead)
+- create_date
+- device_a_id
+- device_b_id
 
 ## Example Queries
 
@@ -336,9 +340,9 @@ ORDER BY building_height DESC;
 
 Install dependencies:
 
--   Python
--   Postgres
--   PostGIS
+- Python
+- Postgres
+- PostGIS
 
 Create a table in the db:
 

@@ -114,59 +114,59 @@ RETURNING
 	*`;
 
 export async function getNode(id, authorized) {
-	console.log("!", id, authorized);
-	if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
-	const query = authorized ? authorizedGetNodeQuery : getNodeQuery;
-	const [node] = await performQuery(query, [id]);
-	if (!node) throw Error("Not found");
-	return node;
+  console.log("!", id, authorized);
+  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
+  const query = authorized ? authorizedGetNodeQuery : getNodeQuery;
+  const [node] = await performQuery(query, [id]);
+  if (!node) throw Error("Not found");
+  return node;
 }
 
 export async function getNodes() {
-	return performQuery(getNodesQuery);
+  return performQuery(getNodesQuery);
 }
 
 export async function createNode(node) {
-	const { lat, lng, alt, status, name, notes, building_id, member_id } = node;
-	const now = new Date();
-	const values = [
-		lat,
-		lng,
-		alt,
-		status,
-		name,
-		notes,
-		now,
-		building_id,
-		member_id,
-	];
-	const newNode = await performQuery(createNodeQuery, values);
-	return newNode;
+  const { lat, lng, alt, status, name, notes, building_id, member_id } = node;
+  const now = new Date();
+  const values = [
+    lat,
+    lng,
+    alt,
+    status,
+    name,
+    notes,
+    now,
+    building_id,
+    member_id,
+  ];
+  const newNode = await performQuery(createNodeQuery, values);
+  return newNode;
 }
 
 export async function updateNode(id, nodePatch) {
-	const existingNode = await getNode(id, true);
+  const existingNode = await getNode(id, true);
 
-	// TODO: Sanitize / validated new values!!
+  // TODO: Sanitize / validated new values!!
 
-	const newNode = {
-		...existingNode,
-		...nodePatch,
-	};
+  const newNode = {
+    ...existingNode,
+    ...nodePatch,
+  };
 
-	const values = [
-		newNode.id,
-		newNode.status,
-		newNode.lat,
-		newNode.lng,
-		newNode.alt,
-		newNode.name,
-		newNode.notes,
-		newNode.building_id,
-		newNode.member_id,
-	];
-	await performQuery(updateNodeQuery, values);
+  const values = [
+    newNode.id,
+    newNode.status,
+    newNode.lat,
+    newNode.lng,
+    newNode.alt,
+    newNode.name,
+    newNode.notes,
+    newNode.building_id,
+    newNode.member_id,
+  ];
+  await performQuery(updateNodeQuery, values);
 
-	const updatedNode = await getNode(id);
-	return updatedNode;
+  const updatedNode = await getNode(id);
+  return updatedNode;
 }

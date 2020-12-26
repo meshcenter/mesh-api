@@ -2,43 +2,43 @@ import { performQuery } from "../db";
 import { iconStyle, lineStyle, data, panoData, kml } from "./utils";
 
 export async function getNodesKML() {
-	const nodes = await getNodes();
-	const links = await getLinks();
+  const nodes = await getNodes();
+  const links = await getLinks();
 
-	const linksByNode = links.reduce((acc, cur) => {
-		acc[cur.node_a.id] = acc[cur.node_a.id] || [];
-		acc[cur.node_a.id].push(cur);
-		return acc;
-	}, {});
+  const linksByNode = links.reduce((acc, cur) => {
+    acc[cur.node_a.id] = acc[cur.node_a.id] || [];
+    acc[cur.node_a.id].push(cur);
+    return acc;
+  }, {});
 
-	const nodesKml = nodes
-		.sort((a, b) => a.id - b.id)
-		.map(
-			(node) => `<Folder>
+  const nodesKml = nodes
+    .sort((a, b) => a.id - b.id)
+    .map(
+      (node) => `<Folder>
 					<name>${node.id}</name>
 					${nodePlacemark(node)}
 					${(linksByNode[node.id] || []).map(linkPlacemark)}
 				</Folder>`
-		);
+    );
 
-	const elements = [
-		iconStyle("supernode", 0.6, "https://i.imgur.com/GFd364p.png"),
-		iconStyle("hub", 0.6, "https://i.imgur.com/dsizT9e.png"),
-		iconStyle("omni", 0.6, "https://i.imgur.com/dsizT9e.png"),
-		iconStyle("node", 0.5, "https://i.imgur.com/OBBZi9E.png"),
-		lineStyle("hubLink", "ff00ffff", 3),
-		lineStyle("backboneLink", "ff00ffff", 3),
-		lineStyle("activeLink", "ff0000ff", 3),
-		nodesKml,
-	];
+  const elements = [
+    iconStyle("supernode", 0.6, "https://i.imgur.com/GFd364p.png"),
+    iconStyle("hub", 0.6, "https://i.imgur.com/dsizT9e.png"),
+    iconStyle("omni", 0.6, "https://i.imgur.com/dsizT9e.png"),
+    iconStyle("node", 0.5, "https://i.imgur.com/OBBZi9E.png"),
+    lineStyle("hubLink", "ff00ffff", 3),
+    lineStyle("backboneLink", "ff00ffff", 3),
+    lineStyle("activeLink", "ff0000ff", 3),
+    nodesKml,
+  ];
 
-	return kml(elements);
+  return kml(elements);
 }
 
 function nodePlacemark(node) {
-	const dashboardLink = `<a href="https://dashboard.nycmesh.net/requests/${node.id}" style="margin-right: 1rem;">Dashboard →</a>`;
-	const ticketLink = `<a href="https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=${node.id}" style="margin-right: 1rem;">Tickets →</a>`;
-	return `<Placemark>
+  const dashboardLink = `<a href="https://dashboard.nycmesh.net/requests/${node.id}" style="margin-right: 1rem;">Dashboard →</a>`;
+  const ticketLink = `<a href="https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=${node.id}" style="margin-right: 1rem;">Tickets →</a>`;
+  return `<Placemark>
 	<name>${node.name || `Node ${node.id}`}</name>
 		<ExtendedData>
 		${node.name ? data("Name", node.name) : ""}
@@ -58,17 +58,13 @@ function nodePlacemark(node) {
 }
 
 function linkPlacemark(link) {
-	const { node_a, node_b, device_type_a, device_type_b } = link;
-	const coordinates = `${node_a.lng},${node_a.lat},${node_a.alt} ${node_b.lng},${node_b.lat},${node_b.alt}`;
-	const deviceNameA =
-		device_type_a.name === "Unknown"
-			? "Unknown Device"
-			: device_type_a.name;
-	const deviceNameB =
-		device_type_b.name === "Unknown"
-			? "Unknown Device"
-			: device_type_b.name;
-	return `<Placemark>
+  const { node_a, node_b, device_type_a, device_type_b } = link;
+  const coordinates = `${node_a.lng},${node_a.lat},${node_a.alt} ${node_b.lng},${node_b.lat},${node_b.alt}`;
+  const deviceNameA =
+    device_type_a.name === "Unknown" ? "Unknown Device" : device_type_a.name;
+  const deviceNameB =
+    device_type_b.name === "Unknown" ? "Unknown Device" : device_type_b.name;
+  return `<Placemark>
 	<name>Link</name>
 	<ExtendedData>
 		${data("ID", link.id)}
@@ -89,23 +85,23 @@ const isOmni = (device_type) => device_type.name === "Omni";
 const isSupernode = (node) => node.name && node.name.includes("Supernode");
 const isHub = (node) => node.notes && node.notes.includes("hub");
 const isBackbone = (node, device_type) =>
-	isSupernode(node) || isHub(node) || isOmni(device_type);
+  isSupernode(node) || isHub(node) || isOmni(device_type);
 
 function nodeStyleId(node) {
-	const { name, notes, device_types } = node;
-	if (isSupernode(node)) return "#supernode";
-	if (isHub(node)) return "#hub";
-	if (device_types.filter(isOmni).length) return "#omni";
-	return "#node";
+  const { name, notes, device_types } = node;
+  if (isSupernode(node)) return "#supernode";
+  if (isHub(node)) return "#hub";
+  if (device_types.filter(isOmni).length) return "#omni";
+  return "#node";
 }
 
 // TODO: Need to check all devices on each node to determine color.
 function linkStyleId(link) {
-	const { node_a, node_b, device_type_a, device_type_b } = link;
-	if (isHub(node_a) && isHub(node_b)) return "#hubLink";
-	if (isBackbone(node_a, device_type_a) && isBackbone(node_b, device_type_b))
-		return "#backboneLink";
-	return "#activeLink";
+  const { node_a, node_b, device_type_a, device_type_b } = link;
+  if (isHub(node_a) && isHub(node_b)) return "#hubLink";
+  if (isBackbone(node_a, device_type_a) && isBackbone(node_b, device_type_b))
+    return "#backboneLink";
+  return "#activeLink";
 }
 
 const getNodesQuery = `SELECT
@@ -130,7 +126,7 @@ ORDER BY
 	nodes.create_date DESC`;
 
 async function getNodes() {
-	return performQuery(getNodesQuery);
+  return performQuery(getNodesQuery);
 }
 
 const getLinksQuery = `SELECT
@@ -192,5 +188,5 @@ GROUP BY
 	links.id`;
 
 async function getLinks() {
-	return performQuery(getLinksQuery);
+  return performQuery(getLinksQuery);
 }
