@@ -22,7 +22,7 @@ exports.up = (pgm) => {
     phone: { type: "varchar(256)" },
   });
 
-  pgm.createType("node_status", ["planned", "active", "dead"]);
+  pgm.createType("node_status", ["active", "inactive", "potential"]);
 
   pgm.createTable("nodes", {
     id: "id",
@@ -67,7 +67,7 @@ exports.up = (pgm) => {
     width: { type: "float", notNull },
   });
 
-  pgm.createType("device_status", ["in stock", "active", "dead"]);
+  pgm.createType("device_status", ["active", "inactive", "potential"]);
 
   pgm.createTable("devices", {
     id: "id",
@@ -89,7 +89,7 @@ exports.up = (pgm) => {
     node_id: { type: "integer", references: "nodes(id)", notNull },
   });
 
-  pgm.createType("link_status", ["planned", "active", "dead"]);
+  pgm.createType("link_status", ["active", "inactive", "potential"]);
 
   pgm.createTable("links", {
     id: "id",
