@@ -1,15 +1,22 @@
 const { Pool } = require("pg");
+const url = require("url");
 
 let pgPool;
 
 async function createPool() {
+  const params = url.parse(process.env.DATABASE_URL);
+  const auth = params.auth && params.auth.split(':');
+
+  const user = auth ? auth[0] : null;
+  const password = auth ? auth[1] : null;
+
   pgPool = new Pool({
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    port: process.env.DB_PORT,
-    ssl: sslOptions(process.env.DB_HOST),
+    host: params.hostname,
+    database: params.pathname.split('/')[1],
+    user: user,
+    password: password,
+    port: params.port,
+    ssl: sslOptions(params.hostname),
   });
 }
 
