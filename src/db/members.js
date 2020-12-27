@@ -43,21 +43,21 @@ GROUP BY
 	buildings.id`;
 
 export async function getMembers() {
-	return performQuery(getMembersQuery);
+  return performQuery(getMembersQuery);
 }
 
 export async function getMember(id) {
-	if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
+  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
 
-	const [member] = await performQuery(getMemberQuery, [id]);
-	if (!member) throw new Error("Not found");
+  const [member] = await performQuery(getMemberQuery, [id]);
+  if (!member) throw new Error("Not found");
 
-	const nodes = await performQuery(getMemberNodesQuery, [id]);
-	const requests = await performQuery(getMemberRequestsQuery, [id]);
+  const nodes = await performQuery(getMemberNodesQuery, [id]);
+  const requests = await performQuery(getMemberRequestsQuery, [id]);
 
-	return {
-		...member,
-		nodes,
-		requests
-	};
+  return {
+    ...member,
+    nodes,
+    requests,
+  };
 }

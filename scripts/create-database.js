@@ -5,10 +5,10 @@ createDatabase();
 
 // TODO: Figure out how to do this safely and idempotently, also migrations
 async function createDatabase() {
-	try {
-		console.log("Dropping tables...");
-		await performQuery(
-			`DROP table IF EXISTS
+  try {
+    console.log("Dropping tables...");
+    await performQuery(
+      `DROP table IF EXISTS
 				"appointments",
 				"los",
 				"links",
@@ -19,19 +19,19 @@ async function createDatabase() {
 				"members",
 				"buildings",
 				"nodes"`
-		);
+    );
 
-		await performQuery(
-			`DROP type IF EXISTS
+    await performQuery(
+      `DROP type IF EXISTS
 				"node_status",
 				"device_status",
 				"link_status",
 				"request_status",
 				"appointment_type"`
-		);
+    );
 
-		await performQuery(
-			`CREATE TABLE "buildings" (
+    await performQuery(
+      `CREATE TABLE "buildings" (
 				id			SERIAL PRIMARY KEY,
 				address		VARCHAR(256) NOT NULL,
 				lat			FLOAT NOT NULL,
@@ -40,25 +40,25 @@ async function createDatabase() {
 				bin			INT,
 				notes		TEXT
 			)`
-		);
+    );
 
-		await performQuery(
-			`CREATE TABLE "members" (
+    await performQuery(
+      `CREATE TABLE "members" (
 				id			SERIAL PRIMARY KEY,
 				name		VARCHAR(256),
 				email		VARCHAR(256) NOT NULL UNIQUE,
 				phone		VARCHAR(256)
 			)`
-		);
+    );
 
-		console.log("Creating tables...");
+    console.log("Creating tables...");
 
-		await performQuery(
-			`CREATE TYPE node_status AS ENUM ('active', 'inactive', 'potential');`
-		);
+    await performQuery(
+      `CREATE TYPE node_status AS ENUM ('active', 'inactive', 'potential');`
+    );
 
-		await performQuery(
-			`CREATE TABLE "nodes" (
+    await performQuery(
+      `CREATE TABLE "nodes" (
 				id				SERIAL PRIMARY KEY,
 				lat				FLOAT NOT NULL,
 				lng				FLOAT NOT NULL,
@@ -72,14 +72,14 @@ async function createDatabase() {
 				building_id		INTEGER REFERENCES buildings(id) NOT NULL,
 				member_id		INTEGER REFERENCES members(id) NOT NULL
 			)`
-		);
+    );
 
-		await performQuery(
-			`CREATE TYPE request_status AS ENUM ('open', 'closed');`
-		);
+    await performQuery(
+      `CREATE TYPE request_status AS ENUM ('open', 'closed');`
+    );
 
-		await performQuery(
-			`CREATE TABLE "requests" (
+    await performQuery(
+      `CREATE TABLE "requests" (
 				id				SERIAL PRIMARY KEY,
 				status			request_status NOT NULL DEFAULT 'open',
 				apartment		VARCHAR(10),
@@ -89,33 +89,33 @@ async function createDatabase() {
 				member_id		INTEGER REFERENCES members(id) NOT NULL,
 				building_id		INTEGER REFERENCES buildings(id) NOT NULL
 			)`
-		);
+    );
 
-		await performQuery(
-			`CREATE TABLE "panoramas" (
+    await performQuery(
+      `CREATE TABLE "panoramas" (
 				id				SERIAL PRIMARY KEY,
 				url				VARCHAR(256) NOT NULL,
 				date			TIMESTAMP WITH TIME ZONE NOT NULL,
 				request_id		INTEGER REFERENCES requests(id) NOT NULL
 			)`
-		);
+    );
 
-		await performQuery(
-			`CREATE TABLE "device_types" (
+    await performQuery(
+      `CREATE TABLE "device_types" (
 				id				SERIAL PRIMARY KEY,
 				name			VARCHAR(256) NOT NULL,
 				manufacturer	VARCHAR(256),
 				range			FLOAT NOT NULL,
 				width			FLOAT NOT NULL
 			)`
-		);
+    );
 
-		await performQuery(
-			`CREATE TYPE device_status AS ENUM ('active', 'inactive', 'potential');`
-		);
+    await performQuery(
+      `CREATE TYPE device_status AS ENUM ('active', 'inactive', 'potential');`
+    );
 
-		await performQuery(
-			`CREATE TABLE "devices" (
+    await performQuery(
+      `CREATE TABLE "devices" (
 				id				SERIAL PRIMARY KEY,
 				lat				FLOAT NOT NULL,
 				lng				FLOAT NOT NULL,
@@ -130,24 +130,24 @@ async function createDatabase() {
 				device_type_id	INTEGER REFERENCES device_types(id) NOT NULL,
 				node_id			INTEGER REFERENCES nodes(id) NOT NULL
 			)`
-		);
+    );
 
-		await performQuery(
-			`CREATE TYPE link_status AS ENUM ('active', 'inactive', 'potential');`
-		);
+    await performQuery(
+      `CREATE TYPE link_status AS ENUM ('active', 'inactive', 'potential');`
+    );
 
-		await performQuery(
-			`CREATE TABLE "links" (
+    await performQuery(
+      `CREATE TABLE "links" (
 				id				SERIAL PRIMARY KEY,
 				status			link_status NOT NULL,
 				create_date		TIMESTAMP WITH TIME ZONE NOT NULL,
 				device_a_id		INTEGER REFERENCES devices(id) NOT NULL,
 				device_b_id		INTEGER REFERENCES devices(id) NOT NULL
 			)`
-		);
+    );
 
-		await performQuery(
-			`CREATE TABLE "los" (
+    await performQuery(
+      `CREATE TABLE "los" (
 				id				SERIAL PRIMARY KEY,
 				building_a_id	INTEGER REFERENCES buildings(id) NOT NULL,
 				building_b_id	INTEGER REFERENCES buildings(id) NOT NULL,
@@ -158,14 +158,14 @@ async function createDatabase() {
 				lng_b			FLOAT NOT NULL,
 				alt_b			FLOAT NOT NULL
 			)`
-		);
+    );
 
-		await performQuery(
-			`CREATE TYPE appointment_type AS ENUM ('install', 'support', 'survey');`
-		);
+    await performQuery(
+      `CREATE TYPE appointment_type AS ENUM ('install', 'support', 'survey');`
+    );
 
-		await performQuery(
-			`CREATE TABLE "appointments" (
+    await performQuery(
+      `CREATE TABLE "appointments" (
 				id				SERIAL PRIMARY KEY,
 				type			appointment_type NOT NULL,
 				date			TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -177,8 +177,8 @@ async function createDatabase() {
 				acuity_id		INTEGER,
 				slack_ts		VARCHAR(256)
 			)`
-		);
-	} catch (error) {
-		console.log("Error creating db:", error);
-	}
+    );
+  } catch (error) {
+    console.log("Error creating db:", error);
+  }
 }

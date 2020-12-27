@@ -17,21 +17,21 @@ const getBuildingQuery = "SELECT * FROM buildings WHERE id = $1";
 const getBuildingNodesQuery = "SELECT * FROM nodes WHERE building_id = $1";
 
 const getBuildingRequestsQuery =
-	"SELECT id, date, roof_access FROM requests WHERE building_id = $1";
+  "SELECT id, date, roof_access FROM requests WHERE building_id = $1";
 
 export async function getBuildings() {
-	return performQuery(getBuildingsQuery);
+  return performQuery(getBuildingsQuery);
 }
 
 export async function getBuilding(id) {
-	if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
-	const [building] = await performQuery(getBuildingQuery, [id]);
-	if (!building) throw new Error("Not found");
-	const nodes = await performQuery(getBuildingNodesQuery, [id]);
-	const requests = await performQuery(getBuildingRequestsQuery, [id]);
-	return {
-		...building,
-		nodes,
-		requests
-	};
+  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
+  const [building] = await performQuery(getBuildingQuery, [id]);
+  if (!building) throw new Error("Not found");
+  const nodes = await performQuery(getBuildingNodesQuery, [id]);
+  const requests = await performQuery(getBuildingRequestsQuery, [id]);
+  return {
+    ...building,
+    nodes,
+    requests,
+  };
 }
