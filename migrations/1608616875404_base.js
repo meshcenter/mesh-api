@@ -29,7 +29,7 @@ exports.up = (pgm) => {
     lat: { type: "float", notNull },
     lng: { type: "float", notNull },
     alt: { type: "float", notNull },
-    status: { type: "node_status", notNull, default: "planned" },
+    status: { type: "node_status", notNull },
     location: { type: "varchar(256)" },
     name: { type: "varchar(256)" },
     notes: { type: "text" },
