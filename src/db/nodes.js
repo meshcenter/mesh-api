@@ -94,7 +94,8 @@ const authorizedGetNodeQuery = `SELECT
 FROM
 	nodes
 	LEFT JOIN buildings ON nodes.building_id = buildings.id
-	LEFT JOIN members ON nodes.member_id = members.id
+	LEFT JOIN memberships ON memberships.node_id = nodes.id
+	LEFT JOIN members ON members.id = memberships.member_id
 	LEFT JOIN requests ON requests.building_id = buildings.id
 	LEFT JOIN panoramas ON panoramas.request_id = requests.id
 WHERE

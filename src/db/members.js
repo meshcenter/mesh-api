@@ -2,10 +2,11 @@ import { performQuery } from ".";
 
 const getMembersQuery = `SELECT
 	members.*,
-	JSON_AGG(DISTINCT nodes.*) AS nodes
+	COALESCE(JSON_AGG(DISTINCT nodes.*) FILTER (WHERE nodes.id IS NOT NULL), '[]') AS nodes
 FROM
 	members
-	LEFT JOIN nodes ON nodes.member_id = members.id
+	LEFT JOIN memberships ON memberships.member_id = members.id
+	LEFT JOIN nodes ON nodes.id = memberships.node_id
 GROUP BY
 	members.id
 ORDER BY
