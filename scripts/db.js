@@ -5,14 +5,14 @@ let pgPool;
 
 async function createPool() {
   const params = url.parse(process.env.DATABASE_URL);
-  const auth = params.auth && params.auth.split(':');
+  const auth = params.auth && params.auth.split(":");
 
   const user = auth ? auth[0] : null;
   const password = auth ? auth[1] : null;
 
   pgPool = new Pool({
     host: params.hostname,
-    database: params.pathname.split('/')[1],
+    database: params.pathname.split("/")[1],
     user: user,
     password: password,
     port: params.port,
