@@ -121,7 +121,7 @@ exports.up = (pgm) => {
     request_id: { type: "integer", references: "requests(id)", notNull },
     member_id: { type: "integer", references: "members(id)", notNull },
     building_id: { type: "integer", references: "buildings(id)", notNull },
-    node_id: { type: "integer", references: "nodes(id)", notNull },
+    node_id: { type: "integer", references: "nodes(id)" },
     acuity_id: { type: "integer" },
     slack_ts: { type: "varchar(256)" },
   });
