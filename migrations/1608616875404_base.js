@@ -129,7 +129,7 @@ exports.up = (pgm) => {
 
 exports.down = (pgm) => {
   // Tables
-  const opts = { ifExists: true };
+  const opts = { ifExists: true, cascade: true };
   pgm.dropTable("appointments", opts);
   pgm.dropTable("los", opts);
   pgm.dropTable("links", opts);
