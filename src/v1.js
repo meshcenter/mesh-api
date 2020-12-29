@@ -8,6 +8,7 @@ import { getBuildings, getBuilding } from "./db/buildings";
 import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
 import { getMembers, getMember } from "./db/members";
+import { createMembership, destroyMembership } from "./db/memberships";
 import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest, createRequest } from "./db/requests";
@@ -127,6 +128,24 @@ router.post(
     res.json(node);
   })
 );
+
+router.post(
+  "/nodes/:node_id/memberships",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const membership = await createMembership(req.params.node_id, req.body);
+    res.json(membership);
+  })
+)
+
+router.delete(
+  "/memberships/:id",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    await destroyMembership(req.params.id);
+    res.json({});
+  })
+)
 
 router.post(
   "/panos",

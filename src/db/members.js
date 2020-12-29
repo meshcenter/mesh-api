@@ -25,8 +25,9 @@ const getMemberNodesQuery = `SELECT
 FROM
 	nodes
 	JOIN buildings ON nodes.building_id = buildings.id
+	JOIN memberships ON memberships.node_id = nodes.id
 WHERE
-	member_id = $1
+	memberships.member_id = $1
 GROUP BY
 	nodes.id,
 	buildings.id`;

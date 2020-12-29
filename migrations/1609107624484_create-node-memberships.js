@@ -9,6 +9,8 @@ exports.up = pgm => {
     member_id: {type: "integer", references: "members(id)", notNull: true},
   });
 
+  pgm.addConstraint("memberships", "memberships_node_id_member_id_unique", {unique: ["node_id", "member_id"]});
+
   pgm.sql(`
     INSERT INTO memberships (node_id, member_id) SELECT id, member_id FROM nodes WHERE member_id IS NOT NULL
   `);
