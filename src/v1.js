@@ -133,8 +133,9 @@ router.post(
   "/nodes/:node_id/memberships",
   handleErrors(async (req, res, next) => {
     await checkAuth(req.headers);
-    const membership = await createMembership(req.params.node_id, req.body);
-    res.json(membership);
+    await createMembership(req.params.node_id, req.body);
+    const node = await getNode(req.params.node_id, true);
+    res.json(node);
   })
 )
 
