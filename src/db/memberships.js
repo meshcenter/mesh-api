@@ -5,13 +5,17 @@ const createMembershipQuery = `
 `;
 
 const destroyMembershipQuery = `
-  DELETE FROM memberships WHERE id = $1
+  DELETE FROM memberships WHERE id = $1 RETURNING *
 `;
 
 export async function createMembership(nodeId, params) {
-  return await performQuery(createMembershipQuery, [nodeId, params.member_id]);
+  const results = await performQuery(createMembershipQuery, [nodeId, params.member_id]);
+
+  return results[0];
 }
 
 export async function destroyMembership(id) {
-  await performQuery(destroyMembershipQuery, [id]);
+  let results = await performQuery(destroyMembershipQuery, [id]);
+
+  return results[0];
 }
