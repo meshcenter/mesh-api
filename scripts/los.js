@@ -11,65 +11,65 @@ let notFound = 0;
 let total = 0;
 
 async function checkLOS() {
-	const requests = await getRequests();
-	bar = new ProgressBar(requests.length);
-	bar.render();
+  const requests = await getRequests();
+  bar = new ProgressBar(requests.length);
+  bar.render();
 
-	for (var i = requests.length - 1; i >= 0; i--) {
-		const request = requests[i];
-		await handleRequest(request);
-		bar.curr = ++total;
-		bar.render();
-	}
+  for (var i = requests.length - 1; i >= 0; i--) {
+    const request = requests[i];
+    await handleRequest(request);
+    bar.curr = ++total;
+    bar.render();
+  }
 
-	console.log("\n");
-	console.log(`${processed} buildings processed`);
-	console.log(`${notFound} buildings not found`);
+  console.log("\n");
+  console.log(`${processed} buildings processed`);
+  console.log(`${notFound} buildings not found`);
 }
 
 async function handleRequest(request) {
-	let skip = false;
-	if (!request.bin) skip = true;
-	if (!request.roof_access) skip = true;
-	if (request.bin < 0 || request.bin % 1000000 === 0) skip = true;
-	if (
-		request.device_types.filter(
-			(device_type) =>
-				device_type &&
-				["Omni", "LBE120", "SN1Sector1", "SN1Sector2"].indexOf(
-					device_type.name
-				) > -1
-		).length
-	)
-		skip = true;
-	if ([3946, 1932, 1933].indexOf(request.id) > -1) skip = true;
-	if (skip) {
-		processed++;
-		return;
-	}
+  let skip = false;
+  if (!request.bin) skip = true;
+  if (!request.roof_access) skip = true;
+  if (request.bin < 0 || request.bin % 1000000 === 0) skip = true;
+  if (
+    request.device_types.filter(
+      (device_type) =>
+        device_type &&
+        ["Omni", "LBE120", "SN1Sector1", "SN1Sector2"].indexOf(
+          device_type.name
+        ) > -1
+    ).length
+  )
+    skip = true;
+  if ([3946, 1932, 1933].indexOf(request.id) > -1) skip = true;
+  if (skip) {
+    processed++;
+    return;
+  }
 
-	const url = `http://localhost:9000/v1/los?bin=${request.bin}`;
-	const losResponse = await fetch(url);
-	const {
-		visibleOmnis,
-		visibleSectors,
-		visibleRequests,
-		error,
-	} = await losResponse.json();
-	if (error) {
-		if (error === "Not found") {
-			notFound++;
-			return;
-		}
-		throw Error(error);
-	} else {
-		processed++;
-	}
+  const url = `http://localhost:9000/v1/los?bin=${request.bin}`;
+  const losResponse = await fetch(url);
+  const {
+    visibleOmnis,
+    visibleSectors,
+    visibleRequests,
+    error,
+  } = await losResponse.json();
+  if (error) {
+    if (error === "Not found") {
+      notFound++;
+      return;
+    }
+    throw Error(error);
+  } else {
+    processed++;
+  }
 }
 
 async function getRequests() {
-	return performQuery(
-		`SELECT
+  return performQuery(
+    `SELECT
 	requests.*,
 	buildings.bin,
 	buildings.lat,
@@ -91,5 +91,5 @@ GROUP BY
 	buildings.id
 ORDER BY
 	requests.id`
-	);
+  );
 }

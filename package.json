@@ -21,13 +21,28 @@
     "dotenv": "^8.2.0",
     "dotenv-webpack": "^1.7.0",
     "jest": "^26.4.0",
-    "netlify-lambda": "^1.5.1"
+    "netlify-lambda": "^1.5.1",
+    "prettier": "2.2.1"
   },
   "scripts": {
     "start": "NODE_ENV=development netlify-lambda serve src -c webpack.functions.js",
     "build": "netlify-lambda build src -c webpack.functions.js",
-    "reset-db": "node scripts/create-database && node scripts/import-spreadsheet.js",
+    "format": "prettier --write .",
+    "precommit": "yarn format && yarn test",
     "los": "node scripts/los.js",
+    "migrate": "node-pg-migrate --reject-unauthorized false",
     "test": "TZ=UTC jest --setupFiles dotenv/config"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ]
+    ]
   }
 }
