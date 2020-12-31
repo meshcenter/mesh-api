@@ -71,7 +71,7 @@ function searchRequests(query) {
   );
 }
 
-function searchMembers(query) {
+export async function searchMembers(query) {
   return performQuery(
     `SELECT *
 		FROM

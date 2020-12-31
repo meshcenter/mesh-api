@@ -12,7 +12,7 @@ import { createMembership, destroyMembership } from "./db/memberships";
 import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest, createRequest } from "./db/requests";
-import { getSearch } from "./db/search";
+import { getSearch, searchMembers } from "./db/search";
 
 import { getKML } from "./kml";
 import { getAppointmentsKML } from "./kml/appointments";
@@ -76,6 +76,15 @@ router.get(
   handleErrors(async (req, res, next) => {
     await checkAuth(req.headers);
     const members = await getMembers();
+    res.json(members);
+  })
+);
+
+router.get(
+  "/members/search",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const members = await searchMembers(req.query.s);
     res.json(members);
   })
 );
