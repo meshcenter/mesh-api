@@ -67,13 +67,7 @@ const authorizedGetNodeQuery = `SELECT
 	to_json(buildings) AS building,
 	json_agg(DISTINCT requests) AS requests,
 	json_agg(DISTINCT panoramas) FILTER (WHERE panoramas IS NOT NULL) AS panoramas,
-	json_agg(json_build_object(
-		'id', members.id,
-		'name', members.name,
-		'email', members.email,
-		'phone', members.phone,
-		'membership_id', memberships.id
-	) ORDER BY memberships.id ASC) AS members,
+	json_agg(DISTINCT members_with_membership_id) AS members,
 	(
 		SELECT
 			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
@@ -101,7 +95,13 @@ FROM
 	nodes
 	LEFT JOIN buildings ON nodes.building_id = buildings.id
 	LEFT JOIN memberships ON memberships.node_id = nodes.id
-	LEFT JOIN members ON members.id = memberships.member_id
+	LEFT JOIN (
+		SELECT
+				members.*,
+				memberships.id AS membership_id
+		FROM members
+		LEFT JOIN memberships ON memberships.member_id = members.id
+	) AS members_with_membership_id ON memberships.id = members_with_membership_id.membership_id
 	LEFT JOIN requests ON requests.building_id = buildings.id
 	LEFT JOIN panoramas ON panoramas.request_id = requests.id
 WHERE
