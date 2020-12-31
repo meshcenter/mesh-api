@@ -110,12 +110,12 @@ GROUP BY
 	nodes.id,
 	buildings.id`;
 
-const createNodeQuery = `INSERT INTO nodes (lat, lng, alt, status, name, notes, create_date, building_id, member_id)
-	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+const createNodeQuery = `INSERT INTO nodes (lat, lng, alt, status, name, notes, create_date, building_id)
+	VALUES($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING
 	*`;
 
-const updateNodeQuery = `UPDATE nodes SET status = $2, lat = $3, lng = $4, alt = $5, name = $6, notes = $7, building_id = $8, member_id = $9
+const updateNodeQuery = `UPDATE nodes SET status = $2, lat = $3, lng = $4, alt = $5, name = $6, notes = $7, building_id = $8
 WHERE id = $1
 RETURNING
 	*`;
@@ -145,7 +145,6 @@ export async function createNode(node) {
     notes,
     now,
     building_id,
-    member_id,
   ];
   const newNode = await performQuery(createNodeQuery, values);
   return newNode;
@@ -170,7 +169,6 @@ export async function updateNode(id, nodePatch) {
     newNode.name,
     newNode.notes,
     newNode.building_id,
-    newNode.member_id,
   ];
   await performQuery(updateNodeQuery, values);
 
