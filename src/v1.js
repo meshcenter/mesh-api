@@ -8,7 +8,7 @@ import { getBuildings, getBuilding } from "./db/buildings";
 import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
 import { getMembers, getMember } from "./db/members";
-import { createMembership, destroyMembership } from "./db/memberships";
+import { createMembership, destroyMembership, findMembership } from "./db/memberships";
 import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest, createRequest } from "./db/requests";
@@ -141,7 +141,14 @@ router.post(
 router.post(
   "/nodes/:node_id/memberships",
   handleErrors(async (req, res, next) => {
-    await checkAuth(req.headers);
+    // await checkAuth(req.headers);
+    const membership = await findMembership(req.params.node_id, req.body.member_id);
+
+    if (membership) {
+      res.status(422).json({error: "A membership with that node_id and member_id already exists"});
+      return;
+    }
+
     await createMembership(req.params.node_id, req.body);
     const node = await getNode(req.params.node_id, true);
     res.json(node);
