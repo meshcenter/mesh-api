@@ -3,19 +3,10 @@ const url = require("url");
 
 let pgPool;
 
-async function createPool() {
-  const params = url.parse(process.env.DATABASE_URL);
-  const auth = params.auth && params.auth.split(":");
-
-  const user = auth ? auth[0] : null;
-  const password = auth ? auth[1] : null;
-
+async function createPool(connectionString) {
+  const params = url.parse(connectionString);
   pgPool = new Pool({
-    host: params.hostname,
-    database: params.pathname.split("/")[1],
-    user: user,
-    password: password,
-    port: params.port,
+    connectionString,
     ssl: sslOptions(params.hostname),
   });
 }
@@ -30,7 +21,7 @@ function sslOptions(host) {
 }
 
 async function performQuery(text, values) {
-  if (!pgPool) await createPool();
+  if (!pgPool) await createPool(process.env.DATABASE_URL);
   const client = await pgPool.connect();
   const result = await client.query(text, values);
   client.release();
