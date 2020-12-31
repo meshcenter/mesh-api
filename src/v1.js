@@ -153,6 +153,9 @@ router.delete(
   handleErrors(async (req, res, next) => {
     await checkAuth(req.headers);
     const membership = await destroyMembership(req.params.id);
+
+    if (!membership) { notFound() }
+
     res.json({});
   })
 )
@@ -303,4 +306,8 @@ function handleErrors(fn) {
   return (req, res, next) => {
     fn(req, res, next).catch(next);
   };
+}
+
+function notFound() {
+  throw new Error("Not found")
 }
