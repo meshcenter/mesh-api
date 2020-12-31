@@ -141,7 +141,7 @@ router.post(
 router.post(
   "/nodes/:node_id/memberships",
   handleErrors(async (req, res, next) => {
-    // await checkAuth(req.headers);
+    await checkAuth(req.headers);
     const membership = await findMembership(req.params.node_id, req.body.member_id);
 
     if (membership) {
