@@ -27,7 +27,7 @@ export async function installMessage(client, appointment) {
 }
 
 export async function rescheduleMessage(client, appointment, slackTS) {
-  const channel = await client.getChannel(installChannel);
+  const channel = await client.getChannel(process.env.SLACK_INSTALL_CHANNEL);
   if (!channel) {
     // console.log(`#${channelName} not found`);
     return;
