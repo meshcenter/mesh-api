@@ -33,5 +33,17 @@
     "los": "node scripts/los.js",
     "migrate": "node-pg-migrate",
     "test": "TZ=UTC jest --setupFiles dotenv/config"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ]
+    ]
   }
 }
