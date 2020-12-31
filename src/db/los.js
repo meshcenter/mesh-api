@@ -43,7 +43,7 @@ FROM
 	LEFT JOIN devices ON devices.node_id = nodes.id
 	LEFT JOIN device_types ON devices.device_type_id = device_types.id
 WHERE
-	device_types.name IN ('LBE120', 'SN1Sector1', 'SN1Sector2')
+	device_types.name IN ('LBE-120', 'SN1Sector1', 'SN1Sector2', 'Mikrotik120', 'LTU-60', 'PS-5AC')
 	AND devices.status = 'active'
 	AND nodes.status = 'active'
 GROUP BY
@@ -65,7 +65,7 @@ FROM
 	JOIN buildings ON requests.building_id = buildings.id
 	LEFT JOIN appointments ON appointments.request_id = requests.id
 WHERE
-	requests.id IN(3946, 1933)
+	requests.id IN(3946)
 	OR(
 		SELECT
 			id FROM appointments
