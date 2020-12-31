@@ -4,31 +4,11 @@ import url from "url";
 let pool;
 let losPool;
 
-async function createPool() {
-  const params = url.parse(process.env.DATABASE_URL);
-  const auth = params.auth && params.auth.split(":");
-
-  const user = auth ? auth[0] : null;
-  const password = auth ? auth[1] : null;
-
-  pool = new Pool({
-    host: params.hostname,
-    database: params.pathname.split("/")[1],
-    user: user,
-    password: password,
-    port: params.port,
+async function createPool(connectionString) {
+  const params = url.parse(connectionString);
+  return new Pool({
+    connectionString,
     ssl: sslOptions(params.hostname),
-  });
-}
-
-async function createLosPool() {
-  losPool = new Pool({
-    host: process.env.LOS_DB_HOST,
-    database: process.env.LOS_DB_NAME,
-    user: process.env.LOS_DB_USER,
-    password: process.env.LOS_DB_PASS,
-    port: process.env.LOS_DB_PORT,
-    ssl: sslOptions(process.env.LOS_DB_HOST),
   });
 }
 
@@ -45,7 +25,9 @@ function sslOptions(host) {
 }
 
 export async function performQuery(text, values) {
-  if (!pool) await createPool();
+  if (!pool) {
+    pool = await createPool(process.env.DATABASE_URL);
+  }
   const client = await pool.connect();
   const result = await client.query(text, values);
   client.release();
@@ -53,7 +35,9 @@ export async function performQuery(text, values) {
 }
 
 export async function performLosQuery(text, values) {
-  if (!losPool) await createLosPool();
+  if (!losPool) {
+    losPool = await createPool(process.env.LOS_DATABASE_URL);
+  }
   const client = await losPool.connect();
   const result = await client.query(text, values);
   client.release();

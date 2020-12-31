@@ -29,9 +29,20 @@
     "build": "netlify-lambda build src -c webpack.functions.js",
     "format": "prettier --write .",
     "precommit": "yarn format && yarn test",
-    "reset-db": "node scripts/create-database && node scripts/import-spreadsheet.js",
     "los": "node scripts/los.js",
-    "migrate": "node-pg-migrate",
+    "migrate": "node-pg-migrate --reject-unauthorized false",
     "test": "TZ=UTC jest --setupFiles dotenv/config"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ]
+    ]
   }
 }

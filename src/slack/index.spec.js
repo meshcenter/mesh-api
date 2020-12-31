@@ -10,7 +10,7 @@ describe("requestMessage", () => {
     it("sends a message to the join requests channel", async () => {
       const slackClient = mockSlackClient();
       slackClient.getChannel.mockResolvedValue({
-        name: "join-requests-test",
+        name: process.env.SLACK_REQUEST_CHANNEL,
         id: 1,
       });
 
@@ -29,7 +29,9 @@ describe("requestMessage", () => {
 
       await requestMessage(slackClient, request, building, visibleNodes);
 
-      expect(slackClient.getChannel).toHaveBeenCalledWith("join-requests-test");
+      expect(slackClient.getChannel).toHaveBeenCalledWith(
+        process.env.SLACK_REQUEST_CHANNEL
+      );
       expect(slackClient.postMessage).toHaveBeenCalled();
       const {
         channel,
