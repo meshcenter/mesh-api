@@ -6,7 +6,7 @@ let losPool;
 
 async function createPool(connectionString) {
   const params = url.parse(connectionString);
-  pool = new Pool({
+  return new Pool({
     connectionString,
     ssl: sslOptions(params.hostname),
   });
@@ -25,7 +25,9 @@ function sslOptions(host) {
 }
 
 export async function performQuery(text, values) {
-  if (!pool) await createPool(process.env.DATABASE_URL);
+  if (!pool) {
+    pool = await createPool(process.env.DATABASE_URL);
+  }
   const client = await pool.connect();
   const result = await client.query(text, values);
   client.release();
@@ -33,7 +35,9 @@ export async function performQuery(text, values) {
 }
 
 export async function performLosQuery(text, values) {
-  if (!losPool) await createPool(process.env.LOS_DATABASE_URL);
+  if (!losPool) {
+    losPool = await createPool(process.env.LOS_DATABASE_URL);
+  }
   const client = await losPool.connect();
   const result = await client.query(text, values);
   client.release();
