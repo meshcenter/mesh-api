@@ -65,9 +65,9 @@ GROUP BY
 const authorizedGetNodeQuery = `SELECT
 	nodes.*,
 	to_json(buildings) AS building,
+	json_agg(DISTINCT members_with_membership_id) AS members,
 	json_agg(DISTINCT requests) AS requests,
 	json_agg(DISTINCT panoramas) FILTER (WHERE panoramas IS NOT NULL) AS panoramas,
-	json_agg(DISTINCT members_with_membership_id) AS members,
 	(
 		SELECT
 			json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
