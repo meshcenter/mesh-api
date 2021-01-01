@@ -134,7 +134,7 @@ export async function getNodes() {
 }
 
 export async function createNode(node) {
-  const { lat, lng, alt, status, name, notes, building_id, member_id } = node;
+  const { lat, lng, alt, status, name, notes, building_id } = node;
   const now = new Date();
   const values = [
     lat,
