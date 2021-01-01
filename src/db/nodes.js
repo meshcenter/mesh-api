@@ -97,8 +97,8 @@ FROM
 	LEFT JOIN memberships ON memberships.node_id = nodes.id
 	LEFT JOIN (
 		SELECT
-				members.*,
-				memberships.id AS membership_id
+			members.*,
+			memberships.id AS membership_id
 		FROM members
 		LEFT JOIN memberships ON memberships.member_id = members.id
 	) AS members_with_membership_id ON memberships.id = members_with_membership_id.membership_id
