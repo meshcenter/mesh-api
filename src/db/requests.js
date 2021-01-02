@@ -4,21 +4,21 @@ import { requestMessage } from "../slack";
 import { performQuery } from ".";
 
 const getRequestQuery = `SELECT
-	requests.*,
-	to_json(buildings) AS building,
-	to_json(members) AS member,
-	json_agg(json_build_object('id', panoramas.id, 'url', panoramas.url, 'date', panoramas.date)) AS panoramas
+  requests.*,
+  to_json(buildings) AS building,
+  to_json(members) AS member,
+  json_agg(DISTINCT panoramas) FILTER (WHERE panoramas IS NOT NULL) AS panoramas
 FROM
-	requests
-	JOIN buildings ON requests.building_id = buildings.id
-	JOIN members ON requests.member_id = members.id
-	LEFT JOIN panoramas ON requests.id = panoramas.request_id
+  requests
+  JOIN buildings ON requests.building_id = buildings.id
+  JOIN members ON requests.member_id = members.id
+  LEFT JOIN panoramas ON requests.id = panoramas.request_id
 WHERE
-	requests.id = $1
+  requests.id = $1
 GROUP BY
-	requests.id,
-	buildings.id,
-	members.id`;
+  requests.id,
+  buildings.id,
+  members.id`;
 
 export async function getRequest(id) {
   if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
@@ -28,19 +28,19 @@ export async function getRequest(id) {
 }
 
 const getRequestsQuery = `SELECT
-	requests.*,
-	to_json(buildings) AS building,
-	to_json(members) AS member
+  requests.*,
+  to_json(buildings) AS building,
+  to_json(members) AS member
 FROM
-	requests
-	LEFT JOIN buildings ON requests.building_id = buildings.id
-	LEFT JOIN members ON requests.member_id = members.id
+  requests
+  LEFT JOIN buildings ON requests.building_id = buildings.id
+  LEFT JOIN members ON requests.member_id = members.id
 GROUP BY
-	requests.id,
-	buildings.id,
-	members.id
+  requests.id,
+  buildings.id,
+  members.id
 ORDER BY
-	date DESC`;
+  date DESC`;
 
 export async function getRequests() {
   return performQuery(getRequestsQuery);
@@ -154,7 +154,7 @@ async function createTicket(request, building, member) {
 
   const text = await response.text();
   if (response.status !== 201) {
-    throw text;
+    throw new Error(text);
   }
 
   return text; // external ticket id of the newly-created ticket

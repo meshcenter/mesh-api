@@ -114,7 +114,6 @@ RETURNING
 	*`;
 
 export async function getNode(id, authorized) {
-  console.log("!", id, authorized);
   if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
   const query = authorized ? authorizedGetNodeQuery : getNodeQuery;
   const [node] = await performQuery(query, [id]);

@@ -15,10 +15,10 @@ export async function getNodesKML() {
     .sort((a, b) => a.id - b.id)
     .map(
       (node) => `<Folder>
-					<name>${node.id}</name>
-					${nodePlacemark(node)}
-					${(linksByNode[node.id] || []).map(linkPlacemark)}
-				</Folder>`
+  <name>${node.id}</name>
+  ${nodePlacemark(node)}
+  ${(linksByNode[node.id] || []).map(linkPlacemark)}
+</Folder>`
     );
 
   const elements = [
@@ -36,24 +36,24 @@ export async function getNodesKML() {
 }
 
 function nodePlacemark(node) {
-  const dashboardLink = `<a href="https://dashboard.nycmesh.net/requests/${node.id}" style="margin-right: 1rem;">Dashboard →</a>`;
+  const dashboardLink = `<a href="https://dashboard.nycmesh.net/map/nodes/${node.id}" style="margin-right: 1rem;">Dashboard →</a>`;
   const ticketLink = `<a href="https://support.nycmesh.net/scp/tickets.php?a=search&amp;query=${node.id}" style="margin-right: 1rem;">Tickets →</a>`;
   return `<Placemark>
-	<name>${node.name || `Node ${node.id}`}</name>
-		<ExtendedData>
-		${node.name ? data("Name", node.name) : ""}
-		${data("Status", node.status)}
-		${data("Installed", node.create_date.toDateString())}
-		${data("Devices", node.device_types.map((d) => d.name).join(", "))}
-		${node.notes ? data("Notes", node.notes) : ""}
-		${data("Links", `${dashboardLink} ${ticketLink}`)}
-		${panoData(node.panoramas.filter((p) => p) || [])}
-	</ExtendedData>
-	<Point>
-		<altitudeMode>absolute</altitudeMode>
-		<coordinates>${node.lng},${node.lat},${node.alt || 20}</coordinates>
-	</Point>
-	<styleUrl>${nodeStyleId(node)}</styleUrl>
+  <name>${node.name || `Node ${node.id}`}</name>
+    <ExtendedData>
+    ${node.name ? data("Name", node.name) : ""}
+    ${data("Status", node.status)}
+    ${data("Installed", node.create_date.toDateString())}
+    ${data("Devices", node.device_types.map((d) => d.name).join(", "))}
+    ${node.notes ? data("Notes", node.notes) : ""}
+    ${data("Links", `${dashboardLink} ${ticketLink}`)}
+    ${panoData(node.panoramas.filter((p) => p) || [])}
+  </ExtendedData>
+  <Point>
+    <altitudeMode>absolute</altitudeMode>
+    <coordinates>${node.lng},${node.lat},${node.alt || 20}</coordinates>
+  </Point>
+  <styleUrl>${nodeStyleId(node)}</styleUrl>
 </Placemark>`;
 }
 
@@ -65,18 +65,18 @@ function linkPlacemark(link) {
   const deviceNameB =
     device_type_b.name === "Unknown" ? "Unknown Device" : device_type_b.name;
   return `<Placemark>
-	<name>Link</name>
-	<ExtendedData>
-		${data("ID", link.id)}
-		${data("Status", link.status)}
-		${data("From", `${node_a.name || node_a.id} ${deviceNameA}`)}
-		${data("To", `${node_b.name || node_b.id} ${deviceNameB}`)}
-	</ExtendedData>
-	<LineString>
-		<altitudeMode>absolute</altitudeMode>
-		<coordinates>${coordinates}</coordinates>
-	</LineString>
-	<styleUrl>${linkStyleId(link)}</styleUrl>
+  <name>Link</name>
+  <ExtendedData>
+    ${data("ID", link.id)}
+    ${data("Status", link.status)}
+    ${data("From", `${node_a.name || node_a.id} ${deviceNameA}`)}
+    ${data("To", `${node_b.name || node_b.id} ${deviceNameB}`)}
+  </ExtendedData>
+  <LineString>
+    <altitudeMode>absolute</altitudeMode>
+    <coordinates>${coordinates}</coordinates>
+  </LineString>
+  <styleUrl>${linkStyleId(link)}</styleUrl>
 </Placemark>
 `;
 }
@@ -105,87 +105,87 @@ function linkStyleId(link) {
 }
 
 const getNodesQuery = `SELECT
-	nodes.*,
-	buildings.address,
-	json_agg(DISTINCT devices) as devices,
-	json_agg(DISTINCT device_types) as device_types,
-	json_agg(DISTINCT panoramas) as panoramas
+  nodes.*,
+  buildings.address,
+  json_agg(DISTINCT devices) as devices,
+  json_agg(DISTINCT device_types) as device_types,
+  json_agg(DISTINCT panoramas) as panoramas
 FROM
-	nodes
-	LEFT JOIN buildings ON nodes.building_id = buildings.id
-	LEFT JOIN devices ON nodes.id = devices.node_id
-	LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
-	LEFT JOIN requests ON requests.building_id = buildings.id
-	LEFT JOIN panoramas ON panoramas.request_id = requests.id
+  nodes
+  LEFT JOIN buildings ON nodes.building_id = buildings.id
+  LEFT JOIN devices ON nodes.id = devices.node_id
+  LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
+  LEFT JOIN requests ON requests.building_id = buildings.id
+  LEFT JOIN panoramas ON panoramas.request_id = requests.id
 WHERE
-	nodes.status = 'active'
+  nodes.status = 'active'
 GROUP BY
-	nodes.id,
-	buildings.id
+  nodes.id,
+  buildings.id
 ORDER BY
-	nodes.create_date DESC`;
+  nodes.create_date DESC`;
 
 async function getNodes() {
   return performQuery(getNodesQuery);
 }
 
 const getLinksQuery = `SELECT
-	links.*,
-	(
-		SELECT
-			to_json(devices.*)
-		FROM
-			devices
-		WHERE
-			devices.id = device_a_id) AS device_a,
-	(
-		SELECT
-			to_json(devices.*)
-		FROM
-			devices
-		WHERE
-			devices.id = device_b_id) AS device_b,
-	(
-		SELECT
-			to_json(device_types.*)
-		FROM
-			devices
-			JOIN device_types ON device_types.id = devices.device_type_id
-		WHERE
-			devices.id = device_a_id) AS device_type_a,
-	(
-		SELECT
-			to_json(device_types.*)
-		FROM
-			devices
-			JOIN device_types ON device_types.id = devices.device_type_id
-		WHERE
-			devices.id = device_b_id) AS device_type_b,
-	(
-		SELECT
-			to_json(nodes.*)
-		FROM
-			devices
-			JOIN nodes ON nodes.id = devices.node_id
-		WHERE
-			devices.id = device_a_id) AS node_a,
-	(
-		SELECT
-			to_json(nodes.*)
-		FROM
-			devices
-			JOIN nodes ON nodes.id = devices.node_id
-		WHERE
-			devices.id = device_b_id) AS node_b
+  links.*,
+  (
+    SELECT
+      to_json(devices.*)
+    FROM
+      devices
+    WHERE
+      devices.id = device_a_id) AS device_a,
+  (
+    SELECT
+      to_json(devices.*)
+    FROM
+      devices
+    WHERE
+      devices.id = device_b_id) AS device_b,
+  (
+    SELECT
+      to_json(device_types.*)
+    FROM
+      devices
+      JOIN device_types ON device_types.id = devices.device_type_id
+    WHERE
+      devices.id = device_a_id) AS device_type_a,
+  (
+    SELECT
+      to_json(device_types.*)
+    FROM
+      devices
+      JOIN device_types ON device_types.id = devices.device_type_id
+    WHERE
+      devices.id = device_b_id) AS device_type_b,
+  (
+    SELECT
+      to_json(nodes.*)
+    FROM
+      devices
+      JOIN nodes ON nodes.id = devices.node_id
+    WHERE
+      devices.id = device_a_id) AS node_a,
+  (
+    SELECT
+      to_json(nodes.*)
+    FROM
+      devices
+      JOIN nodes ON nodes.id = devices.node_id
+    WHERE
+      devices.id = device_b_id) AS node_b
 FROM
-	links
-	JOIN devices ON devices.id IN (links.device_a_id, links.device_b_id)
-	JOIN device_types ON device_types.id = devices.device_type_id
-	JOIN nodes ON nodes.id = devices.node_id
+  links
+  JOIN devices ON devices.id IN (links.device_a_id, links.device_b_id)
+  JOIN device_types ON device_types.id = devices.device_type_id
+  JOIN nodes ON nodes.id = devices.node_id
 WHERE
-	links.status = 'active'
+  links.status = 'active'
 GROUP BY
-	links.id`;
+  links.id`;
 
 async function getLinks() {
   return performQuery(getLinksQuery);
