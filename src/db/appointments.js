@@ -3,14 +3,14 @@ import { getBuilding } from "./buildings";
 import { createNode } from "./nodes";
 
 const getAppointmentsQuery = `SELECT
-	appointments.*,
-	to_json(buildings) AS building
+  appointments.*,
+  to_json(buildings) AS building
 FROM
-	appointments
-	LEFT JOIN buildings ON appointments.building_id = buildings.id
+  appointments
+  LEFT JOIN buildings ON appointments.building_id = buildings.id
 GROUP BY
-	appointments.id,
-	buildings.id`;
+  appointments.id,
+  buildings.id`;
 
 export async function getAppointments() {
   const appointments = await performQuery(getAppointmentsQuery);
@@ -18,19 +18,19 @@ export async function getAppointments() {
 }
 
 const getAppointmentQuery = `SELECT
-	appointments.*,
-	to_json(buildings) AS building,
-	to_json(members) AS member
+  appointments.*,
+  to_json(buildings) AS building,
+  to_json(members) AS member
 FROM
-	appointments
-	LEFT JOIN buildings ON appointments.building_id = buildings.id
-	LEFT JOIN members ON appointments.member_id = members.id
+  appointments
+  LEFT JOIN buildings ON appointments.building_id = buildings.id
+  LEFT JOIN members ON appointments.member_id = members.id
 WHERE
-	appointments.id = $1
+  appointments.id = $1
 GROUP BY
-	appointments.id,
-	buildings.id,
-	members.id`;
+  appointments.id,
+  buildings.id,
+  members.id`;
 
 export async function getAppointment(id) {
   const [appointment] = await performQuery(getAppointmentQuery, [id]);
@@ -48,9 +48,9 @@ export async function getAppointmentByAcuityId(acuity_id) {
 }
 
 const createAppointmentQuery = `INSERT INTO appointments (type, date, notes, member_id, building_id, request_id, node_id, acuity_id)
-	VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+  VALUES($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING
-	*`;
+  *`;
 
 export async function createAppointment(appointment) {
   // TODO: Allocate node if none in building
@@ -84,20 +84,20 @@ export async function createAppointment(appointment) {
 }
 
 const updateAppointmentQuery = `UPDATE
-	appointments
+  appointments
 SET
-	type = $2,
-	date = $3,
-	notes = $4,
-	member_id = $5,
-	building_id = $6,
-	request_id = $7,
-	acuity_id = $8,
-	slack_ts = $9
+  type = $2,
+  date = $3,
+  notes = $4,
+  member_id = $5,
+  building_id = $6,
+  request_id = $7,
+  acuity_id = $8,
+  slack_ts = $9
 WHERE
-	id = $1
+  id = $1
 RETURNING
-	*`;
+  *`;
 
 export async function updateAppointment(appointment) {
   const [updatedAppointment] = await performQuery(updateAppointmentQuery, [
