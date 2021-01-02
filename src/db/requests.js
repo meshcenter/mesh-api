@@ -115,10 +115,17 @@ export async function createRequest(request, slackClient) {
     [now, apartment, roofAccess, member.id, building.id]
   );
 
-  // Send Slack message
+  // Get los
+  let visibleNodes = [];
   try {
     const { visibleSectors, visibleOmnis } = await getLos(bin);
-    const visibleNodes = [...visibleSectors, ...visibleOmnis];
+    visibleNodes.push(...visibleSectors, ...visibleOmnis);
+  } catch (error) {
+    console.log(error);
+  }
+
+  // Send Slack message
+  try {
     await requestMessage(slackClient, dbRequest, building, visibleNodes);
   } catch (error) {
     console.log(error);
