@@ -58,16 +58,17 @@ function searchRequests(query) {
 			requests
 		JOIN buildings ON requests.building_id = buildings.id
 		JOIN members ON requests.member_id = members.id
-		WHERE buildings.address ILIKE $1
-			OR members.name ILIKE $1
-			OR members.email ILIKE $1
-			OR notes ILIKE $2
+		WHERE CAST(requests.id AS VARCHAR) = $1
+			OR buildings.address ILIKE $3
+			OR members.name ILIKE $2
+			OR members.email ILIKE $2
+			OR notes ILIKE $3
 		GROUP BY
 			requests.id,
 			buildings.id,
 			members.id
 		LIMIT 5`,
-    [`${query}%`, `%${query}%`]
+    [query, `${query}%`, `%${query}%`]
   );
 }
 
