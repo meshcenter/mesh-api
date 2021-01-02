@@ -8,6 +8,7 @@ import { getBuildings, getBuilding } from "./db/buildings";
 import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
 import { getMembers, getMember } from "./db/members";
+import { getMap } from "./db/map";
 import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest, createRequest } from "./db/requests";
@@ -85,6 +86,14 @@ router.get(
     await checkAuth(req.headers);
     const member = await getMember(req.params.id);
     res.json(member);
+  })
+);
+
+router.get(
+  "/map",
+  handleErrors(async (req, res, next) => {
+    const map = await getMap();
+    res.json(map);
   })
 );
 
