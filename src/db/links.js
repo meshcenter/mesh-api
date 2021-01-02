@@ -13,5 +13,5 @@ FROM
 		links.id`;
 
 export async function getLinks() {
-	return performQuery(getLinksQuery);
+  return performQuery(getLinksQuery);
 }
