@@ -9,7 +9,11 @@ import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
 import { getMap } from "./db/map";
 import { getMembers, getMember } from "./db/members";
-import { createMembership, destroyMembership, findMembership } from "./db/memberships";
+import {
+  createMembership,
+  destroyMembership,
+  findMembership,
+} from "./db/memberships";
 import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest, createRequest } from "./db/requests";
@@ -151,10 +155,17 @@ router.post(
   "/nodes/:node_id/memberships",
   handleErrors(async (req, res, next) => {
     await checkAuth(req.headers);
-    const membership = await findMembership(req.params.node_id, req.body.member_id);
+    const membership = await findMembership(
+      req.params.node_id,
+      req.body.member_id
+    );
 
     if (membership) {
-      res.status(422).json({error: "A membership with that node_id and member_id already exists"});
+      res
+        .status(422)
+        .json({
+          error: "A membership with that node_id and member_id already exists",
+        });
       return;
     }
 
@@ -162,7 +173,7 @@ router.post(
     const node = await getNode(req.params.node_id, true);
     res.json(node);
   })
-)
+);
 
 router.delete(
   "/memberships/:id",
@@ -170,11 +181,13 @@ router.delete(
     await checkAuth(req.headers);
     const membership = await destroyMembership(req.params.id);
 
-    if (!membership) { notFound() }
+    if (!membership) {
+      notFound();
+    }
 
     res.json({});
   })
-)
+);
 
 router.post(
   "/panos",
@@ -329,5 +342,5 @@ function handleErrors(fn) {
 }
 
 function notFound() {
-  throw new Error("Not found")
+  throw new Error("Not found");
 }

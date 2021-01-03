@@ -133,16 +133,7 @@ export async function getNodes() {
 export async function createNode(node) {
   const { lat, lng, alt, status, name, notes, building_id } = node;
   const now = new Date();
-  const values = [
-    lat,
-    lng,
-    alt,
-    status,
-    name,
-    notes,
-    now,
-    building_id,
-  ];
+  const values = [lat, lng, alt, status, name, notes, now, building_id];
   const newNode = await performQuery(createNodeQuery, values);
   return newNode;
 }

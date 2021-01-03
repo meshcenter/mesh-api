@@ -13,7 +13,10 @@ const findMembershipQuery = `
 `;
 
 export async function createMembership(nodeId, params) {
-  const results = await performQuery(createMembershipQuery, [nodeId, params.member_id]);
+  const results = await performQuery(createMembershipQuery, [
+    nodeId,
+    params.member_id,
+  ]);
 
   return results[0];
 }
