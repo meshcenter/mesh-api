@@ -39,18 +39,13 @@ describe("requestMessage", () => {
         blocks,
       } = slackClient.postMessage.mock.calls[0][0];
       expect(channel).toBe(1);
-      expect(text).toBe(
-        "123 4th Street · 98m · Roof access · LoS to nodes 5544, 312"
-      );
+      expect(text).toBe("123 4th Street");
       const lines = blocks[0].text.text.split("\n");
-      expect(lines).toHaveLength(3);
+      expect(lines).toHaveLength(2);
       expect(lines[0]).toBe(
-        "*<https://www.nycmesh.net/map/nodes/4321|123 4th Street>*"
+        "*<https://dashboard.nycmesh.net/map/requests/4321|123 4th Street>*"
       );
-      expect(lines[1]).toBe("98m · Roof access · LoS to nodes 5544, 312");
-      expect(lines[2]).toBe(
-        "<https://earth.google.com/web/search/123+4th+Street/@32.1234542,188.029342,300a,300d,40y,0.6h,65t,0r|Earth →>\t<https://los.nycmesh.net/search?address=123%204th%20Street&bin=F4SF0J32&lat=32.1234542&lng=188.029342|LoS →>\t<https://support.nycmesh.net/scp/tickets.php?a=search&query=4321|Ticket →>"
-      );
+      expect(lines[1]).toBe("98m · Roof access · 5544, 312");
     });
   });
 
@@ -58,7 +53,7 @@ describe("requestMessage", () => {
     it("sends a message to the join requests channel", async () => {
       const slackClient = mockSlackClient();
       slackClient.getChannel.mockResolvedValue({
-        name: "join-requests-test",
+        name: process.env.SLACK_REQUEST_CHANNEL,
         id: 1,
       });
 
@@ -68,8 +63,8 @@ describe("requestMessage", () => {
       await requestMessage(slackClient, request, building, []);
 
       expect(slackClient.postMessage).toHaveBeenCalled();
-      const { text } = slackClient.postMessage.mock.calls[0][0];
-      expect(text).toContain("No roof access");
+      const { blocks } = slackClient.postMessage.mock.calls[0][0];
+      expect(blocks[0].text.text).toContain("No roof access");
     });
   });
 
@@ -77,7 +72,7 @@ describe("requestMessage", () => {
     it("sends a message to the join requests channel", async () => {
       const slackClient = mockSlackClient();
       slackClient.getChannel.mockResolvedValue({
-        name: "join-requests-test",
+        name: process.env.SLACK_REQUEST_CHANNEL,
         id: 1,
       });
 
@@ -86,8 +81,8 @@ describe("requestMessage", () => {
       await requestMessage(slackClient, {}, building, []);
 
       expect(slackClient.postMessage).toHaveBeenCalled();
-      const { text } = slackClient.postMessage.mock.calls[0][0];
-      expect(text).toContain("No LoS");
+      const { blocks } = slackClient.postMessage.mock.calls[0][0];
+      expect(blocks[0].text.text).toContain("No LoS");
     });
   });
 
@@ -95,7 +90,7 @@ describe("requestMessage", () => {
     it("sends a message to the join requests channel", async () => {
       const slackClient = mockSlackClient();
       slackClient.getChannel.mockResolvedValue({
-        name: "join-requests-test",
+        name: process.env.SLACK_REQUEST_CHANNEL,
         id: 1,
       });
 
@@ -104,8 +99,8 @@ describe("requestMessage", () => {
       await requestMessage(slackClient, {}, building, null);
 
       expect(slackClient.postMessage).toHaveBeenCalled();
-      const { text } = slackClient.postMessage.mock.calls[0][0];
-      expect(text).toContain("LoS Failed");
+      const { blocks } = slackClient.postMessage.mock.calls[0][0];
+      expect(blocks[0].text.text).toContain("LoS search failed");
     });
   });
 
@@ -113,10 +108,14 @@ describe("requestMessage", () => {
     it("does not send a message", async () => {
       const slackClient = mockSlackClient();
       slackClient.getChannel.mockResolvedValue(null);
+      const consoleLog = console.log;
+      console.log = jest.fn();
 
       await requestMessage(slackClient, {}, { address: "" }, []);
 
       expect(slackClient.postMessage).not.toHaveBeenCalled();
+
+      console.log = consoleLog;
     });
   });
 });
@@ -124,18 +123,26 @@ describe("requestMessage", () => {
 describe("panoMessage", () => {
   it("sends a message to the panoramas channel", async () => {
     const slackClient = mockSlackClient();
-    slackClient.getChannel.mockResolvedValue({ name: "panoramas-test", id: 2 });
-
+    slackClient.getChannel.mockResolvedValue({
+      name: process.env.SLACK_REQUEST_CHANNEL,
+      id: 2,
+    });
     const url = "https://example.com";
-    const nodeID = 1;
+    const requestId = 1;
 
-    await panoMessage(slackClient, { url, node_id: nodeID });
+    await panoMessage(
+      slackClient,
+      { url, request_id: requestId },
+      { id: requestId, slack_ts: "123" }
+    );
 
-    expect(slackClient.getChannel).toHaveBeenCalledWith("panoramas-test");
+    expect(slackClient.getChannel).toHaveBeenCalledWith(
+      process.env.SLACK_REQUEST_CHANNEL
+    );
     expect(slackClient.postMessage).toHaveBeenCalled();
     const { channel, text, blocks } = slackClient.postMessage.mock.calls[0][0];
     expect(channel).toBe(2);
-    expect(text).toBe("New pano for 1!");
+    expect(text).toBe("New pano for request 1!");
     expect(blocks[0].image_url).toBe("https://example.com");
   });
 });
@@ -144,7 +151,7 @@ describe("installMessage", () => {
   it("sends a message to the install channel", async () => {
     const slackClient = mockSlackClient();
     slackClient.getChannel.mockResolvedValue({
-      name: "install-team-test",
+      name: process.env.SLACK_INSTALL_CHANNEL,
       id: 3,
     });
 
@@ -170,7 +177,9 @@ describe("installMessage", () => {
 
     await installMessage(slackClient, appointment);
 
-    expect(slackClient.getChannel).toHaveBeenCalledWith("install-team-test");
+    expect(slackClient.getChannel).toHaveBeenCalledWith(
+      process.env.SLACK_INSTALL_CHANNEL
+    );
     const { channel, blocks, text } = slackClient.postMessage.mock.calls[0][0];
     expect(channel).toBe(3);
     expect(blocks).toHaveLength(4);
@@ -192,7 +201,7 @@ describe("rescheduleMessage", () => {
   it("updates the original message in the install channel", async () => {
     const slackClient = mockSlackClient();
     slackClient.getChannel.mockResolvedValue({
-      name: "install-team-test",
+      name: process.env.SLACK_INSTALL_CHANNEL,
       id: 3,
     });
 
@@ -205,7 +214,9 @@ describe("rescheduleMessage", () => {
 
     await rescheduleMessage(slackClient, appointment, 2394587345);
 
-    expect(slackClient.getChannel).toHaveBeenCalledWith("install-team-test");
+    expect(slackClient.getChannel).toHaveBeenCalledWith(
+      process.env.SLACK_INSTALL_CHANNEL
+    );
     expect(slackClient.update).toHaveBeenCalled();
     const { channel, ts, blocks, text } = slackClient.update.mock.calls[0][0];
     expect(channel).toBe(3);
@@ -217,7 +228,7 @@ describe("rescheduleMessage", () => {
   it("posts a rescheduling message in a thread on the original message", async () => {
     const slackClient = mockSlackClient();
     slackClient.getChannel.mockResolvedValue({
-      name: "install-team-test",
+      name: process.env.SLACK_INSTALL_CHANNEL,
       id: 3,
     });
 

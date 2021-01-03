@@ -140,7 +140,11 @@ router.post(
 router.post(
   "/panos",
   handleErrors(async (req, res, next) => {
-    const pano = await savePano(req.body.requestId, req.body.panoURL);
+    const pano = await savePano(
+      req.body.requestId,
+      req.body.panoURL,
+      slackClient
+    );
     res.json(pano);
   })
 );

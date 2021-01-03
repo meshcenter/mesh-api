@@ -1,5 +1,6 @@
 import AWS from "aws-sdk";
 import { panoMessage } from "../slack";
+import { getRequest } from "./requests";
 import { performQuery } from ".";
 
 const s3 = new AWS.S3({
@@ -27,10 +28,16 @@ const insertPanoQuery =
   "INSERT INTO panoramas (url, date, request_id) VALUES ($1, $2, $3) RETURNING *";
 
 // TODO: Restrict this somehow. Maybe require a secret?
-export async function savePano(requestId, panoURL) {
+export async function savePano(requestId, panoURL, slackClient) {
   if (!requestId || !panoURL) throw new Error("Bad params");
   const values = [panoURL, new Date(), requestId];
   const [pano] = await performQuery(insertPanoQuery, values);
-  await panoMessage(pano);
+  try {
+    const request = await getRequest(requestId);
+    await panoMessage(slackClient, pano, request);
+  } catch (error) {
+    console.log("Failed to send pano slack message!");
+    console.log(error.message);
+  }
   return pano;
 }
