@@ -97,7 +97,6 @@ async function importNodes(nodes) {
       "create_date",
       "abandon_date",
       "building_id",
-      "member_id",
     ],
     validNodes,
     (node) => {
@@ -122,12 +121,18 @@ async function importNodes(nodes) {
         new Date(node.installDate),
         node.abandonDate ? new Date(node.abandonDate) : null,
         buildingsByNodeAddress[node.address].id,
-        membersMap[node.memberEmail.toLowerCase()].id,
       ];
     }
   );
   await performQuery(
     `ALTER SEQUENCE nodes_id_seq RESTART WITH ${maxNodeId + 1}`
+  );
+
+  await insertBulk(
+    "memberships",
+    ["node_id", "member_id"],
+    validNodes,
+    (node) => [node.id, membersMap[node.memberEmail.toLowerCase()].id]
   );
 }
 

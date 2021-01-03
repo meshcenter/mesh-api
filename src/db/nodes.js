@@ -63,7 +63,7 @@ GROUP BY
 const authorizedGetNodeQuery = `SELECT
   nodes.*,
   to_json(buildings) AS building,
-  json_agg(DISTINCT members) AS members,
+  json_agg(DISTINCT members_with_membership_id) AS members,
   json_agg(DISTINCT requests) AS requests,
   COALESCE(json_agg(panoramas ORDER BY panoramas.date DESC) FILTER (WHERE panoramas IS NOT NULL), '[]') AS panoramas,
   (
@@ -92,7 +92,14 @@ const authorizedGetNodeQuery = `SELECT
 FROM
   nodes
   LEFT JOIN buildings ON nodes.building_id = buildings.id
-  LEFT JOIN members ON nodes.member_id = members.id
+  LEFT JOIN memberships ON memberships.node_id = nodes.id
+  LEFT JOIN (
+    SELECT
+      members.*,
+      memberships.id AS membership_id
+    FROM members
+    LEFT JOIN memberships ON memberships.member_id = members.id
+  ) AS members_with_membership_id ON memberships.id = members_with_membership_id.membership_id
   LEFT JOIN requests ON requests.building_id = buildings.id
   LEFT JOIN panoramas ON panoramas.request_id = requests.id
 WHERE
@@ -101,12 +108,12 @@ GROUP BY
   nodes.id,
   buildings.id`;
 
-const createNodeQuery = `INSERT INTO nodes (lat, lng, alt, status, name, notes, create_date, building_id, member_id)
-  VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+const createNodeQuery = `INSERT INTO nodes (lat, lng, alt, status, name, notes, create_date, building_id)
+  VALUES($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING
   *`;
 
-const updateNodeQuery = `UPDATE nodes SET status = $2, lat = $3, lng = $4, alt = $5, name = $6, notes = $7, building_id = $8, member_id = $9
+const updateNodeQuery = `UPDATE nodes SET status = $2, lat = $3, lng = $4, alt = $5, name = $6, notes = $7, building_id = $8
 WHERE id = $1
 RETURNING
   *`;
@@ -124,19 +131,9 @@ export async function getNodes() {
 }
 
 export async function createNode(node) {
-  const { lat, lng, alt, status, name, notes, building_id, member_id } = node;
+  const { lat, lng, alt, status, name, notes, building_id } = node;
   const now = new Date();
-  const values = [
-    lat,
-    lng,
-    alt,
-    status,
-    name,
-    notes,
-    now,
-    building_id,
-    member_id,
-  ];
+  const values = [lat, lng, alt, status, name, notes, now, building_id];
   const newNode = await performQuery(createNodeQuery, values);
   return newNode;
 }
@@ -160,7 +157,6 @@ export async function updateNode(id, nodePatch) {
     newNode.name,
     newNode.notes,
     newNode.building_id,
-    newNode.member_id,
   ];
   await performQuery(updateNodeQuery, values);
 

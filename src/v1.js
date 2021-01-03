@@ -7,12 +7,17 @@ import { checkAuth } from "./auth";
 import { getBuildings, getBuilding } from "./db/buildings";
 import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
-import { getMembers, getMember } from "./db/members";
 import { getMap } from "./db/map";
+import { getMembers, getMember } from "./db/members";
+import {
+  createMembership,
+  destroyMembership,
+  findMembership,
+} from "./db/memberships";
 import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest, createRequest } from "./db/requests";
-import { getSearch } from "./db/search";
+import { getSearch, searchMembers } from "./db/search";
 
 import { getKML } from "./kml";
 import { getAppointmentsKML } from "./kml/appointments";
@@ -81,6 +86,15 @@ router.get(
 );
 
 router.get(
+  "/members/search",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const members = await searchMembers(req.query.s);
+    res.json(members);
+  })
+);
+
+router.get(
   "/members/:id",
   handleErrors(async (req, res, next) => {
     await checkAuth(req.headers);
@@ -134,6 +148,44 @@ router.post(
     await checkAuth(req.headers);
     const node = await updateNode(req.params.id, req.body);
     res.json(node);
+  })
+);
+
+router.post(
+  "/nodes/:node_id/memberships",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const membership = await findMembership(
+      req.params.node_id,
+      req.body.member_id
+    );
+
+    if (membership) {
+      res
+        .status(422)
+        .json({
+          error: "A membership with that node_id and member_id already exists",
+        });
+      return;
+    }
+
+    await createMembership(req.params.node_id, req.body);
+    const node = await getNode(req.params.node_id, true);
+    res.json(node);
+  })
+);
+
+router.delete(
+  "/memberships/:id",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const membership = await destroyMembership(req.params.id);
+
+    if (!membership) {
+      notFound();
+    }
+
+    res.json({});
   })
 );
 
@@ -287,4 +339,8 @@ function handleErrors(fn) {
   return (req, res, next) => {
     fn(req, res, next).catch(next);
   };
+}
+
+function notFound() {
+  throw new Error("Not found");
 }

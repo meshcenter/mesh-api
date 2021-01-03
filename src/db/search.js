@@ -19,7 +19,8 @@ function searchNodes(query) {
 			nodes.*
 		FROM
 			nodes
-		JOIN members ON members.id = nodes.member_id
+		JOIN memberships ON memberships.node_id = nodes.id
+		JOIN members ON members.id = memberships.member_id
 		WHERE
 			CAST(nodes.id AS VARCHAR) = $1
 				OR nodes.name ILIKE $2
@@ -72,7 +73,7 @@ function searchRequests(query) {
   );
 }
 
-function searchMembers(query) {
+export async function searchMembers(query) {
   return performQuery(
     `SELECT *
 		FROM
