@@ -7,7 +7,7 @@ const getRequestQuery = `SELECT
   requests.*,
   to_json(buildings) AS building,
   to_json(members) AS member,
-  json_agg(DISTINCT panoramas) FILTER (WHERE panoramas IS NOT NULL) AS panoramas
+  COALESCE(json_agg(DISTINCT panoramas) FILTER (WHERE panoramas IS NOT NULL), '[]') AS panoramas
 FROM
   requests
   JOIN buildings ON requests.building_id = buildings.id
@@ -108,7 +108,7 @@ export async function createRequest(request, slackClient) {
 
   // Insert request
   const now = new Date();
-  const [
+  let [
     dbRequest,
   ] = await performQuery(
     "INSERT INTO requests (date, apartment, roof_access, member_id, building_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
@@ -121,15 +121,27 @@ export async function createRequest(request, slackClient) {
     const { visibleSectors, visibleOmnis } = await getLos(bin);
     visibleNodes.push(...visibleSectors, ...visibleOmnis);
   } catch (error) {
+    console.log("Failed to get line of sight");
     console.log(error);
   }
 
   // Send Slack message
   try {
-    await requestMessage(slackClient, dbRequest, building, visibleNodes);
+    const slackRes = await requestMessage(
+      slackClient,
+      dbRequest,
+      building,
+      visibleNodes
+    );
+    await performQuery(
+      "UPDATE requests SET slack_ts = $1 WHERE id = $2 RETURNING *",
+      [slackRes.ts, dbRequest.id]
+    );
   } catch (error) {
     console.log(error);
   }
+
+  dbRequest = await getRequest(dbRequest.id);
 
   return dbRequest;
 }

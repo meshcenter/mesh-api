@@ -10,12 +10,23 @@ export async function requestMessage(client, request, building, visibleNodes) {
   );
 }
 
-export async function panoMessage(client, pano) {
-  return sendMessage(
-    client,
-    process.env.SLACK_PANO_CHANNEL,
-    panoMessageContent(pano)
-  );
+export async function panoMessage(client, pano, request) {
+  const messageContent = panoMessageContent(pano, request);
+  if (request.slack_ts) {
+    const channel = await client.getChannel(process.env.SLACK_REQUEST_CHANNEL);
+    return client.postMessage({
+      channel: channel.id,
+      thread_ts: request.slack_ts,
+      reply_broadcast: true,
+      ...messageContent,
+    });
+  } else {
+    return sendMessage(
+      client,
+      process.env.SLACK_REQUEST_CHANNEL,
+      messageContent
+    );
+  }
 }
 
 export async function installMessage(client, appointment) {
@@ -73,16 +84,12 @@ function requestMessageContent(request, building, visibleNodes) {
   const altMeters = Math.round(alt * 0.328);
   const losString = getLoSString(visibleNodes);
   const roofString = roof_access ? "Roof access" : "No roof access";
-  const mapURL = getMapURL(id);
-  const earthURL = getEarthURL(building);
-  const losURL = getLosURL(building);
-  const ticketURL = getTicketURL(id);
-
-  const title = `*<${mapURL}|${address}>*`;
+  const dashboardURL = getDashboardURL("requests", id);
+  const titleText = address;
+  const title = `*<${dashboardURL}|${titleText}>*`;
   const info = `${altMeters}m · ${roofString} · ${losString}`;
-  const links = `<${earthURL}|Earth →>\t<${losURL}|LoS →>\t<${ticketURL}|Ticket →>`;
-  const text = `${title}\n${info}\n${links}`;
-  const fallbackText = `${address} · ${info}`;
+  const text = `${title}\n${info}`;
+  const fallbackText = address;
 
   return {
     blocks: [markdownSection(text)],
@@ -90,49 +97,23 @@ function requestMessageContent(request, building, visibleNodes) {
   };
 }
 
-function panoMessageContent(pano) {
+function panoMessageContent(pano, request) {
   const blocks = [
     {
       type: "image",
       title: {
         type: "plain_text",
-        text: "Panorama 1",
+        text: "Panorama",
       },
-      image_url: pano.url,
-      alt_text: "Panorama 1",
-    },
-    {
-      type: "actions",
-      elements: [
-        {
-          type: "button",
-          text: {
-            type: "plain_text",
-            emoji: true,
-            text: "Schedule Install",
-          },
-          style: "primary",
-          value: "click_me_123",
-        },
-        {
-          type: "button",
-          text: {
-            type: "plain_text",
-            emoji: true,
-            text: "No Line of Sight",
-          },
-          style: "danger",
-          value: "click_me_123",
-        },
-      ],
+      image_url: encodeURI(pano.url),
+      alt_text: "Panorama",
     },
   ];
 
-  const fallbackText = `New pano for ${pano.node_id}!`;
-
+  const text = `New pano for request ${pano.request_id}!`;
   return {
     blocks,
-    text: fallbackText,
+    text,
   };
 }
 
@@ -180,7 +161,7 @@ function markdownSection(text) {
 
 function getLoSString(visibleNodes) {
   if (!visibleNodes) {
-    return "LoS Failed";
+    return "LoS search failed";
   }
 
   if (!visibleNodes.length) {
@@ -190,10 +171,11 @@ function getLoSString(visibleNodes) {
   const isKnownDevice = (device) => device.type.name !== "Unknown";
   const hasDevice = (node) => node.devices.filter(isKnownDevice).length;
   const toIdentifier = (node) => node.name || node.id;
-  const visible = visibleNodes.filter(hasDevice).map(toIdentifier).join(", ");
-  const nodesString = visible.length !== 1 ? "nodes" : "node";
+  return visibleNodes.filter(hasDevice).map(toIdentifier).join(", ");
+}
 
-  return `LoS to ${nodesString} ${visible}`;
+function getDashboardURL(type, id) {
+  return `https://dashboard.nycmesh.net/map/${type}/${id}`;
 }
 
 function getMapURL(id) {
