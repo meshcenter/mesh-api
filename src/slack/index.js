@@ -40,7 +40,7 @@ export async function installMessage(client, appointment) {
 export async function rescheduleMessage(client, appointment, slackTS) {
   const channel = await client.getChannel(process.env.SLACK_INSTALL_CHANNEL);
   if (!channel) {
-    // console.log(`#${channelName} not found`);
+    console.log(`#${channelName} not found`);
     return;
   }
 
@@ -65,7 +65,7 @@ export async function rescheduleMessage(client, appointment, slackTS) {
 async function sendMessage(client, channelName, messageContent) {
   const channel = await client.getChannel(channelName);
   if (!channel) {
-    // console.log(`#${channelName} not found`);
+    console.log(`#${channelName} not found`);
     return;
   }
 
@@ -81,13 +81,18 @@ async function sendMessage(client, channelName, messageContent) {
 function requestMessageContent(request, building, visibleNodes) {
   const { id, roof_access } = request;
   const { address, alt } = building;
-  const altMeters = Math.round(alt * 0.328);
-  const losString = getLoSString(visibleNodes);
-  const roofString = roof_access ? "Roof access" : "No roof access";
+
   const dashboardURL = getDashboardURL("requests", id);
   const titleText = address;
   const title = `*<${dashboardURL}|${titleText}>*`;
-  const info = `${altMeters}m · ${roofString} · ${losString}`;
+
+  const altString = alt
+    ? `${Math.round(alt * 0.328)}m · `
+    : "Building not found · ";
+  const roofString = roof_access ? "Roof access · " : "No roof access · ";
+  const losString = getLoSString(visibleNodes);
+  const info = `${altString}${roofString}${losString}`;
+
   const text = `${title}\n${info}`;
   const fallbackText = address;
 
