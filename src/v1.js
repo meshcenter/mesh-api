@@ -7,6 +7,7 @@ import { checkAuth } from "./auth";
 import { getBuildings, getBuilding } from "./db/buildings";
 import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
+import { getMap } from "./db/map";
 import { getMembers, getMember } from "./db/members";
 import { createMembership, destroyMembership, findMembership } from "./db/memberships";
 import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
@@ -99,6 +100,14 @@ router.get(
 );
 
 router.get(
+  "/map",
+  handleErrors(async (req, res, next) => {
+    const map = await getMap();
+    res.json(map);
+  })
+);
+
+router.get(
   "/nodes",
   handleErrors(async (req, res, next) => {
     const nodes = await getNodes();
@@ -170,7 +179,11 @@ router.delete(
 router.post(
   "/panos",
   handleErrors(async (req, res, next) => {
-    const pano = await savePano(req.body.requestId, req.body.panoURL);
+    const pano = await savePano(
+      req.body.requestId,
+      req.body.panoURL,
+      slackClient
+    );
     res.json(pano);
   })
 );

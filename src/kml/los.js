@@ -35,62 +35,62 @@ function losPlacemark(los) {
         <coordinates>${lng_a},${lat_a},${alt_a} ${lng_b},${lat_b},${alt_b}</coordinates>
     </LineString>
     <styleUrl>#losLink</styleUrl>
-</Placemark>
-	`;
+</Placemark>`;
 }
 
 const losQuery = `SELECT
-	los.*,
-	json_agg(requests) AS requests,
-	json_agg(nodes) AS nodes
+  los.*,
+  json_agg(requests) AS requests,
+  json_agg(nodes) AS nodes
 FROM
-	los
-	JOIN requests ON requests.building_id = los.building_a_id
-		AND requests.status = 'open'
-	LEFT JOIN nodes ON nodes.building_id = los.building_b_id
-		AND nodes.status = 'active'
+  los
+  JOIN requests ON requests.building_id = los.building_a_id
+    AND requests.status = 'open'
+  LEFT JOIN nodes ON nodes.building_id = los.building_b_id
+    AND nodes.status = 'active'
 GROUP BY
-	los.id,
-	los.building_a_id`;
+  los.id,
+  los.building_a_id`;
 
 const losPanoQuery = `SELECT
-	los.*,
-	json_agg(requests) AS requests,
-	json_agg(nodes) AS nodes
+  los.*,
+  json_agg(requests) AS requests,
+  json_agg(nodes) AS nodes
 FROM
-	los
-	JOIN requests ON requests.building_id = los.building_a_id
-		AND requests.status = 'open'
-	JOIN panoramas ON panoramas.request_id = requests.id
-	LEFT JOIN nodes ON nodes.building_id = los.building_b_id
-		AND nodes.status = 'active'
+  los
+  JOIN requests ON requests.building_id = los.building_a_id
+    AND requests.status = 'open'
+  JOIN panoramas ON panoramas.request_id = requests.id
+  LEFT JOIN nodes ON nodes.building_id = los.building_b_id
+    AND nodes.status = 'active'
 GROUP BY
-	los.id,
-	los.building_a_id`;
+  los.id,
+  los.building_a_id`;
 
 async function getLos() {
   return performQuery(losQuery);
 }
 
 const losOfDegreeQuery = `SELECT
-	los.*,
-	json_agg(requests) AS requests,
-	json_agg(nodes) AS nodes
+  los.*,
+  json_agg(requests) AS requests,
+  json_agg(nodes) AS nodes
 FROM
-	los
-	JOIN requests ON requests.building_id IN (los.building_a_id, los.building_b_id)
-	LEFT JOIN nodes ON nodes.building_id = los.building_b_id
-		AND nodes.status = 'active'
+  los
+  JOIN requests ON requests.building_id IN (los.building_a_id, los.building_b_id)
+    AND requests.status = 'open'
+  JOIN nodes ON nodes.building_id = los.building_b_id
+    AND nodes.status = 'active'
 WHERE
-	building_a_id IN(
-		SELECT
-			building_a_id FROM los
-		GROUP BY
-			building_a_id
-		HAVING
-			count(building_a_id) >= $1)
+  building_a_id IN(
+    SELECT
+      building_a_id FROM los
+    GROUP BY
+      building_a_id
+    HAVING
+      count(building_a_id) >= $1)
 GROUP BY
-	los.id`;
+  los.id`;
 
 async function getLosOfDegree(degree) {
   return performQuery(losOfDegreeQuery, [degree]);

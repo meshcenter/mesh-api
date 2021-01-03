@@ -1,4 +1,4 @@
 [build]
-  command = "yarn test && yarn build && yarn migrate up"
+  command = "yarn build && yarn migrate up && yarn test"
   functions = "functions"
   publish = "public"

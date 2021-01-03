@@ -7,5 +7,6 @@ exports.up = (pgm) => {
 };
 
 exports.down = (pgm) => {
+  pgm.sql(`UPDATE requests SET apartment = substring(apartment from 1 for 10)`);
   pgm.alterColumn("requests", "apartment", { type: "varchar(10)" });
 };

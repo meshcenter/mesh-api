@@ -37,17 +37,8 @@ Run the local server: `yarn start`
 You'll need a `.env` file with the following values:
 
 ```
-DB_USER=
-DB_PASS=
-DB_HOST=
-DB_PORT=
-DB_NAME=
-
-LOS_DB_USER=
-LOS_DB_PASS=
-LOS_DB_HOST=
-LOS_DB_PORT=
-LOS_DB_NAME=
+DATABASE_URL=postgres://$user:$pass@$host:$port/$db
+LOS_DATABASE_URL=postgres://$user:$pass@$host:$port/$db
 
 S3_BUCKET=
 S3_ENDPOINT=
@@ -58,9 +49,15 @@ JWKS_URI=
 JWT_AUDIENCE=
 JWT_ISSUER=
 
-SLACK_WEBHOOK_URL=
+SLACK_TOKEN=
+SLACK_INSTALL_CHANNEL=
+SLACK_PANO_CHANNEL=
+SLACK_REQUEST_CHANNEL=
+
 OSTICKET_API_KEY=
-SPREADSHEET_URL=
+
+ACUITY_USER_ID=
+ACUITY_API_KEY=
 ```
 
 ## Schema

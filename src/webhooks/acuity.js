@@ -13,6 +13,10 @@ export async function acuityWebhook(body, slackClient) {
 
   const acuityAppointment = await getAcuityAppointment(id);
 
+  if (!acuityAppointment) {
+    throw new Error(`Acuity appointment ${id} not found`);
+  }
+
   const { values } = acuityAppointment.forms[0];
   const [requestIdValue] = values.filter((v) => v.name === "Node Number");
   const [notesValue] = values.filter((v) => v.name === "Notes");
