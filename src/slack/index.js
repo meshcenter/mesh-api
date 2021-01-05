@@ -2,11 +2,17 @@ import { format } from "date-fns";
 
 const dateFmtString = "EEEE, MMM d h:mm aa";
 
-export async function requestMessage(client, request, building, visibleNodes) {
+export async function requestMessage(
+  client,
+  request,
+  building,
+  visibleNodes,
+  buildingNodes
+) {
   return sendMessage(
     client,
     process.env.SLACK_REQUEST_CHANNEL,
-    requestMessageContent(request, building, visibleNodes)
+    requestMessageContent(request, building, visibleNodes, buildingNodes)
   );
 }
 
@@ -78,7 +84,7 @@ async function sendMessage(client, channelName, messageContent) {
   });
 }
 
-function requestMessageContent(request, building, visibleNodes) {
+function requestMessageContent(request, building, visibleNodes, buildingNodes) {
   const { id, roof_access } = request;
   const { address, alt } = building;
 
@@ -96,22 +102,31 @@ function requestMessageContent(request, building, visibleNodes) {
   const text = `${title}\n${info}`;
   const fallbackText = address;
 
+  const blocks = [markdownSection(text)];
+
+  if (buildingNodes.length) {
+    blocks.push(contextSection("✅ Node in building!"));
+  }
+
   return {
-    blocks: [markdownSection(text)],
+    blocks,
     text: fallbackText,
   };
 }
 
 function panoMessageContent(pano, request) {
+  const imageText = request.slack_ts
+    ? "Panorama"
+    : `Request ${request.id} - ${request.building.address}`;
   const blocks = [
     {
       type: "image",
       title: {
         type: "plain_text",
-        text: "Panorama",
+        text: imageText,
       },
       image_url: encodeURI(pano.url),
-      alt_text: "Panorama",
+      alt_text: imageText,
     },
   ];
 
@@ -161,6 +176,18 @@ function markdownSection(text) {
       type: "mrkdwn",
       text,
     },
+  };
+}
+
+function contextSection(text) {
+  return {
+    type: "context",
+    elements: [
+      {
+        type: "mrkdwn",
+        text,
+      },
+    ],
   };
 }
 
