@@ -27,7 +27,15 @@ describe("requestMessage", () => {
         { devices: [{ type: { name: "OmniTik" } }], id: 312 },
       ];
 
-      await requestMessage(slackClient, request, building, visibleNodes);
+      const buildingNodes = [];
+
+      await requestMessage(
+        slackClient,
+        request,
+        building,
+        visibleNodes,
+        buildingNodes
+      );
 
       expect(slackClient.getChannel).toHaveBeenCalledWith(
         process.env.SLACK_REQUEST_CHANNEL
@@ -60,7 +68,7 @@ describe("requestMessage", () => {
       const request = { roof_access: false };
       const building = { address: "123 4th Street" };
 
-      await requestMessage(slackClient, request, building, []);
+      await requestMessage(slackClient, request, building, [], []);
 
       expect(slackClient.postMessage).toHaveBeenCalled();
       const { blocks } = slackClient.postMessage.mock.calls[0][0];
@@ -78,7 +86,7 @@ describe("requestMessage", () => {
 
       const building = { address: "123 4th Street" };
 
-      await requestMessage(slackClient, {}, building, []);
+      await requestMessage(slackClient, {}, building, [], []);
 
       expect(slackClient.postMessage).toHaveBeenCalled();
       const { blocks } = slackClient.postMessage.mock.calls[0][0];
@@ -96,11 +104,49 @@ describe("requestMessage", () => {
 
       const building = { address: "123 4th Street" };
 
-      await requestMessage(slackClient, {}, building, null);
+      await requestMessage(slackClient, {}, building, null, []);
 
       expect(slackClient.postMessage).toHaveBeenCalled();
       const { blocks } = slackClient.postMessage.mock.calls[0][0];
       expect(blocks[0].text.text).toContain("LoS search failed");
+    });
+  });
+
+  describe("if building nodes is not empty", () => {
+    it("adds node in building to the slack message", async () => {
+      const slackClient = mockSlackClient();
+      slackClient.getChannel.mockResolvedValue({
+        name: process.env.SLACK_REQUEST_CHANNEL,
+        id: 1,
+      });
+
+      const building = { address: "123 4th Street" };
+      const buildingNodes = [{ id: 123 }];
+
+      await requestMessage(slackClient, {}, building, [], buildingNodes);
+
+      expect(slackClient.postMessage).toHaveBeenCalled();
+      const { blocks } = slackClient.postMessage.mock.calls[0][0];
+      expect(blocks[1].elements[0].text).toEqual("✅ Node in building!");
+    });
+  });
+
+  describe("if building nodes is empty", () => {
+    it("adds node in building to the slack message", async () => {
+      const slackClient = mockSlackClient();
+      slackClient.getChannel.mockResolvedValue({
+        name: process.env.SLACK_REQUEST_CHANNEL,
+        id: 1,
+      });
+
+      const building = { address: "123 4th Street" };
+      const buildingNodes = [];
+
+      await requestMessage(slackClient, {}, building, [], buildingNodes);
+
+      expect(slackClient.postMessage).toHaveBeenCalled();
+      const { blocks } = slackClient.postMessage.mock.calls[0][0];
+      expect(blocks.length).toEqual(1);
     });
   });
 
@@ -111,7 +157,7 @@ describe("requestMessage", () => {
       const consoleLog = console.log;
       console.log = jest.fn();
 
-      await requestMessage(slackClient, {}, { address: "" }, []);
+      await requestMessage(slackClient, {}, { address: "" }, [], []);
 
       expect(slackClient.postMessage).not.toHaveBeenCalled();
 

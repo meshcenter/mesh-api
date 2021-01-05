@@ -127,11 +127,16 @@ export async function createRequest(request, slackClient) {
 
   // Send Slack message
   try {
+    const buildingNodes = await performQuery(
+      "SELECT * FROM nodes WHERE nodes.building_id = $1 AND nodes.status = 'active'",
+      [dbRequest.building_id]
+    );
     const slackRes = await requestMessage(
       slackClient,
       dbRequest,
       building,
-      visibleNodes
+      visibleNodes,
+      buildingNodes
     );
     await performQuery(
       "UPDATE requests SET slack_ts = $1 WHERE id = $2 RETURNING *",
