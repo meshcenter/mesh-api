@@ -47,7 +47,15 @@ export async function getRequests() {
 }
 
 export async function createRequest(request, slackClient) {
-  const { name, email, phone, address, apartment, roofAccess } = request;
+  const {
+    id: spreadsheet_id,
+    name,
+    email,
+    phone,
+    address,
+    apartment,
+    roofAccess,
+  } = request;
 
   // Geocode address
   let { lat, lng, bin } = request;
@@ -127,6 +135,9 @@ export async function createRequest(request, slackClient) {
 
   // Send Slack message
   try {
+    if (spreadsheet_id) {
+      dbRequest.id = spreadsheet_id
+    }
     const buildingNodes = await performQuery(
       "SELECT * FROM nodes WHERE nodes.building_id = $1 AND nodes.status = 'active'",
       [dbRequest.building_id]
