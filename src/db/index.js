@@ -16,7 +16,6 @@ async function createPool(connectionString) {
 // TODO: get ssl running locally
 // TODO: Figure out how to verify the key
 function sslOptions(host) {
-  // console.log(host);
   if (host === "localhost" || host === "127.0.0.1") return false;
   return {
     rejectUnauthorized: false,
