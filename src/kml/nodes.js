@@ -105,8 +105,11 @@ function linkStyleId(link) {
 }
 
 const getNodesQuery = `SELECT
-  nodes.*,
-  buildings.address,
+  nodes.id,
+  nodes.name,
+  nodes.status,
+  nodes.notes,
+  nodes.create_date,
   json_agg(DISTINCT devices) as devices,
   json_agg(DISTINCT device_types) as device_types,
   json_agg(DISTINCT panoramas) as panoramas
