@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { getLos, getBuildingHeight } from "./los";
+import { getLos, getBuildingHeightMeters } from "./los";
 import { requestMessage } from "../slack";
 import { performQuery } from ".";
 
@@ -69,7 +69,7 @@ export async function createRequest(request, slackClient) {
     console.log(error);
   }
 
-  const alt = await getBuildingHeight(bin);
+  const alt = await getBuildingHeightMeters(bin);
 
   // Look up building by bin
   let building;

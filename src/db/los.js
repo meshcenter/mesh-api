@@ -109,8 +109,7 @@ export async function getLos(bin) {
 
   const building = await getBuildingFromBIN(bin);
   const buildingMidpoint = await getBuildingMidpoint(bin);
-  const buildingHeight = await getBuildingHeight(bin);
-  const buildingHeightMeters = parseInt(buildingHeight * 0.3048);
+  const buildingHeight = await getBuildingHeightMeters(bin);
 
   const omnisInRange = await getNodesInRange(omnis, bin, OMNI_RANGE); // 0.4 miles
   const sectorsInRange = await getNodesInRange(sectors, bin, SECTOR_RANGE); // 1.5 miles
@@ -147,7 +146,7 @@ export async function getLos(bin) {
   }
 
   return {
-    buildingHeight: buildingHeightMeters,
+    buildingHeight,
     visibleOmnis,
     visibleSectors,
     visibleRequests,
@@ -163,13 +162,13 @@ export async function getLos(bin) {
       const { coordinates } = await JSON.parse(midpoint);
       const [lat, lng] = coordinates;
       const nodeMidpoint = [lat, lng];
-      const nodeHieght = await getBuildingHeight(node.bin);
+      const nodeHeight = await getBuildingHeight(node.bin);
       const intersections = await getIntersections(
         buildingMidpoint,
         buildingHeight,
         bin,
         nodeMidpoint,
-        nodeHieght,
+        nodeHeight,
         node.bin
       );
 
@@ -210,6 +209,13 @@ export async function getBuildingHeight(bin) {
     console.log(error);
     return -1;
   }
+}
+
+export async function 
+  (bin) {
+  const buildingHeight = await getBuildingHeight(bin);
+  const buildingHeightMeters = parseInt(buildingHeight * 0.3048);
+  return buildingHeightMeters;
 }
 
 async function getNodesInRange(nodes, bin, range) {
