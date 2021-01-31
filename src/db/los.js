@@ -211,8 +211,7 @@ export async function getBuildingHeight(bin) {
   }
 }
 
-export async function 
-  (bin) {
+export async function getBuildingHeightMeters(bin) {
   const buildingHeight = await getBuildingHeight(bin);
   const buildingHeightMeters = parseInt(buildingHeight * 0.3048);
   return buildingHeightMeters;
