@@ -150,7 +150,7 @@ export async function getLos(bin) {
   }
 
   return {
-    buildingHeight: buildingHeightMeters,
+    buildingHeight,
     visibleOmnis,
     visibleSectors,
     visibleRequests,
