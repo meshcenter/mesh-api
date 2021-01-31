@@ -2,3 +2,8 @@
   command = "yarn build && yarn migrate up && yarn test"
   functions = "functions"
   publish = "public"
+
+[[headers]]
+   for = "/*"
+   [headers.values]
+      Access-Control-Allow-Origin = "*"

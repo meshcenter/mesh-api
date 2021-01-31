@@ -60,15 +60,16 @@ export async function createRequest(request, slackClient) {
   // Geocode address
   let { lat, lng, bin } = request;
   try {
-    const buildingInfo = await getBuildingInfo(address, lat, lng);
-    lat = lat || buildingInfo.lat;
-    lng = lng || buildingInfo.lng;
-    bin = bin || buildingInfo.bin;
+    const googleData = await getGoogleData(address);
+    const nycData = await getNycData(address, lat, lng);
+    lat = googleData.geometry.location.lat || nycData.lat;
+    lng = googleData.geometry.location.lng || nycData.lng;
+    bin = nycData.bin;
   } catch (error) {
     console.log(error);
   }
 
-  const buildingHeight = await getBuildingHeightMeters(bin);
+  const alt = await getBuildingHeightMeters(bin);
 
   // Look up building by bin
   let building;
@@ -95,7 +96,7 @@ export async function createRequest(request, slackClient) {
       building,
     ] = await performQuery(
       "INSERT INTO buildings (address, lat, lng, alt, bin) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [address, lat, lng, buildingHeight, bin]
+      [address, lat, lng, alt, bin]
     );
   }
 
@@ -136,7 +137,7 @@ export async function createRequest(request, slackClient) {
   // Send Slack message
   try {
     if (spreadsheet_id) {
-      dbRequest.id = spreadsheet_id
+      dbRequest.id = spreadsheet_id;
     }
     const buildingNodes = await performQuery(
       "SELECT * FROM nodes WHERE nodes.building_id = $1 AND nodes.status = 'active'",
@@ -195,7 +196,24 @@ async function createTicket(request, building, member) {
   return text; // external ticket id of the newly-created ticket
 }
 
-async function getBuildingInfo(address, buildingLat = 0, buildingLng = 0) {
+async function getGoogleData(address) {
+  const encodedAddress = encodeURIComponent(address);
+  const params = `address=${encodedAddress}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+  const URL = `https://maps.googleapis.com/maps/api/geocode/json?${params}`;
+  const res = await fetch(URL);
+  const json = await res.json();
+  return json.results[0];
+}
+
+async function getOsmData(address) {
+  const encodedAddress = encodeURIComponent(address);
+  const URL = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json`;
+  const res = await fetch(URL);
+  const json = await res.json();
+  return json[0];
+}
+
+async function getNycData(address, buildingLat = 0, buildingLng = 0) {
   const URIaddress = encodeURIComponent(address);
   const URL = `https://geosearch.planninglabs.nyc/v1/search?text=${URIaddress}`;
   const binRes = await fetch(URL);

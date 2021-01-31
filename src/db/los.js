@@ -6,97 +6,98 @@ const SECTOR_RANGE = 3 * KM;
 const REQUEST_RANGE = 3 * KM;
 
 const getOmnisQuery = `SELECT
-	nodes.id,
-	nodes.name,
-	buildings.bin,
-	buildings.id as building_id,
-	buildings.lat,
-	buildings.lng,
-	buildings.alt,
-	json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
+  nodes.id,
+  nodes.name,
+  buildings.bin,
+  buildings.id as building_id,
+  buildings.lat,
+  buildings.lng,
+  buildings.alt,
+  json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
 FROM
-	nodes
-	LEFT JOIN buildings ON nodes.building_id = buildings.id
-	LEFT JOIN devices ON devices.node_id = nodes.id
-	LEFT JOIN device_types ON devices.device_type_id = device_types.id
+  nodes
+  LEFT JOIN buildings ON nodes.building_id = buildings.id
+  LEFT JOIN devices ON devices.node_id = nodes.id
+  LEFT JOIN device_types ON devices.device_type_id = device_types.id
 WHERE
-	device_types.name = 'Omni'
-	AND devices.status = 'active'
-	AND nodes.status = 'active'
+  device_types.name = 'Omni'
+  AND devices.status = 'active'
+  AND nodes.status = 'active'
 GROUP BY
-	nodes.id,
-	buildings.bin,
-	buildings.id`;
+  nodes.id,
+  buildings.bin,
+  buildings.id`;
 
 const getSectorsQuery = `SELECT
-	nodes.id,
-	nodes.name,
-	buildings.bin,
-	buildings.id as building_id,
-	buildings.lat,
-	buildings.lng,
-	buildings.alt,
-	json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
+  nodes.id,
+  nodes.name,
+  buildings.bin,
+  buildings.id as building_id,
+  buildings.lat,
+  buildings.lng,
+  buildings.alt,
+  json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
 FROM
-	nodes
-	LEFT JOIN buildings ON nodes.building_id = buildings.id
-	LEFT JOIN devices ON devices.node_id = nodes.id
-	LEFT JOIN device_types ON devices.device_type_id = device_types.id
+  nodes
+  LEFT JOIN buildings ON nodes.building_id = buildings.id
+  LEFT JOIN devices ON devices.node_id = nodes.id
+  LEFT JOIN device_types ON devices.device_type_id = device_types.id
 WHERE
-	device_types.name IN ('LBE-120', 'SN1Sector1', 'SN1Sector2', 'Mikrotik120', 'LTU-60', 'PS-5AC')
-	AND devices.status = 'active'
-	AND nodes.status = 'active'
+  device_types.name IN ('LBE-120', 'SN1Sector1', 'SN1Sector2', 'Mikrotik120', 'LTU-60', 'PS-5AC')
+  AND devices.status = 'active'
+  AND nodes.status = 'active'
 GROUP BY
-	nodes.id,
-	buildings.bin,
-	buildings.id`;
+  nodes.id,
+  buildings.bin,
+  buildings.id`;
 
 // Get hardcoded requests and requests with scheduled appointments
 const getRequestsQuery = `SELECT
-	requests.*,
-	buildings.id AS building_id,
-	buildings.bin,
-	buildings.address,
-	buildings.lat,
-	buildings.lng,
-	buildings.alt
+  requests.id,
+  requests.status,
+  buildings.id AS building_id,
+  buildings.bin,
+  buildings.address,
+  buildings.lat,
+  buildings.lng,
+  buildings.alt
 FROM
-	requests
-	JOIN buildings ON requests.building_id = buildings.id
-	LEFT JOIN appointments ON appointments.request_id = requests.id
+  requests
+  JOIN buildings ON requests.building_id = buildings.id
+  LEFT JOIN appointments ON appointments.request_id = requests.id
 WHERE
-	requests.id IN(3946)
-	OR(
-		SELECT
-			id FROM appointments
-		WHERE
-			appointments.request_id = requests.id
-			AND appointments.type = 'install'
-		LIMIT 1) IS NOT NULL
+  requests.id IN(3946)
+  OR(
+    SELECT
+      id FROM appointments
+    WHERE
+      appointments.request_id = requests.id
+      AND appointments.type = 'install'
+    LIMIT 1) IS NOT NULL
 GROUP BY
-	requests.id,
-	buildings.bin,
-	buildings.id,
-	appointments.id`;
+  requests.id,
+  buildings.bin,
+  buildings.id,
+  appointments.id`;
 
 const getLosQuery = `SELECT
-	bldg_bin as bin,
-	ST_AsGeoJSON(ST_Centroid(geom)) as midpoint
+  bldg_bin as bin,
+  ST_AsGeoJSON(ST_Centroid(geom)) as midpoint
 FROM (
-	SELECT
-		*
-	FROM
-		ny
-	WHERE
-		bldg_bin = ANY ($1)) AS hubs
+  SELECT
+    *
+  FROM
+    ny
+  WHERE
+    bldg_bin = ANY ($1)) AS hubs
 WHERE
-	ST_DWithin (ST_Centroid(geom), (
-			SELECT
-				ST_Centroid(geom)
-			FROM
-				ny
-			WHERE
-				bldg_bin = $2), $3)`;
+  ST_DWithin (ST_Centroid(geom), (
+      SELECT
+        ST_Centroid(geom)
+      FROM
+        ny
+      WHERE
+        bldg_bin = $2), $3)`;
 
 export async function getLos(bin) {
   if (!bin) throw Error("Bad params");
@@ -112,12 +113,7 @@ export async function getLos(bin) {
 
   const omnisInRange = await getNodesInRange(omnis, bin, OMNI_RANGE); // 0.4 miles
   const sectorsInRange = await getNodesInRange(sectors, bin, SECTOR_RANGE); // 1.5 miles
-  const requestsInRange = await getNodesInRange(
-    requests,
-    bin,
-    REQUEST_RANGE,
-    true
-  );
+  const requestsInRange = await getNodesInRange(requests, bin, REQUEST_RANGE);
 
   // TODO: Dedupe code
   const visibleOmnis1 = [];
@@ -215,13 +211,14 @@ export async function getBuildingHeight(bin) {
   }
 }
 
-export async function getBuildingHeightMeters(bin) {
+export async function 
+  (bin) {
   const buildingHeight = await getBuildingHeight(bin);
   const buildingHeightMeters = parseInt(buildingHeight * 0.3048);
   return buildingHeightMeters;
 }
 
-async function getNodesInRange(nodes, bin, range, isRequests) {
+async function getNodesInRange(nodes, bin, range) {
   const nodeBins = nodes
     .map((node) => node.bin)
     .filter((bin) => bin % 1000000 !== 0);
@@ -259,16 +256,16 @@ async function getIntersections(
   // const FREQUENCY = 5; // GHz
   // const MILES_FEET = 5280;
   // const fresnelRadius =
-  // 	72.05 * Math.sqrt(distance / MILES_FEET / (4 * FREQUENCY));
+  // 72.05 * Math.sqrt(distance / MILES_FEET / (4 * FREQUENCY));
   const text = `SELECT
-				a.bldg_bin as bin
-			FROM
-				ny AS a
-			WHERE
-				ST_3DIntersects (a.geom, ST_SetSRID(ST_GeomFromText('LINESTRINGZ(${x1} ${y1} ${height1}, ${x2} ${y2} ${height2})'), 2263))
-				AND bldg_bin != $1
-				AND bldg_bin != $2
-			LIMIT 1`;
+        a.bldg_bin as bin
+      FROM
+        ny AS a
+      WHERE
+        ST_3DIntersects (a.geom, ST_SetSRID(ST_GeomFromText('LINESTRINGZ(${x1} ${y1} ${height1}, ${x2} ${y2} ${height2})'), 2263))
+        AND bldg_bin != $1
+        AND bldg_bin != $2
+      LIMIT 1`;
   const res = await performLosQuery(text, [bin1, bin2]);
   if (!res) throw new Error("Failed to get intersections");
   return res;
@@ -279,9 +276,9 @@ async function getDistance(point1, point2) {
   const [x1, y1] = point1;
   const [x2, y2] = point2;
   const text = `SELECT ST_Distance(
-			'POINT (${x1} ${y1})'::geometry,
-			'POINT (${x2} ${y2})'::geometry
-		);`;
+      'POINT (${x1} ${y1})'::geometry,
+      'POINT (${x2} ${y2})'::geometry
+    );`;
   const res = await performLosQuery(text);
   if (!res.length) throw new Error("Failed to calculate distance");
   const { st_distance } = res[0];
@@ -293,9 +290,9 @@ async function getDistance(point1, point2) {
 async function getBuildingFromBIN(bin) {
   const [building] = await performQuery(
     `SELECT *
-		FROM buildings
-		WHERE bin = $1
-		LIMIT 1`,
+    FROM buildings
+    WHERE bin = $1
+    LIMIT 1`,
     [bin]
   );
   return building;
