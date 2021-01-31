@@ -17,7 +17,7 @@ import {
 import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest, createRequest } from "./db/requests";
-import { getSearch, searchMembers } from "./db/search";
+import { getSearch, authorizedSearchMembers } from "./db/search";
 
 import { getKML } from "./kml";
 import { getAppointmentsKML } from "./kml/appointments";
@@ -89,7 +89,7 @@ router.get(
   "/members/search",
   handleErrors(async (req, res, next) => {
     await checkAuth(req.headers);
-    const members = await searchMembers(req.query.s);
+    const members = await authorizedSearchMembers(req.query.s);
     res.json(members);
   })
 );
@@ -106,7 +106,13 @@ router.get(
 router.get(
   "/map",
   handleErrors(async (req, res, next) => {
-    const map = await getMap();
+    let map;
+    try {
+      await checkAuth(req.headers);
+      map = await getMap(true);
+    } catch (error) {
+      map = await getMap();
+    }
     res.json(map);
   })
 );
@@ -161,11 +167,9 @@ router.post(
     );
 
     if (membership) {
-      res
-        .status(422)
-        .json({
-          error: "A membership with that node_id and member_id already exists",
-        });
+      res.status(422).json({
+        error: "A membership with that node_id and member_id already exists",
+      });
       return;
     }
 
@@ -242,8 +246,14 @@ router.post(
 router.get(
   "/search",
   handleErrors(async (req, res, next) => {
-    await checkAuth(req.headers);
-    const results = await getSearch(req.query.s);
+    let results;
+    try {
+      await checkAuth(req.headers);
+      const authorized = true;
+      results = await getSearch(req.query.s, authorized);
+    } catch (error) {
+      results = await getSearch(req.query.s);
+    }
     res.json(results);
   })
 );
