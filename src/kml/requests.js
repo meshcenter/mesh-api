@@ -36,7 +36,10 @@ function requestPlacemark(request) {
 }
 
 const getRequestsQuery = `SELECT
-  requests.*,
+  requests.id,
+  requests.status,
+  requests.date,
+  requests.roof_access,
   (SELECT to_json(buildings.*) FROM buildings WHERE buildings.id = requests.building_id) AS building,
   (SELECT json_agg(panoramas.*) FROM panoramas WHERE panoramas.request_id = requests.id) AS panoramas
 FROM
