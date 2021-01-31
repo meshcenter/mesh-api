@@ -109,7 +109,8 @@ export async function getLos(bin) {
 
   const building = await getBuildingFromBIN(bin);
   const buildingMidpoint = await getBuildingMidpoint(bin);
-  const buildingHeight = await getBuildingHeightMeters(bin);
+  const buildingHeight = await getBuildingHeight(bin);
+  const buildingHeightMeters = await getBuildingHeightMeters(bin);
 
   const omnisInRange = await getNodesInRange(omnis, bin, OMNI_RANGE); // 0.4 miles
   const sectorsInRange = await getNodesInRange(sectors, bin, SECTOR_RANGE); // 1.5 miles
@@ -146,7 +147,7 @@ export async function getLos(bin) {
   }
 
   return {
-    buildingHeight,
+    buildingHeight: buildingHeightMeters,
     visibleOmnis,
     visibleSectors,
     visibleRequests,
