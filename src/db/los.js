@@ -52,6 +52,7 @@ GROUP BY
   buildings.id`;
 
 // Get hardcoded requests and requests with scheduled appointments
+// added Vernon 5916 as potential
 const getRequestsQuery = `SELECT
   requests.id,
   requests.status,
@@ -66,7 +67,6 @@ FROM
   JOIN buildings ON requests.building_id = buildings.id
   LEFT JOIN appointments ON appointments.request_id = requests.id
 WHERE
-// adding Vernon 5916 as potential
   requests.id IN(5916)
   OR(
     SELECT
