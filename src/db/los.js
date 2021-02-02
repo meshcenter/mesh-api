@@ -66,7 +66,8 @@ FROM
   JOIN buildings ON requests.building_id = buildings.id
   LEFT JOIN appointments ON appointments.request_id = requests.id
 WHERE
-  requests.id IN(3946)
+// adding Vernon 5916 as potential
+  requests.id IN(5916)
   OR(
     SELECT
       id FROM appointments
