@@ -39,23 +39,26 @@ const authorizedGetMapQuery = `SELECT
       '[]'
     ),
     'requests',
-    COALESCE( 
+    COALESCE(
       (
-        SELECT 
+        SELECT
           json_agg(
-            json_build_object(
-              'id', requests.id, 
-              'lat', buildings.lat, 
-              'lng', buildings.lng, 
-              'status', requests.status
+            DISTINCT jsonb_build_object(
+              'id', requests.id,
+              'lat', buildings.lat,
+              'lng', buildings.lng,
+              'bin', buildings.bin,
+              'status', requests.status,
+              'has_panoramas', panoramas IS NOT NULL
             )
-          ) 
-        FROM 
-          requests 
+          )
+        FROM
+          requests
           JOIN buildings ON buildings.id = requests.building_id
+          LEFT JOIN panoramas ON requests.id = panoramas.request_id
       ),
       '[]'
-    ), 
+    ),
     'links', 
     COALESCE(
       (
@@ -145,7 +148,26 @@ const getMapQuery = `SELECT
       '[]'
     ),
     'requests',
-    '[]'::json, 
+    COALESCE(
+      (
+        SELECT
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', requests.id,
+              'lat', buildings.lat,
+              'lng', buildings.lng,
+              'bin', buildings.bin,
+              'status', requests.status,
+              'has_panoramas', panoramas IS NOT NULL
+            )
+          )
+        FROM
+          requests
+          JOIN buildings ON buildings.id = requests.building_id
+          LEFT JOIN panoramas ON requests.id = panoramas.request_id
+      ),
+      '[]'
+    ),
     'links', 
     COALESCE(
       (
