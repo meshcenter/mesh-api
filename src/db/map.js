@@ -104,6 +104,8 @@ const authorizedGetMapQuery = `SELECT
           )
           FROM appointments
           JOIN buildings ON buildings.id = appointments.building_id
+          WHERE
+            appointments.date > now() - INTERVAL '6 HOURS'
       ),
       '[]'
     )
