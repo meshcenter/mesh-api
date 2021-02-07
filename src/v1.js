@@ -4,6 +4,10 @@ import serverless from "serverless-http";
 
 import { checkAuth } from "./auth";
 
+import {
+  authorizedGetAppointment,
+  authorizedGetAppointments,
+} from "./db/appointments";
 import { getBuildings, getBuilding } from "./db/buildings";
 import { authorizedGetDevice, authorizedCreateDevice } from "./db/devices";
 import { getLinks } from "./db/links";
@@ -48,6 +52,24 @@ app.disable("x-powered-by");
 const router = Router({
   caseSensitive: true,
 });
+
+router.get(
+  "/appointments",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const appointments = await authorizedGetAppointments();
+    res.json(appointments);
+  })
+);
+
+router.get(
+  "/appointments/:id",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const appointment = await authorizedGetAppointment(req.params.id);
+    res.json(appointment);
+  })
+);
 
 router.get(
   "/buildings",
