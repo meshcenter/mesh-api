@@ -8,7 +8,7 @@ import {
   authorizedGetAppointment,
   authorizedGetAppointments,
 } from "./db/appointments";
-import { getBuildings, getBuilding } from "./db/buildings";
+import { getBuildings, getBuilding, updateBuilding } from "./db/buildings";
 import { authorizedGetDevice, authorizedCreateDevice } from "./db/devices";
 import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
@@ -85,6 +85,15 @@ router.get(
   handleErrors(async (req, res, next) => {
     await checkAuth(req.headers);
     const building = await getBuilding(req.params.id);
+    res.json(building);
+  })
+);
+
+router.post(
+  "/buildings/:id",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const building = await updateBuilding(req.params.id, req.body);
     res.json(building);
   })
 );

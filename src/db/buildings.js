@@ -84,6 +84,20 @@ LEFT JOIN panoramas ON panoramas.request_id = requests.id
 WHERE buildings.id = $1
 GROUP BY buildings.id`;
 
+const updateBuildingQuery = `UPDATE
+  buildings
+SET
+  address = $2,
+  lat = $3,
+  lng = $4,
+  alt = $5,
+  bin = $6,
+  notes = $7
+WHERE
+  id = $1
+RETURNING
+  *`;
+
 export async function getBuildings() {
   return performQuery(getBuildingsQuery);
 }
@@ -93,4 +107,29 @@ export async function getBuilding(id) {
   const [building] = await performQuery(getBuildingQuery, [id]);
   if (!building) throw new Error("Not found");
   return building;
+}
+
+export async function updateBuilding(id, patch) {
+  const existingBuilding = await getBuilding(id, true);
+
+  // TODO: Sanitize / validated new values!!
+
+  const newBuilding = {
+    ...existingBuilding,
+    ...patch,
+  };
+
+  const values = [
+    newBuilding.id,
+    newBuilding.address,
+    newBuilding.lat,
+    newBuilding.lng,
+    newBuilding.alt,
+    newBuilding.bin,
+    newBuilding.notes,
+  ];
+
+  await performQuery(updateBuildingQuery, values);
+  const updatedBuilding = await getBuilding(id);
+  return updatedBuilding;
 }
