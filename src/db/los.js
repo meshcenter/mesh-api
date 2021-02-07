@@ -8,6 +8,7 @@ const REQUEST_RANGE = 3 * KM;
 const getOmnisQuery = `SELECT
   nodes.id,
   nodes.name,
+  nodes.status,
   buildings.bin,
   buildings.id as building_id,
   buildings.lat,
@@ -31,6 +32,7 @@ GROUP BY
 const getSectorsQuery = `SELECT
   nodes.id,
   nodes.name,
+  nodes.status,
   buildings.bin,
   buildings.id as building_id,
   buildings.lat,
