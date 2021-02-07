@@ -52,6 +52,7 @@ const router = Router({
 router.get(
   "/buildings",
   handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
     const buildings = await getBuildings();
     res.json(buildings);
   })
@@ -60,6 +61,7 @@ router.get(
 router.get(
   "/buildings/:id",
   handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
     const building = await getBuilding(req.params.id);
     res.json(building);
   })
