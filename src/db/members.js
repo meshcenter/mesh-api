@@ -21,11 +21,23 @@ WHERE
 
 const getMemberNodesQuery = `SELECT
 	nodes.*,
-	to_json(buildings) AS building
+	to_json(buildings) AS building,
+  json_agg(
+    json_build_object(
+      'id', devices.id,
+      'type', device_types,
+      'lat', devices.lat,
+      'lng', devices.lng,
+      'azimuth', devices.azimuth,
+      'status', devices.status
+    )
+  ) AS devices
 FROM
 	nodes
 	JOIN buildings ON nodes.building_id = buildings.id
 	JOIN memberships ON memberships.node_id = nodes.id
+  LEFT JOIN devices ON devices.node_id = nodes.id
+  LEFT JOIN device_types ON device_types.id = devices.device_type_id
 WHERE
 	memberships.member_id = $1
 GROUP BY
@@ -34,15 +46,18 @@ GROUP BY
 
 const getMemberRequestsQuery = `SELECT
 	requests.*,
-	to_json(buildings) AS building
+	to_json(buildings) AS building,
+  to_json(members) AS member
 FROM
 	requests
 	JOIN buildings ON requests.building_id = buildings.id
+  JOIN members ON members.id = requests.member_id
 WHERE
 	member_id = $1
 GROUP BY
 	requests.id,
-	buildings.id`;
+	buildings.id,
+  members.id`;
 
 export async function getMembers() {
   return performQuery(getMembersQuery);

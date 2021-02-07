@@ -5,6 +5,7 @@ import serverless from "serverless-http";
 import { checkAuth } from "./auth";
 
 import { getBuildings, getBuilding } from "./db/buildings";
+import { authorizedGetDevice, authorizedCreateDevice } from "./db/devices";
 import { getLinks } from "./db/links";
 import { getLos } from "./db/los";
 import { getMap } from "./db/map";
@@ -17,7 +18,11 @@ import {
 import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
 import { getRequests, getRequest, createRequest } from "./db/requests";
-import { getSearch, authorizedSearchMembers } from "./db/search";
+import {
+  getSearch,
+  authorizedSearchMembers,
+  authorizedSearchDeviceTypes,
+} from "./db/search";
 
 import { getKML } from "./kml";
 import { getAppointmentsKML } from "./kml/appointments";
@@ -57,6 +62,33 @@ router.get(
   handleErrors(async (req, res, next) => {
     const building = await getBuilding(req.params.id);
     res.json(building);
+  })
+);
+
+router.get(
+  "/device_types/search",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const types = await authorizedSearchDeviceTypes(req.query.s);
+    res.json(types);
+  })
+);
+
+router.post(
+  "/devices",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const device = await authorizedCreateDevice(req.body);
+    res.json(device);
+  })
+);
+
+router.get(
+  "/devices/:id",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const types = await authorizedGetDevice(req.params.id);
+    res.json(types);
   })
 );
 

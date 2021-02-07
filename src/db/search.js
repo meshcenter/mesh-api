@@ -126,3 +126,15 @@ export async function authorizedSearchMembers(query) {
     [`${query}%`, ` ${query}%`, `${query}%`]
   );
 }
+
+export async function authorizedSearchDeviceTypes(query) {
+  return performQuery(
+    `SELECT *
+    FROM
+      device_types
+    WHERE name ILIKE $1
+      OR manufacturer ILIKE $1
+    LIMIT 5`,
+    [`${query}%`]
+  );
+}
