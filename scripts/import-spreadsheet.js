@@ -74,13 +74,13 @@ async function importNodes(nodes) {
     (node) =>
       node.status === "Installed" ||
       node.status === "Abandoned" ||
-      node.status === "Unsubscribe"
+      node.status === "Unsubscribe" ||
+      node.status === "NN Assigned"
   );
   const installedNodes = actualNodes.filter((node) => node.installDate);
   const validNodes = installedNodes.filter(
     (node) => node.address && buildingsByNodeAddress[node.address]
   );
-  const activeNodes = validNodes.filter((node) => node.status === "Installed");
 
   let maxNodeId = 1;
   await insertBulk(
@@ -146,7 +146,13 @@ async function importDevices(devices) {
     return acc;
   }, {});
 
-  deviceTypeMap["Unknown"] = { name: "Unknown", range: 0, width: 0 };
+  deviceTypeMap["Unknown Device Type"] = {
+    name: "Unknown Device Type",
+    range: 0,
+    width: 0,
+  };
+  deviceTypeMap["SXTsq 5 ac"] = { name: "SXTsq 5 ac", range: 0.3, width: 0 };
+  deviceTypeMap["LiteBeam AC"] = { name: "LiteBeam AC", range: 2, width: 0 };
 
   const deviceTypes = Object.values(deviceTypeMap);
   await insertBulk(
@@ -182,21 +188,11 @@ async function importDevices(devices) {
       return;
     }
 
-    if (device.status !== node.status) {
-      console.log("mismaatched status", device, node);
-    }
-
     if (device.device === "Omni" && node.status === "active") {
       devices[index].status = "active";
+    } else if (node.status === "active" && device.status !== node.status) {
+      console.log("mismatched status", device, node);
     }
-
-    // if (node && node.notes && node.notes.toLowerCase().includes("omni")) {
-    // 	devices[index].device = "Omni";
-    // 	if (device.status !== node.status && node.status === "active") {
-    // 		console.log(node, device);
-    // 		devices[index].status = "active";
-    // 	}
-    // }
   });
 
   // Add devices for nodes with no devices
@@ -207,15 +203,41 @@ async function importDevices(devices) {
 
   const unknownDevices = nodes.reduce((acc, cur) => {
     if (!nodeDevicesMap[cur.id]) {
-      let device = "Unknown";
-      if (cur.notes && cur.notes.toLowerCase().includes("omni")) {
-        device = "Omni";
+      const lowerNotes = (cur.notes || "").toLowerCase();
+      let isUnknown = true;
+      const isOmni = lowerNotes.includes("omni");
+      const isSxt = lowerNotes.includes("sxt") || lowerNotes.includes("kiosk");
+      const isLbe =
+        lowerNotes.includes("lbe") || lowerNotes.includes("litebeam");
+      // const isMoca = lowerNotes.includes("moca");
+      // const isR6 = lowerNotes === "r6";
+      // const isVPN = lowerNotes.includes("rem") || lowerNotes.includes("vpn");
+      // const isNp7r = lowerNotes.includes("netPower Lite 7R");
+
+      function addDevice(deviceName) {
+        acc.push({
+          status: cur.status,
+          device: deviceName,
+          nodeId: cur.id,
+        });
       }
-      acc.push({
-        status: cur.status,
-        device,
-        nodeId: cur.id,
-      });
+
+      if (isOmni) {
+        addDevice("Omni");
+        isUnknown = false;
+      }
+      if (isSxt) {
+        addDevice("SXTsq 5 ac");
+        isUnknown = false;
+      }
+      if (isLbe) {
+        addDevice("LiteBeam AC");
+        isUnknown = false;
+      }
+
+      if (isUnknown) {
+        addDevice("Unknown Device Type");
+      }
     }
     return acc;
   }, []);
@@ -278,16 +300,16 @@ async function importDevices(devices) {
 }
 
 const getDevicesQuery = `SELECT
-	devices.*,
-	device_types.name AS type
+  devices.*,
+  device_types.name AS type
 FROM
-	devices
-	JOIN device_types ON device_types.id = devices.device_type_id`;
+  devices
+  JOIN device_types ON device_types.id = devices.device_type_id`;
 
 async function importLinks(links) {
   const devices = await performQuery(getDevicesQuery);
   const devicesMap = devices.reduce((acc, cur) => {
-    if (cur.type === "Unknown" && acc[cur.node_id]) return acc;
+    if (cur.type === "Unknown Device Type" && acc[cur.node_id]) return acc;
     acc[cur.node_id] = cur;
     return acc;
   }, {});
@@ -410,7 +432,15 @@ async function importJoinRequests(nodes) {
   let maxRequestId = 1;
   await insertBulk(
     "requests",
-    ["id", "status", "date", "roof_access", "building_id", "member_id"],
+    [
+      "id",
+      "status",
+      "apartment",
+      "date",
+      "roof_access",
+      "building_id",
+      "member_id",
+    ],
     nodesWithIDs.filter((node) => {
       if (!node.requestDate) {
         console.log(`Node ${node.id} missing request date`);
@@ -431,9 +461,15 @@ async function importJoinRequests(nodes) {
             node.status === "Dupe"
           ? "closed"
           : "open";
+
+      if (node.apartment && node.apartment.length > 200) {
+        console.log("too long", node);
+        node.apartment = node.apartment.substring(0, 200);
+      }
       return [
         node.id,
         status,
+        node.apartment,
         new Date(node.requestDate),
         node.roofAccess,
         node.buildingId,
@@ -561,13 +597,13 @@ async function importAppointments() {
     // Get Buillding
     const buildings = await performQuery(
       `SELECT
-	buildings.*
+  buildings.*
 FROM
-	members
-	JOIN requests ON requests.member_id = members.id
-	JOIN buildings ON buildings.id = requests.building_id
+  members
+  JOIN requests ON requests.member_id = members.id
+  JOIN buildings ON buildings.id = requests.building_id
 WHERE
-	members.email = $1
+  members.email = $1
 GROUP BY buildings.id`,
       [member.email]
     );
@@ -592,7 +628,8 @@ GROUP BY buildings.id`,
     }
 
     let request = {};
-    let sanitizedNodeId = parseInt(nodeId.replace(/[^0-9]/g, ""));
+    // Handle weird new format: 1234 (NN: 321)
+    let sanitizedNodeId = parseInt(nodeId.split(" ")[0].replace(/[^0-9]/g, ""));
     sanitizedNodeId = Number.isInteger(sanitizedNodeId)
       ? sanitizedNodeId
       : null;
@@ -619,6 +656,7 @@ GROUP BY buildings.id`,
       Install: "install",
       Support: "support",
       "Site survey": "survey",
+      "all day": "install",
     };
     const dbType = typeMap[type];
     newAppointments.push([
@@ -631,6 +669,8 @@ GROUP BY buildings.id`,
       request.id || sanitizedNodeId,
     ]);
   }
+
+  console.log(newAppointments);
 
   await insertBulk(
     "appointments",

@@ -1,7 +1,22 @@
 import { performQuery } from ".";
 
 const nodeDevicesQuery = `SELECT
-  json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
+  json_agg(
+    json_build_object(
+      'id', devices.id,
+      'type', device_types,
+      'lat', devices.lat,
+      'lng', devices.lng,
+      'alt', devices.alt,
+      'azimuth', devices.azimuth,
+      'status', devices.status,
+      'name', devices.name,
+      'ssid', devices.ssid,
+      'notes', devices.notes,
+      'create_date', devices.create_date, 
+      'abandon_date', devices.abandon_date
+    )
+  ) AS devices
 FROM
   devices
   LEFT JOIN device_types ON device_types.id IN(devices.device_type_id)
@@ -44,19 +59,30 @@ GROUP BY
 ORDER BY
   nodes.create_date DESC`;
 
-const connectedNodesQuery = `SELECT
-  json_agg(json_build_object('id', nodes.id, 'lat', nodes.lat, 'lng', nodes.lng, 'alt', nodes.alt, 'status', nodes.status, 'name', nodes.name, 'notes', nodes.notes))
-FROM
-  devices devices1
-  JOIN links ON links.device_a_id = devices1.id
-    OR links.device_b_id = devices1.id
-  JOIN devices devices2 ON devices2.id = links.device_b_id
-    OR devices2.id = links.device_a_id
-  JOIN nodes nodes ON nodes.id = devices2.node_id
-WHERE
-  devices1.node_id = $1
-  AND nodes.id != $1
-  AND links.status = 'active'`;
+const connectedNodesQuery = `COALESCE(
+  (SELECT
+    json_agg(json_build_object(
+      'id', nodes.id,
+      'lat', nodes.lat,
+      'lng', nodes.lng,
+      'alt', nodes.alt,
+      'status', nodes.status,
+      'name', nodes.name,
+      'notes', nodes.notes
+    ))
+  FROM
+    devices devices1
+    JOIN links ON links.device_a_id = devices1.id
+      OR links.device_b_id = devices1.id
+    JOIN devices devices2 ON devices2.id = links.device_b_id
+      OR devices2.id = links.device_a_id
+    JOIN nodes nodes ON nodes.id = devices2.node_id
+  WHERE
+    devices1.node_id = $1
+    AND nodes.id != $1
+    AND links.status = 'active'),
+  '[]'
+)`;
 
 const getNodeQuery = `SELECT
   nodes.id,

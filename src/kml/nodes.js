@@ -110,6 +110,9 @@ const getNodesQuery = `SELECT
   nodes.status,
   nodes.notes,
   nodes.create_date,
+  buildings.lat,
+  buildings.lng,
+  buildings.alt,
   json_agg(DISTINCT devices) as devices,
   json_agg(DISTINCT device_types) as device_types,
   json_agg(DISTINCT panoramas) as panoramas

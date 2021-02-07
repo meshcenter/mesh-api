@@ -49,6 +49,7 @@ const authorizedGetMapQuery = `SELECT
               'lng', buildings.lng,
               'bin', buildings.bin,
               'status', requests.status,
+              'roof_access', requests.roof_access,
               'has_panoramas', panoramas IS NOT NULL
             )
           )
@@ -160,6 +161,7 @@ const getMapQuery = `SELECT
               'lng', buildings.lng,
               'bin', buildings.bin,
               'status', requests.status,
+              'roof_access', requests.roof_access,
               'has_panoramas', panoramas IS NOT NULL
             )
           )
