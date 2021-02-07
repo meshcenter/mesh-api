@@ -575,8 +575,9 @@ async function importAppointments() {
           )[0] || {}
         ).value || address;
 
-      (form.values.filter((value) => value.name === "Notes")[0] || {}).value ||
-        notes;
+      notes =
+        (form.values.filter((value) => value.name === "Notes")[0] || {})
+          .value || notes;
     });
 
     // Get Member
