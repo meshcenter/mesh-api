@@ -10,7 +10,7 @@ import {
 } from "./db/appointments";
 import { getBuildings, getBuilding, updateBuilding } from "./db/buildings";
 import { authorizedGetDevice, authorizedCreateDevice } from "./db/devices";
-import { getLinks } from "./db/links";
+import { getLinks, authorizedCreateLink } from "./db/links";
 import { getLos } from "./db/los";
 import { getMap } from "./db/map";
 import { getMembers, getMember } from "./db/members";
@@ -129,6 +129,15 @@ router.get(
   "/links",
   handleErrors(async (req, res, next) => {
     const links = await getLinks();
+    res.json(links);
+  })
+);
+
+router.post(
+  "/links",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const links = await authorizedCreateLink(req.body);
     res.json(links);
   })
 );
