@@ -17,24 +17,68 @@ export async function getAppointments() {
   return appointments;
 }
 
-const getAppointmentQuery = `SELECT
+const authorizedGetAppointmentQuery = `SELECT
   appointments.*,
   to_json(buildings) AS building,
-  to_json(members) AS member
+  to_json(members) AS member,
+  to_json(nodes) AS node,
+  COALESCE(
+    (
+      SELECT
+        jsonb_build_object(
+          'id', requests.id,
+          'status', requests.status,
+          'apartment', requests.apartment,
+          'date', requests.date,
+          'roof_access', requests.roof_access,
+          'member', to_json(members.*)
+        )
+      FROM
+        requests
+      JOIN
+        members ON members.id = requests.member_id
+      WHERE
+        requests.id = appointments.request_id
+    ),
+    '[]'
+  ) AS request
 FROM
   appointments
   LEFT JOIN buildings ON appointments.building_id = buildings.id
   LEFT JOIN members ON appointments.member_id = members.id
+  LEFT JOIN nodes ON appointments.node_id = nodes.id
 WHERE
   appointments.id = $1
 GROUP BY
   appointments.id,
   buildings.id,
-  members.id`;
+  members.id,
+  nodes.id`;
 
-export async function getAppointment(id) {
-  const [appointment] = await performQuery(getAppointmentQuery, [id]);
+export async function authorizedGetAppointment(id) {
+  const [appointment] = await performQuery(authorizedGetAppointmentQuery, [id]);
   return appointment;
+}
+
+const authorizedGetAppointmentsQuery = `SELECT 
+  appointments.*,
+  to_json(buildings) AS building,
+  to_json(requests) AS request,
+  to_json(members) AS member
+FROM
+  appointments
+JOIN
+  buildings ON buildings.id = appointments.building_id
+JOIN
+  requests ON requests.id = appointments.request_id
+JOIN
+  members ON members.id = appointments.member_id
+ORDER BY
+  appointments.date`;
+
+export async function authorizedGetAppointments() {
+  const appointments = await performQuery(authorizedGetAppointmentsQuery);
+  return appointments;
 }
 
 export async function getAppointmentByAcuityId(acuity_id) {
