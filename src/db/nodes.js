@@ -108,7 +108,7 @@ GROUP BY
   buildings.id`;
 
 const nodeMembersQuery = `SELECT
-  json_agg(json_build_object('id', members.id, 'name', members.name, 'email', members.email, 'phone', members.phone, 'membership_id', memberships.id))
+  json_agg(json_build_object('id', members.id, 'name', members.name, 'email', members.email, 'phone', members.phone, 'donor', members.donor, 'membership_id', memberships.id))
 FROM
   members
   LEFT JOIN memberships ON memberships.member_id = members.id

@@ -142,8 +142,9 @@ export async function createRequest(request, slackClient) {
 
   // Send Slack message
   try {
+    let slackMessageRequest = dbRequest;
     if (spreadsheetId) {
-      dbRequest.id = spreadsheetId;
+      slackMessageRequest.id = spreadsheetId;
     }
     const buildingNodes = await performQuery(
       "SELECT * FROM nodes WHERE nodes.building_id = $1 AND nodes.status = 'active'",
@@ -151,7 +152,7 @@ export async function createRequest(request, slackClient) {
     );
     const slackRes = await requestMessage(
       slackClient,
-      dbRequest,
+      slackMessageRequest,
       building,
       visibleNodes,
       buildingNodes
