@@ -1,7 +1,7 @@
 import { performQuery } from ".";
 
 const nodeDevicesQuery = `SELECT
-  json_agg(
+  COALESCE(json_agg(
     json_build_object(
       'id', devices.id,
       'type', device_types,
@@ -16,7 +16,7 @@ const nodeDevicesQuery = `SELECT
       'create_date', devices.create_date, 
       'abandon_date', devices.abandon_date
     )
-  ) AS devices
+  ), '[]') AS devices
 FROM
   devices
   LEFT JOIN device_types ON device_types.id IN(devices.device_type_id)

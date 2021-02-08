@@ -14,7 +14,7 @@ const authorizedGetMapQuery = `SELECT
               'status', nodes.status, 
               'name', nodes.name,
               'notes', nodes.notes,
-              'devices', (
+              'devices', COALESCE((
                 SELECT
                   json_agg(
                     json_build_object(
@@ -30,6 +30,8 @@ const authorizedGetMapQuery = `SELECT
                   devices
                   LEFT JOIN device_types ON device_types.id = devices.device_type_id
                 WHERE devices.node_id = nodes.id
+              ),
+              '[]'
               )
             )
         )
@@ -126,7 +128,7 @@ const getMapQuery = `SELECT
               'status', nodes.status, 
               'name', nodes.name,
               'notes', nodes.notes,
-              'devices', (
+              'devices', COALESCE((
                 SELECT
                   json_agg(
                     json_build_object(
@@ -142,6 +144,8 @@ const getMapQuery = `SELECT
                   devices
                   LEFT JOIN device_types ON device_types.id = devices.device_type_id
                 WHERE devices.node_id = nodes.id
+              ),
+              '[]'
               )
             )
         )
