@@ -48,14 +48,20 @@ export async function getRequests() {
 
 export async function createRequest(request, slackClient) {
   const {
-    id: spreadsheet_id,
     name,
     email,
     phone,
     address,
     apartment,
+    roof_access,
     roofAccess,
+    id: spreadsheet_id,
   } = request;
+
+  const isInvalid = !name || !email || !phone || !address || !apartment;
+  if (!spreadsheet_id && isInvalid) {
+    throw new Error("Invalid request");
+  }
 
   // Geocode address
   let { lat, lng, bin } = request;
@@ -121,7 +127,7 @@ export async function createRequest(request, slackClient) {
     dbRequest,
   ] = await performQuery(
     "INSERT INTO requests (date, apartment, roof_access, member_id, building_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-    [now, apartment, roofAccess, member.id, building.id]
+    [now, apartment, roof_access || roofAccess, member.id, building.id]
   );
 
   // Get los
@@ -163,9 +169,42 @@ export async function createRequest(request, slackClient) {
   return dbRequest;
 }
 
+const updateRequestQuery = `UPDATE
+  requests
+SET
+  status = $2, 
+  apartment = $3, 
+  roof_access = $4
+WHERE
+  id = $1
+RETURNING
+  *`;
+
+export async function updateRequest(id, patch) {
+  const existingRequest = await getRequest(id, true);
+
+  // TODO: Sanitize / validated new values!!
+
+  const newRequest = {
+    ...existingRequest,
+    ...patch,
+  };
+
+  const values = [
+    id,
+    newRequest.status,
+    newRequest.apartment,
+    newRequest.roof_access,
+  ];
+  await performQuery(updateRequestQuery, values);
+
+  const updatedRequest = await getRequest(id);
+  return updatedRequest;
+}
+
 // https://docs.osticket.com/en/latest/Developer%20Documentation/API/Tickets.html
 async function createTicket(request, building, member) {
-  const { id, date, roofAccess } = request;
+  const { id, date } = request;
   const { address, lat, lng } = building;
   const { name, email, phone } = member;
 
