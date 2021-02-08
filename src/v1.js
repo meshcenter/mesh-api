@@ -21,7 +21,12 @@ import {
 } from "./db/memberships";
 import { getNodes, getNode, createNode, updateNode } from "./db/nodes";
 import { savePano, getUploadURL } from "./db/panos";
-import { getRequests, getRequest, createRequest } from "./db/requests";
+import {
+  getRequests,
+  getRequest,
+  createRequest,
+  updateRequest,
+} from "./db/requests";
 import {
   getSearch,
   authorizedSearchMembers,
@@ -314,6 +319,14 @@ router.post(
     } else {
       res.json(request);
     }
+  })
+);
+
+router.post(
+  "/requests/:id",
+  handleErrors(async (req, res, next) => {
+    const request = await updateRequest(req.params.id, req.body);
+    res.json(request);
   })
 );
 
