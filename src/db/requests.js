@@ -55,11 +55,11 @@ export async function createRequest(request, slackClient) {
     apartment,
     roof_access,
     roofAccess,
-    id: spreadsheet_id,
+    spreadsheetId,
   } = request;
 
   const isInvalid = !name || !email || !phone || !address || !apartment;
-  if (!spreadsheet_id && isInvalid) {
+  if (!spreadsheetId && isInvalid) {
     throw new Error("Invalid request");
   }
 
@@ -142,8 +142,8 @@ export async function createRequest(request, slackClient) {
 
   // Send Slack message
   try {
-    if (spreadsheet_id) {
-      dbRequest.id = spreadsheet_id;
+    if (spreadsheetId) {
+      dbRequest.id = spreadsheetId;
     }
     const buildingNodes = await performQuery(
       "SELECT * FROM nodes WHERE nodes.building_id = $1 AND nodes.status = 'active'",

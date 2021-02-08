@@ -452,7 +452,7 @@ async function importJoinRequests(nodes) {
     (node) => {
       const status =
         node.status === "Installed"
-          ? "closed"
+          ? "installed"
           : node.status === "Abandoned" ||
             node.status === "Unsubscribe" ||
             node.status === "Not Interested" ||
