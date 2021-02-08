@@ -14,7 +14,8 @@
     "node-fetch": "^2.6.0",
     "node-pg-migrate": "^5.9.0",
     "pg": "^8.0.0",
-    "serverless-http": "^2.3.0"
+    "serverless-http": "^2.3.0",
+    "stripe": "^8.134.0"
   },
   "devDependencies": {
     "colors": "^1.4.0",
