@@ -88,7 +88,7 @@ export async function getAppointmentByAcuityId(acuity_id) {
     "SELECT id FROM appointments WHERE appointments.acuity_id = $1",
     [acuity_id]
   );
-  return getAppointment(idAppointment.id);
+  return authorizedGetAppointment(idAppointment.id);
 }
 
 const createAppointmentQuery = `INSERT INTO appointments (type, date, notes, member_id, building_id, request_id, node_id, acuity_id)
