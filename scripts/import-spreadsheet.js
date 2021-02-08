@@ -593,7 +593,10 @@ async function importAppointments() {
       if (!member) continue;
     }
 
-    if (!nodeId) continue;
+    if (!nodeId) {
+      console.log("Missing node id", appointment);
+      continue;
+    }
 
     // Get Buillding
     const buildings = await performQuery(
@@ -653,6 +656,19 @@ GROUP BY buildings.id`,
       }
     }
 
+    // Get node
+    let node_id;
+    if (request) {
+      const [
+        node,
+      ] = await performQuery("SELECT * FROM nodes WHERE building_id = $1", [
+        request.building_id,
+      ]);
+      if (node) {
+        node_id = node.id;
+      }
+    }
+
     const typeMap = {
       Install: "install",
       Support: "support",
@@ -668,6 +684,7 @@ GROUP BY buildings.id`,
       member.id,
       building.id,
       request.id || sanitizedNodeId,
+      node_id,
     ]);
   }
 
@@ -683,6 +700,7 @@ GROUP BY buildings.id`,
       "member_id",
       "building_id",
       "request_id",
+      "node_id",
     ],
     newAppointments,
     (appointment) => appointment

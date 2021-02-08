@@ -134,11 +134,6 @@ GROUP BY
   nodes.id,
   buildings.id`;
 
-const createNodeQuery = `INSERT INTO nodes (lat, lng, alt, status, name, notes, create_date, building_id)
-  VALUES($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING
-  *`;
-
 const updateNodeQuery = `UPDATE nodes SET status = $2, lat = $3, lng = $4, alt = $5, name = $6, notes = $7, building_id = $8
 WHERE id = $1
 RETURNING
@@ -156,12 +151,41 @@ export async function getNodes() {
   return performQuery(getNodesQuery);
 }
 
+const createNodeQuery = `INSERT INTO nodes (id, lat, lng, alt, status, name, notes, create_date, building_id)
+  VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING
+  *`;
+
 export async function createNode(node) {
   const { lat, lng, alt, status, name, notes, building_id } = node;
+  const randomId = await unusedNodeId();
   const now = new Date();
-  const values = [lat, lng, alt, status, name, notes, now, building_id];
+  const values = [
+    randomId,
+    lat,
+    lng,
+    alt,
+    status,
+    name,
+    notes,
+    now,
+    building_id,
+  ];
   const newNode = await performQuery(createNodeQuery, values);
   return newNode;
+}
+
+// Super hacky way to find unused node id
+// Keep trying random numbers between 100-8000
+async function unusedNodeId(tries = 10) {
+  if (tries === 0) throw new Error("Unable to find unused node id");
+  const randomId = 100 + Math.floor(Math.random() * 7900);
+  const [existingNode] = await performQuery(
+    "SELECT * FROM nodes WHERE id = $1",
+    [randomId]
+  );
+  if (existingNode) return unusedNodeId(tries - 1);
+  return randomId;
 }
 
 export async function updateNode(id, nodePatch) {
