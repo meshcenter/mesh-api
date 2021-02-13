@@ -2,22 +2,8 @@ import { performQuery } from ".";
 import { getBuilding } from "./buildings";
 import { createNode } from "./nodes";
 
-const getAppointmentsQuery = `SELECT
-  appointments.*,
-  to_json(buildings) AS building
-FROM
-  appointments
-  LEFT JOIN buildings ON appointments.building_id = buildings.id
-GROUP BY
-  appointments.id,
-  buildings.id`;
-
-export async function getAppointments() {
-  const appointments = await performQuery(getAppointmentsQuery);
-  return appointments;
-}
-
-const authorizedGetAppointmentQuery = `SELECT
+const queries = {
+  getAppointment: `SELECT
   appointments.*,
   to_json(buildings) AS building,
   to_json(members) AS member,
@@ -53,14 +39,9 @@ GROUP BY
   appointments.id,
   buildings.id,
   members.id,
-  nodes.id`;
+  nodes.id`,
 
-export async function authorizedGetAppointment(id) {
-  const [appointment] = await performQuery(authorizedGetAppointmentQuery, [id]);
-  return appointment;
-}
-
-const authorizedGetAppointmentsQuery = `SELECT 
+  authorizedGetAppointment: `SELECT 
   appointments.*,
   to_json(buildings) AS building,
   to_json(requests) AS request,
@@ -74,27 +55,49 @@ JOIN
 JOIN
   members ON members.id = appointments.member_id
 ORDER BY
-  appointments.date`;
+  appointments.date`,
 
-export async function authorizedGetAppointments() {
-  const appointments = await performQuery(authorizedGetAppointmentsQuery);
+  getAppointmentByAcuityId:
+    "SELECT id FROM appointments WHERE appointments.acuity_id = $1",
+
+  createAppointment: `INSERT INTO appointments (type, date, notes, member_id, building_id, request_id, node_id, acuity_id)
+  VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING
+  *`,
+
+  updateAppointment: `UPDATE
+  appointments
+SET
+  type = $2,
+  date = $3,
+  notes = $4,
+  member_id = $5,
+  building_id = $6,
+  request_id = $7,
+  acuity_id = $8,
+  slack_ts = $9
+WHERE
+  id = $1
+RETURNING
+  *`,
+};
+
+export async function getAppointment(id) {
+  const [appointment] = await performQuery(queries.getAppointment, [id]);
+  return appointment;
+}
+
+export async function getAppointments() {
+  const appointments = await performQuery(queries.authorizedGetAppointment);
   return appointments;
 }
 
 export async function getAppointmentByAcuityId(acuity_id) {
-  const [
-    idAppointment,
-  ] = await performQuery(
-    "SELECT id FROM appointments WHERE appointments.acuity_id = $1",
-    [acuity_id]
-  );
+  const [idAppointment] = await performQuery(queries.getAppointmentByAcuityId, [
+    acuity_id,
+  ]);
   return authorizedGetAppointment(idAppointment.id);
 }
-
-const createAppointmentQuery = `INSERT INTO appointments (type, date, notes, member_id, building_id, request_id, node_id, acuity_id)
-  VALUES($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING
-  *`;
 
 export async function createAppointment(appointment) {
   // TODO: Allocate node if none in building
@@ -114,7 +117,7 @@ export async function createAppointment(appointment) {
     appointment.node_id = buildingNode.id;
   }
 
-  const [newAppointment] = await performQuery(createAppointmentQuery, [
+  const [newAppointment] = await performQuery(queries.createAppointment, [
     appointment.type,
     appointment.date,
     appointment.notes,
@@ -127,24 +130,8 @@ export async function createAppointment(appointment) {
   return newAppointment;
 }
 
-const updateAppointmentQuery = `UPDATE
-  appointments
-SET
-  type = $2,
-  date = $3,
-  notes = $4,
-  member_id = $5,
-  building_id = $6,
-  request_id = $7,
-  acuity_id = $8,
-  slack_ts = $9
-WHERE
-  id = $1
-RETURNING
-  *`;
-
 export async function updateAppointment(appointment) {
-  const [updatedAppointment] = await performQuery(updateAppointmentQuery, [
+  const [updatedAppointment] = await performQuery(queries.updateAppointment, [
     appointment.id,
     appointment.type,
     appointment.date,

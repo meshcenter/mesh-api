@@ -7,12 +7,10 @@
     "aws-sdk": "^2.575.0",
     "cors": "^2.8.5",
     "date-fns": "^2.8.1",
-    "encoding": "^0.1.12",
-    "express": "^4.17.1",
+    "express": "5.0.0-alpha.8",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^1.6.0",
     "node-fetch": "^2.6.0",
-    "node-pg-migrate": "^5.9.0",
     "pg": "^8.0.0",
     "serverless-http": "^2.3.0",
     "stripe": "^8.134.0"
@@ -23,6 +21,7 @@
     "dotenv-webpack": "^1.7.0",
     "jest": "^26.4.0",
     "netlify-lambda": "^1.5.1",
+    "node-pg-migrate": "^5.9.0",
     "prettier": "2.2.1"
   },
   "scripts": {
