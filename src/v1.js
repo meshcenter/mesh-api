@@ -10,7 +10,7 @@ import {
 } from "./db/appointments";
 import { getBuildings, getBuilding, updateBuilding } from "./db/buildings";
 import { authorizedGetDevice, authorizedCreateDevice } from "./db/devices";
-import { getLinks, authorizedCreateLink } from "./db/links";
+import { getLinks, getLink, createLink, deleteLink } from "./db/links";
 import { getLos } from "./db/los";
 import { getMap } from "./db/map";
 import { getMembers, getMember } from "./db/members";
@@ -38,6 +38,8 @@ import { getAppointmentsKML } from "./kml/appointments";
 import { getLosKML } from "./kml/los";
 import { getNodesKML } from "./kml/nodes";
 import { getRequestsKML } from "./kml/requests";
+
+import { getNodesGeoJSON } from "./geojson/nodes";
 
 import SlackClient from "./slack/client";
 
@@ -131,6 +133,14 @@ router.get(
 );
 
 router.get(
+  "/links/:id",
+  handleErrors(async (req, res, next) => {
+    const link = await getLink(req.params.id);
+    res.json(link);
+  })
+);
+
+router.get(
   "/links",
   handleErrors(async (req, res, next) => {
     const links = await getLinks();
@@ -142,8 +152,17 @@ router.post(
   "/links",
   handleErrors(async (req, res, next) => {
     await checkAuth(req.headers);
-    const links = await authorizedCreateLink(req.body);
+    const links = await createLink(req.body);
     res.json(links);
+  })
+);
+
+router.delete(
+  "/links/:id",
+  handleErrors(async (req, res, next) => {
+    await checkAuth(req.headers);
+    const link = await deleteLink(req.params.id);
+    res.json(link);
   })
 );
 
@@ -400,7 +419,15 @@ router.get(
   })
 );
 
-router.post(
+router.get(
+  "/geojson/nodes",
+  handleErrors(async (req, res, next) => {
+    const geoJSON = await getNodesGeoJSON();
+    res.json(geoJSON);
+  })
+);
+
+router.get(
   "/webhooks/acuity",
   handleErrors(async (req, res, next) => {
     acuityWebhook(req.body, slackClient);
