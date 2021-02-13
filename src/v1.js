@@ -15,7 +15,7 @@ import panos from "./routes/panos";
 import requests from "./routes/requests";
 import search from "./routes/search";
 import kml from "./routes/kml";
-import geoJSON from "./routes/geojson";
+import geojson from "./routes/geojson";
 import webhooks from "./routes/webhooks";
 
 const ROOT = "/v1";
@@ -43,7 +43,7 @@ router.use("/panos", panos);
 router.use("/requests", requests);
 router.use("/search", search);
 router.use("/kml", kml);
-router.use("/geojson", geoJSON);
+router.use("/geojson", geojson);
 router.use("/webhooks", webhooks);
 
 function handleErrors(error, req, res, next) {
