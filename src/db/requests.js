@@ -140,20 +140,19 @@ export async function createRequest(request, slackClient) {
     console.log(error);
   }
 
-  // Send Slack message
+  // Send Slack message and save timestamp to db
   try {
     const slackRequest = {
       ...dbRequest,
       id: spreadsheetId || dbRequest.id,
     };
-    const slack_ts = await sendSlackMessage(
+    const slack_ts = await sendSlackMessage({
       slackRequest,
-      slackClient,
       request,
       building,
       visibleNodes,
-      buildingNodes
-    );
+      slackClient,
+    });
     await performQuery(
       "UPDATE requests SET slack_ts = $1 WHERE id = $2 RETURNING *",
       [slack_ts, dbRequest.id]
@@ -167,13 +166,12 @@ export async function createRequest(request, slackClient) {
   return dbRequest;
 }
 
-async function sendSlackMessage(
+async function sendSlackMessage({
   request,
   building,
   visibleNodes,
-  buildingNodes,
-  slackClient
-) {
+  slackClient,
+}) {
   const buildingNodes = await performQuery(
     "SELECT * FROM nodes WHERE nodes.building_id = $1 AND nodes.status = 'active'",
     [request.building_id]
