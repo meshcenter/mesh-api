@@ -18,7 +18,17 @@ import kml from "./routes/kml";
 import geoJSON from "./routes/geojson";
 import webhooks from "./routes/webhooks";
 
+const ROOT = "/v1";
+const app = express(ROOT);
 const router = Router({ caseSensitive: true });
+
+app.set("etag", false);
+app.disable("x-powered-by");
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(ROOT, router);
+app.use(handleErrors);
 
 router.use("/appointments", appointments);
 router.use("/buildings", buildings);
@@ -36,33 +46,17 @@ router.use("/kml", kml);
 router.use("/geojson", geoJSON);
 router.use("/webhooks", webhooks);
 
-const ROOT = "/v1";
-const app = express(ROOT);
-
-app.set("etag", false);
-app.disable("x-powered-by");
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use(ROOT, router);
-app.use(handleErrors);
-
 function handleErrors(error, req, res, next) {
-  let status;
-  if (error.message === "Unauthorized") {
-    status = 401;
-  } else if (error.message === "Bad params") {
-    status = 422;
-  } else if (error.message === "Not found") {
-    status = 404;
-  } else {
-    status = 500;
-  }
+  const messageStatus = {
+    Unauthorized: 401,
+    "Bad params": 422,
+    "Not found": 400,
+  };
 
   if (req.body.failure_url) {
     res.redirect(303, req.body.failure_url);
   } else {
+    const status = messageStatus[error.message] || 500;
     res.status(status).json({ error: error.message });
   }
 }
