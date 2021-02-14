@@ -19,8 +19,7 @@ import kml from "./routes/kml";
 import geojson from "./routes/geojson";
 import webhooks from "./routes/webhooks";
 
-const ROOT = "/v1";
-const app = express(ROOT);
+const app = express("/v1");
 const router = Router({ caseSensitive: true });
 
 app.set("etag", false);
