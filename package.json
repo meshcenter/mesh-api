@@ -8,6 +8,7 @@
     "aws-sdk": "^2.575.0",
     "cors": "^2.8.5",
     "date-fns": "^2.8.1",
+    "encoding": "^0.1.13",
     "express": "5.0.0-alpha.8",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^1.6.0",
