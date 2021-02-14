@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { getMap } from "../db/map";
+import { getMap, authorizedGetMap } from "../db/map";
 import { checkAuth } from "../auth";
 
 const router = Router({
@@ -11,7 +11,7 @@ router.get("/", async (req, res) => {
   let map;
   try {
     await checkAuth(req.headers);
-    map = await getMap(true);
+    map = await authorizedGetMap();
   } catch (error) {
     map = await getMap();
   }

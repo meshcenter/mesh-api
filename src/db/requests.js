@@ -3,7 +3,10 @@ import { getLos, getBuildingHeightMeters } from "./los";
 import { requestMessage } from "../slack";
 import { performQuery } from ".";
 
-const getRequestQuery = `SELECT
+export async function getRequest(id) {
+  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
+  const [request] = await performQuery(
+    `SELECT
   requests.*,
   to_json(buildings) AS building,
   to_json(members) AS member,
@@ -18,16 +21,15 @@ WHERE
 GROUP BY
   requests.id,
   buildings.id,
-  members.id`;
-
-export async function getRequest(id) {
-  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
-  const [request] = await performQuery(getRequestQuery, [id]);
+  members.id`,
+    [id]
+  );
   if (!request) throw new Error("Not found");
   return request;
 }
 
-const getRequestsQuery = `SELECT
+export async function getRequests() {
+  return performQuery(`SELECT
   requests.*,
   to_json(buildings) AS building,
   to_json(members) AS member
@@ -40,10 +42,7 @@ GROUP BY
   buildings.id,
   members.id
 ORDER BY
-  date DESC`;
-
-export async function getRequests() {
-  return performQuery(getRequestsQuery);
+  date DESC`);
 }
 
 export async function createRequest(request, slackClient) {
@@ -186,17 +185,6 @@ async function sendSlackMessage({
   return ts;
 }
 
-const updateRequestQuery = `UPDATE
-  requests
-SET
-  status = $2, 
-  apartment = $3, 
-  roof_access = $4
-WHERE
-  id = $1
-RETURNING
-  *`;
-
 export async function updateRequest(id, patch) {
   const existingRequest = await getRequest(id, true);
 
@@ -207,13 +195,19 @@ export async function updateRequest(id, patch) {
     ...patch,
   };
 
-  const values = [
-    id,
-    newRequest.status,
-    newRequest.apartment,
-    newRequest.roof_access,
-  ];
-  await performQuery(updateRequestQuery, values);
+  await performQuery(
+    `UPDATE
+  requests
+SET
+  status = $2, 
+  apartment = $3, 
+  roof_access = $4
+WHERE
+  id = $1
+RETURNING
+  *`,
+    [id, newRequest.status, newRequest.apartment, newRequest.roof_access]
+  );
 
   const updatedRequest = await getRequest(id);
   return updatedRequest;

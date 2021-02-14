@@ -1,6 +1,12 @@
 import { Router } from "express";
 
-import { getNodes, getNode, createNode, updateNode } from "../db/nodes";
+import {
+  getNodes,
+  getNode,
+  authorizedGetNode,
+  createNode,
+  updateNode,
+} from "../db/nodes";
 import { checkAuth } from "../auth";
 
 const router = Router({
@@ -16,7 +22,7 @@ router.get("/:id", async (req, res) => {
   let node;
   try {
     await checkAuth(req.headers);
-    node = await getNode(req.params.id, true);
+    node = await authorizedGetNode(req.params.id, true);
   } catch (error) {
     node = await getNode(req.params.id);
   }

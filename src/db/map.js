@@ -1,6 +1,7 @@
 import { performQuery } from ".";
 
-const authorizedGetMapQuery = `SELECT 
+export async function authorizedGetMap() {
+  const results = await performQuery(`SELECT 
   json_build_object(
     'nodes',
     COALESCE( 
@@ -112,9 +113,12 @@ const authorizedGetMapQuery = `SELECT
       ),
       '[]'
     )
-  ) as map`;
+  ) as map`);
+  return results[0].map;
+}
 
-const getMapQuery = `SELECT 
+export async function getMap() {
+  const results = await performQuery(`SELECT 
   json_build_object(
     'nodes',
     COALESCE( 
@@ -207,16 +211,6 @@ const getMapQuery = `SELECT
       ),
       '[]'
     )
-  ) as map`;
-
-export async function getMap(authorized) {
-  let map;
-  if (authorized) {
-    const results = await performQuery(authorizedGetMapQuery);
-    map = results[0].map;
-  } else {
-    const results = await performQuery(getMapQuery);
-    map = results[0].map;
-  }
-  return map;
+  ) as map`);
+  return results[0].map;
 }

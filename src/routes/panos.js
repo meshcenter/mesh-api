@@ -1,7 +1,6 @@
 import { Router } from "express";
 
 import { savePano, getUploadURL } from "../db/panos";
-import { checkAuth } from "../auth";
 import SlackClient from "../slack/client";
 
 const slackClient = new SlackClient(process.env.SLACK_TOKEN);
