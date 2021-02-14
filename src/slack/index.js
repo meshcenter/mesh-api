@@ -150,7 +150,7 @@ function panoMessageContent(pano, request) {
 function installMessageContent(appointment) {
   const { building, member, request } = appointment;
   const formattedDate = format(appointment.date, dateFmtString);
-  const fallbackText = `${request.id} - ${member.name} - ${appointment.type}`;
+  const fallbackText = `${request.id} - ${member.name} - ${appointment.type}\n${formattedDate}\n${building.address}`;
   const line1 = `<https://dashboard.nycmesh.net/appointments/${appointment.id}|*${request.id} - ${member.name} - ${appointment.type}*>`;
   const blocks = [
     markdownSection(`${line1}\n${formattedDate}\n${building.address}`),

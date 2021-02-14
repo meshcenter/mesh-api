@@ -200,8 +200,10 @@ describe("installMessage", () => {
       name: process.env.SLACK_INSTALL_CHANNEL,
       id: 3,
     });
+    slackClient.postMessage.mockResolvedValue({ ts: 1234 });
 
     const appointment = {
+      id: 12345,
       building: {
         address: "567 8th Street",
         alt: 250,
@@ -213,6 +215,9 @@ describe("installMessage", () => {
         name: "First Last",
         phone: "800-555-5555",
         email: "first@last.com",
+      },
+      request: {
+        id: 123,
       },
       date: 946713600000,
       request_id: 6678,
@@ -228,18 +233,13 @@ describe("installMessage", () => {
     );
     const { channel, blocks, text } = slackClient.postMessage.mock.calls[0][0];
     expect(channel).toBe(3);
-    expect(blocks).toHaveLength(4);
+    expect(blocks).toHaveLength(1);
     expect(blocks[0].text.text).toBe(
-      "New install:\n*567 8th Street*\nSaturday, Jan 1 8:00 AM"
+      "<https://dashboard.nycmesh.net/appointments/12345|*123 - First Last - install*>\nSaturday, Jan 1 8:00 AM\n567 8th Street"
     );
-    expect(blocks[1].text.text).toBe(
-      "*Name:*\tFirst Last\n*Phone:*\t<tel:800-555-5555|800-555-5555>\n*Email:*\tfirst@last.com\n*Node:*\t<https://www.nycmesh.net/map/nodes/6678|6678>\n*Notes:*\tOmni only\n"
+    expect(text).toBe(
+      "123 - First Last - install\nSaturday, Jan 1 8:00 AM\n567 8th Street"
     );
-    expect(blocks[2].text.text).toBe(
-      "<https://earth.google.com/web/search/567+8th+Street/@91.423,11.121,250a,300d,40y,0.6h,65t,0r|Earth →>\t<https://los.nycmesh.net/search?address=567%208th%20Street&bin=8FS3&lat=91.423&lng=11.121|LoS →>\t<https://support.nycmesh.net/scp/tickets.php?a=search&query=6678|Ticket →>"
-    );
-    expect(blocks[3].text.text).toBe("Are you available? Thread here");
-    expect(text).toBe("New install:\n567 8th Street\nSaturday, Jan 1 8:00 AM");
   });
 });
 
@@ -252,8 +252,16 @@ describe("rescheduleMessage", () => {
     });
 
     const appointment = {
+      id: 12345,
       building: { address: "567 8th Street" },
-      member: {},
+      member: {
+        name: "First Last",
+        phone: "800-555-5555",
+        email: "first@last.com",
+      },
+      request: {
+        id: 123,
+      },
       date: 946713600000,
       type: "survey",
     };
@@ -267,8 +275,10 @@ describe("rescheduleMessage", () => {
     const { channel, ts, blocks, text } = slackClient.update.mock.calls[0][0];
     expect(channel).toBe(3);
     expect(ts).toBe(2394587345);
-    expect(blocks).toHaveLength(4);
-    expect(text).toBe("New survey:\n567 8th Street\nSaturday, Jan 1 8:00 AM");
+    expect(blocks).toHaveLength(1);
+    expect(text).toBe(
+      "123 - First Last - survey\nSaturday, Jan 1 8:00 AM\n567 8th Street"
+    );
   });
 
   it("posts a rescheduling message in a thread on the original message", async () => {
@@ -279,8 +289,16 @@ describe("rescheduleMessage", () => {
     });
 
     const appointment = {
+      id: 12345,
       building: { address: "567 8th Street" },
-      member: {},
+      member: {
+        name: "First Last",
+        phone: "800-555-5555",
+        email: "first@last.com",
+      },
+      request: {
+        id: 123,
+      },
       date: 946713600000,
     };
 
