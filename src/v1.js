@@ -19,7 +19,8 @@ import kml from "./routes/kml";
 import geojson from "./routes/geojson";
 import webhooks from "./routes/webhooks";
 
-const app = express("/v1");
+const ROOT = "/v1";
+const app = express(ROOT);
 const router = Router({ caseSensitive: true });
 
 app.set("etag", false);
@@ -48,15 +49,14 @@ router.use("/search", search);
 router.use("/webhooks", webhooks);
 
 function handleErrors(error, req, res, next) {
-  const messageStatus = {
-    Unauthorized: 401,
-    "Bad params": 422,
-    "Not found": 400,
-  };
-
   if (req.body.failure_url) {
     res.redirect(303, req.body.failure_url);
   } else {
+    const messageStatus = {
+      Unauthorized: 401,
+      "Bad params": 422,
+      "Not found": 400,
+    };
     const status = messageStatus[error.message] || 500;
     res.status(status).json({ error: error.message });
   }
