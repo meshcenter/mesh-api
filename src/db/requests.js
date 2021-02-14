@@ -3,7 +3,10 @@ import { getLos, getBuildingHeightMeters } from "./los";
 import { requestMessage } from "../slack";
 import { performQuery } from ".";
 
-const getRequestQuery = `SELECT
+export async function getRequest(id) {
+  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
+  const [request] = await performQuery(
+    `SELECT
   requests.*,
   to_json(buildings) AS building,
   to_json(members) AS member,
@@ -18,16 +21,15 @@ WHERE
 GROUP BY
   requests.id,
   buildings.id,
-  members.id`;
-
-export async function getRequest(id) {
-  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
-  const [request] = await performQuery(getRequestQuery, [id]);
+  members.id`,
+    [id]
+  );
   if (!request) throw new Error("Not found");
   return request;
 }
 
-const getRequestsQuery = `SELECT
+export async function getRequests() {
+  return performQuery(`SELECT
   requests.*,
   to_json(buildings) AS building,
   to_json(members) AS member
@@ -40,10 +42,7 @@ GROUP BY
   buildings.id,
   members.id
 ORDER BY
-  date DESC`;
-
-export async function getRequests() {
-  return performQuery(getRequestsQuery);
+  date DESC`);
 }
 
 export async function createRequest(request, slackClient) {
@@ -140,26 +139,22 @@ export async function createRequest(request, slackClient) {
     console.log(error);
   }
 
-  // Send Slack message
+  // Send Slack message and save timestamp to db
   try {
-    let slackMessageRequest = dbRequest;
-    if (spreadsheetId) {
-      slackMessageRequest.id = spreadsheetId;
-    }
-    const buildingNodes = await performQuery(
-      "SELECT * FROM nodes WHERE nodes.building_id = $1 AND nodes.status = 'active'",
-      [dbRequest.building_id]
-    );
-    const slackRes = await requestMessage(
-      slackClient,
-      slackMessageRequest,
+    const slackRequest = {
+      ...dbRequest,
+      id: spreadsheetId || dbRequest.id,
+    };
+    const slack_ts = await sendSlackMessage({
+      slackRequest,
+      request,
       building,
       visibleNodes,
-      buildingNodes
-    );
+      slackClient,
+    });
     await performQuery(
       "UPDATE requests SET slack_ts = $1 WHERE id = $2 RETURNING *",
-      [slackRes.ts, dbRequest.id]
+      [slack_ts, dbRequest.id]
     );
   } catch (error) {
     console.log(error);
@@ -170,16 +165,25 @@ export async function createRequest(request, slackClient) {
   return dbRequest;
 }
 
-const updateRequestQuery = `UPDATE
-  requests
-SET
-  status = $2, 
-  apartment = $3, 
-  roof_access = $4
-WHERE
-  id = $1
-RETURNING
-  *`;
+async function sendSlackMessage({
+  request,
+  building,
+  visibleNodes,
+  slackClient,
+}) {
+  const buildingNodes = await performQuery(
+    "SELECT * FROM nodes WHERE nodes.building_id = $1 AND nodes.status = 'active'",
+    [request.building_id]
+  );
+  const { ts } = await requestMessage(
+    slackClient,
+    request,
+    building,
+    visibleNodes,
+    buildingNodes
+  );
+  return ts;
+}
 
 export async function updateRequest(id, patch) {
   const existingRequest = await getRequest(id, true);
@@ -191,13 +195,19 @@ export async function updateRequest(id, patch) {
     ...patch,
   };
 
-  const values = [
-    id,
-    newRequest.status,
-    newRequest.apartment,
-    newRequest.roof_access,
-  ];
-  await performQuery(updateRequestQuery, values);
+  await performQuery(
+    `UPDATE
+  requests
+SET
+  status = $2, 
+  apartment = $3, 
+  roof_access = $4
+WHERE
+  id = $1
+RETURNING
+  *`,
+    [id, newRequest.status, newRequest.apartment, newRequest.roof_access]
+  );
 
   const updatedRequest = await getRequest(id);
   return updatedRequest;

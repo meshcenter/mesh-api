@@ -5,7 +5,7 @@ export async function getRequestsKML(params) {
   const requests = await getRequests();
 
   const elements = [
-    iconStyle("request", 0.5, "https://i.imgur.com/oVFMyJU.png"),
+    iconStyle("request", 0.3, "https://i.imgur.com/oVFMyJU.png"),
     iconStyle("panoRequest", 0.5, "https://i.imgur.com/uj6HMxZ.png"),
     requests.filter((r) => r.status === "open").map(requestPlacemark),
   ];

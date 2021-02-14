@@ -5,110 +5,13 @@ const OMNI_RANGE = 0.75 * KM;
 const SECTOR_RANGE = 3 * KM;
 const REQUEST_RANGE = 3 * KM;
 
-const getOmnisQuery = `SELECT
-  nodes.id,
-  nodes.name,
-  nodes.status,
-  buildings.bin,
-  buildings.id as building_id,
-  buildings.lat,
-  buildings.lng,
-  buildings.alt,
-  json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
-FROM
-  nodes
-  LEFT JOIN buildings ON nodes.building_id = buildings.id
-  LEFT JOIN devices ON devices.node_id = nodes.id
-  LEFT JOIN device_types ON devices.device_type_id = device_types.id
-WHERE
-  device_types.name = 'Omni'
-  AND devices.status = 'active'
-  AND nodes.status = 'active'
-GROUP BY
-  nodes.id,
-  buildings.bin,
-  buildings.id`;
-
-const getSectorsQuery = `SELECT
-  nodes.id,
-  nodes.name,
-  nodes.status,
-  buildings.bin,
-  buildings.id as building_id,
-  buildings.lat,
-  buildings.lng,
-  buildings.alt,
-  json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
-FROM
-  nodes
-  LEFT JOIN buildings ON nodes.building_id = buildings.id
-  LEFT JOIN devices ON devices.node_id = nodes.id
-  LEFT JOIN device_types ON devices.device_type_id = device_types.id
-WHERE
-  device_types.name IN ('LBE-120', 'SN1Sector1', 'SN1Sector2', 'Mikrotik120', 'LTU-60', 'PS-5AC')
-  AND devices.status = 'active'
-  AND nodes.status = 'active'
-GROUP BY
-  nodes.id,
-  buildings.bin,
-  buildings.id`;
-
-// Get hardcoded requests and requests with scheduled appointments
-// added Vernon 5916 as potential
-const getRequestsQuery = `SELECT
-  requests.id,
-  requests.status,
-  buildings.id AS building_id,
-  buildings.bin,
-  buildings.address,
-  buildings.lat,
-  buildings.lng,
-  buildings.alt
-FROM
-  requests
-  JOIN buildings ON requests.building_id = buildings.id
-  LEFT JOIN appointments ON appointments.request_id = requests.id
-WHERE
-  requests.id IN(5916)
-  OR(
-    SELECT
-      id FROM appointments
-    WHERE
-      appointments.request_id = requests.id
-      AND appointments.type = 'install'
-    LIMIT 1) IS NOT NULL
-GROUP BY
-  requests.id,
-  buildings.bin,
-  buildings.id,
-  appointments.id`;
-
-const getLosQuery = `SELECT
-  bldg_bin as bin,
-  ST_AsGeoJSON(ST_Centroid(geom)) as midpoint
-FROM (
-  SELECT
-    *
-  FROM
-    ny
-  WHERE
-    bldg_bin = ANY ($1)) AS hubs
-WHERE
-  ST_DWithin (ST_Centroid(geom), (
-      SELECT
-        ST_Centroid(geom)
-      FROM
-        ny
-      WHERE
-        bldg_bin = $2), $3)`;
-
 export async function getLos(bin) {
   if (!bin) throw Error("Bad params");
 
   // TODO: One query, and use range of device
-  const omnis = await performQuery(getOmnisQuery);
-  const sectors = await performQuery(getSectorsQuery);
-  const requests = await performQuery(getRequestsQuery);
+  const omnis = await getOmnis();
+  const sectors = await getSectors();
+  const requests = await getRequests();
 
   const building = await getBuildingFromBIN(bin);
   const buildingMidpoint = await getBuildingMidpoint(bin);
@@ -225,8 +128,27 @@ async function getNodesInRange(nodes, bin, range) {
   const nodeBins = nodes
     .map((node) => node.bin)
     .filter((bin) => bin % 1000000 !== 0);
-  const getLosValues = [nodeBins, bin, range];
-  const losNodesInRange = await performLosQuery(getLosQuery, getLosValues);
+  const losNodesInRange = await performLosQuery(
+    `SELECT
+  bldg_bin as bin,
+  ST_AsGeoJSON(ST_Centroid(geom)) as midpoint
+FROM (
+  SELECT
+    *
+  FROM
+    ny
+  WHERE
+    bldg_bin = ANY ($1)) AS hubs
+WHERE
+  ST_DWithin (ST_Centroid(geom), (
+      SELECT
+        ST_Centroid(geom)
+      FROM
+        ny
+      WHERE
+        bldg_bin = $2), $3)`,
+    [nodeBins, bin, range]
+  );
   const losNodesInRangeMap = losNodesInRange.reduce((acc, cur) => {
     acc[cur.bin] = cur;
     return acc;
@@ -302,17 +224,101 @@ async function getBuildingFromBIN(bin) {
 }
 
 async function saveLOS(building, node) {
-  const query =
-    "INSERT INTO los (building_a_id, building_b_id, lat_a, lng_a, alt_a, lat_b, lng_b, alt_b) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
-  const values = [
-    building.id,
-    node.building_id,
-    building.lat,
-    building.lng,
-    building.alt,
-    node.lat,
-    node.lng,
-    node.alt,
-  ];
-  return performQuery(query, values);
+  return performQuery(
+    "INSERT INTO los (building_a_id, building_b_id, lat_a, lng_a, alt_a, lat_b, lng_b, alt_b) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+    [
+      building.id,
+      node.building_id,
+      building.lat,
+      building.lng,
+      building.alt,
+      node.lat,
+      node.lng,
+      node.alt,
+    ]
+  );
+}
+
+async function getOmnis() {
+  return performQuery(`SELECT
+  nodes.id,
+  nodes.name,
+  nodes.status,
+  buildings.bin,
+  buildings.id as building_id,
+  buildings.lat,
+  buildings.lng,
+  buildings.alt,
+  json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
+FROM
+  nodes
+  LEFT JOIN buildings ON nodes.building_id = buildings.id
+  LEFT JOIN devices ON devices.node_id = nodes.id
+  LEFT JOIN device_types ON devices.device_type_id = device_types.id
+WHERE
+  device_types.name = 'Omni'
+  AND devices.status = 'active'
+  AND nodes.status = 'active'
+GROUP BY
+  nodes.id,
+  buildings.bin,
+  buildings.id`);
+}
+
+async function getSectors() {
+  return performQuery(`SELECT
+  nodes.id,
+  nodes.name,
+  nodes.status,
+  buildings.bin,
+  buildings.id as building_id,
+  buildings.lat,
+  buildings.lng,
+  buildings.alt,
+  json_agg(json_build_object('id', devices.id, 'type', device_types, 'lat', devices.lat, 'lng', devices.lng, 'alt', devices.alt, 'azimuth', devices.azimuth, 'status', devices.status, 'name', devices.name, 'ssid', devices.ssid, 'notes', devices.notes, 'create_date', devices.create_date, 'abandon_date', devices.abandon_date)) AS devices
+FROM
+  nodes
+  LEFT JOIN buildings ON nodes.building_id = buildings.id
+  LEFT JOIN devices ON devices.node_id = nodes.id
+  LEFT JOIN device_types ON devices.device_type_id = device_types.id
+WHERE
+  device_types.name IN ('LBE-120', 'SN1Sector1', 'SN1Sector2', 'Mikrotik120', 'LTU-60', 'PS-5AC')
+  AND devices.status = 'active'
+  AND nodes.status = 'active'
+GROUP BY
+  nodes.id,
+  buildings.bin,
+  buildings.id`);
+}
+
+// Get hardcoded requests and requests with scheduled appointments
+// added Vernon 5916 as potential
+async function getRequests() {
+  return performQuery(`SELECT
+  requests.id,
+  requests.status,
+  buildings.id AS building_id,
+  buildings.bin,
+  buildings.address,
+  buildings.lat,
+  buildings.lng,
+  buildings.alt
+FROM
+  requests
+  JOIN buildings ON requests.building_id = buildings.id
+  LEFT JOIN appointments ON appointments.request_id = requests.id
+WHERE
+  requests.id IN(5916)
+  OR(
+    SELECT
+      id FROM appointments
+    WHERE
+      appointments.request_id = requests.id
+      AND appointments.type = 'install'
+    LIMIT 1) IS NOT NULL
+GROUP BY
+  requests.id,
+  buildings.bin,
+  buildings.id,
+  appointments.id`);
 }

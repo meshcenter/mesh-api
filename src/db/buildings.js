@@ -1,6 +1,7 @@
 import { performQuery } from ".";
 
-const getBuildingsQuery = `SELECT
+export async function getBuildings() {
+  return performQuery(`SELECT
   buildings.*,
   JSON_AGG(DISTINCT nodes.*) AS nodes
 FROM
@@ -9,9 +10,13 @@ FROM
 GROUP BY
   buildings.id
 ORDER BY
-  COUNT(DISTINCT nodes.*) DESC`;
+  COUNT(DISTINCT nodes.*) DESC`);
+}
 
-const getBuildingQuery = `SELECT
+export async function getBuilding(id) {
+  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
+  const [building] = await performQuery(
+    `SELECT
   buildings.*,
   COALESCE(
     (SELECT
@@ -82,9 +87,25 @@ LEFT JOIN nodes ON nodes.building_id = buildings.id
 LEFT JOIN requests ON requests.building_id = buildings.id
 LEFT JOIN panoramas ON panoramas.request_id = requests.id
 WHERE buildings.id = $1
-GROUP BY buildings.id`;
+GROUP BY buildings.id`,
+    [id]
+  );
+  if (!building) throw new Error("Not found");
+  return building;
+}
 
-const updateBuildingQuery = `UPDATE
+export async function updateBuilding(id, patch) {
+  const existingBuilding = await getBuilding(id, true);
+
+  // TODO: Sanitize / validate new values!!
+
+  const newBuilding = {
+    ...existingBuilding,
+    ...patch,
+  };
+
+  await performQuery(
+    `UPDATE
   buildings
 SET
   address = $2,
@@ -96,40 +117,16 @@ SET
 WHERE
   id = $1
 RETURNING
-  *`;
-
-export async function getBuildings() {
-  return performQuery(getBuildingsQuery);
-}
-
-export async function getBuilding(id) {
-  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
-  const [building] = await performQuery(getBuildingQuery, [id]);
-  if (!building) throw new Error("Not found");
-  return building;
-}
-
-export async function updateBuilding(id, patch) {
-  const existingBuilding = await getBuilding(id, true);
-
-  // TODO: Sanitize / validated new values!!
-
-  const newBuilding = {
-    ...existingBuilding,
-    ...patch,
-  };
-
-  const values = [
-    newBuilding.id,
-    newBuilding.address,
-    newBuilding.lat,
-    newBuilding.lng,
-    newBuilding.alt,
-    newBuilding.bin,
-    newBuilding.notes,
-  ];
-
-  await performQuery(updateBuildingQuery, values);
-  const updatedBuilding = await getBuilding(id);
-  return updatedBuilding;
+  *`,
+    [
+      id,
+      newBuilding.address,
+      newBuilding.lat,
+      newBuilding.lng,
+      newBuilding.alt,
+      newBuilding.bin,
+      newBuilding.notes,
+    ]
+  );
+  return getBuilding(id);
 }

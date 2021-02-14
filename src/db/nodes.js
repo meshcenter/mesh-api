@@ -1,6 +1,160 @@
 import { performQuery } from ".";
 
-const nodeDevicesQuery = `SELECT
+export async function getNode(id) {
+  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
+  const [node] = await performQuery(
+    `SELECT
+  nodes.id,
+  nodes.lat,
+  nodes.lng,
+  nodes.alt,
+  nodes.status,
+  nodes.name,
+  nodes.notes,
+  json_build_object('id', buildings.id, 'lat', buildings.lat, 'lng', buildings.lng, 'alt', buildings.alt, 'bin', buildings.bin, 'notes', buildings.notes) AS building,
+  COALESCE(json_agg(panoramas ORDER BY panoramas.date DESC) FILTER (WHERE panoramas IS NOT NULL), '[]') AS panoramas,
+  (${nodeDevicesQuery()}) AS devices,
+  (${connectedNodesQuery()}) AS connected_nodes
+FROM
+  nodes
+  LEFT JOIN buildings ON nodes.building_id = buildings.id
+  LEFT JOIN requests ON requests.building_id = buildings.id
+  LEFT JOIN panoramas ON panoramas.request_id = requests.id
+WHERE
+  nodes.id = $1
+GROUP BY
+  nodes.id,
+  buildings.id`,
+    [id]
+  );
+  if (!node) throw Error("Not found");
+  return node;
+}
+
+export async function authorizedGetNode(id) {
+  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
+  const [node] = await performQuery(
+    `SELECT
+  nodes.*,
+  to_json(buildings) AS building,
+  (${nodeMembersQuery()}) AS members,
+  json_agg(DISTINCT requests) AS requests,
+  COALESCE(json_agg(panoramas ORDER BY panoramas.date DESC) FILTER (WHERE panoramas IS NOT NULL), '[]') AS panoramas,
+  (${nodeDevicesQuery()}) AS devices,
+  (${connectedNodesQuery()}) AS connected_nodes
+FROM
+  nodes
+  LEFT JOIN buildings ON buildings.id = nodes.building_id
+  LEFT JOIN requests ON requests.building_id = buildings.id
+  LEFT JOIN panoramas ON panoramas.request_id = requests.id
+WHERE
+  nodes.id = $1
+GROUP BY
+  nodes.id,
+  buildings.id`,
+    [id]
+  );
+  if (!node) throw Error("Not found");
+  return node;
+}
+
+export async function getNodes() {
+  return performQuery(`SELECT
+  nodes.id,
+  nodes.lat,
+  nodes.lng,
+  nodes.alt,
+  nodes.status,
+  nodes.name,
+  nodes.notes,
+  buildings.address AS building,
+  (${nodeDevicesQuery()}) AS devices
+FROM
+  nodes
+  LEFT JOIN buildings ON nodes.building_id = buildings.id
+  LEFT JOIN devices ON nodes.id = devices.node_id
+  LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
+GROUP BY
+  nodes.id,
+  buildings.id
+ORDER BY
+  nodes.create_date DESC`);
+}
+
+export async function authorizedGetNodes() {
+  return performQuery(`SELECT
+  nodes.*,
+  buildings.address AS building,
+  (${nodeDevicesQuery()}) AS devices
+FROM
+  nodes
+  LEFT JOIN buildings ON nodes.building_id = buildings.id
+  LEFT JOIN devices ON nodes.id = devices.node_id
+  LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
+GROUP BY
+  nodes.id,
+  buildings.id
+ORDER BY
+  nodes.create_date DESC`);
+}
+
+export async function createNode(node) {
+  const { lat, lng, alt, status, name, notes, building_id } = node;
+  const randomId = await unusedNodeId();
+  const now = new Date();
+  return performQuery(
+    `INSERT INTO nodes (id, lat, lng, alt, status, name, notes, create_date, building_id)
+  VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING
+  *`,
+    [randomId, lat, lng, alt, status, name, notes, now, building_id]
+  );
+
+  // Super hacky way to find unused node id
+  // Keep trying random numbers between 100-8000
+  async function unusedNodeId(tries = 10) {
+    if (tries === 0) throw new Error("Unable to find unused node id");
+    const randomId = 100 + Math.floor(Math.random() * 7900);
+    const [
+      existingNode,
+    ] = await performQuery("SELECT * FROM nodes WHERE id = $1", [randomId]);
+    if (existingNode) return unusedNodeId(tries - 1);
+    return randomId;
+  }
+}
+
+export async function updateNode(id, patch) {
+  const existingNode = await authorizedGetNode(id);
+
+  // TODO: Sanitize / validated new values!!
+
+  const newNode = {
+    ...existingNode,
+    ...patch,
+  };
+  await performQuery(
+    `UPDATE nodes SET status = $2, lat = $3, lng = $4, alt = $5, name = $6, notes = $7, building_id = $8
+WHERE id = $1
+RETURNING
+  *`,
+    [
+      id,
+      newNode.status,
+      newNode.lat,
+      newNode.lng,
+      newNode.alt,
+      newNode.name,
+      newNode.notes,
+      newNode.building_id,
+    ]
+  );
+
+  const updatedNode = await getNode(id);
+  return updatedNode;
+}
+
+function nodeDevicesQuery() {
+  return `SELECT
   COALESCE(json_agg(
     json_build_object(
       'id', devices.id,
@@ -22,44 +176,20 @@ FROM
   LEFT JOIN device_types ON device_types.id IN(devices.device_type_id)
 WHERE
   devices.node_id = nodes.id`;
+}
 
-const getNodesQuery = `SELECT
-  nodes.id,
-  nodes.lat,
-  nodes.lng,
-  nodes.alt,
-  nodes.status,
-  nodes.name,
-  nodes.notes,
-  buildings.address AS building,
-  (${nodeDevicesQuery}) AS devices
+function nodeMembersQuery() {
+  return `SELECT
+  json_agg(json_build_object('id', members.id, 'name', members.name, 'email', members.email, 'phone', members.phone, 'donor', members.donor, 'membership_id', memberships.id))
 FROM
-  nodes
-  LEFT JOIN buildings ON nodes.building_id = buildings.id
-  LEFT JOIN devices ON nodes.id = devices.node_id
-  LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
-GROUP BY
-  nodes.id,
-  buildings.id
-ORDER BY
-  nodes.create_date DESC`;
+  members
+  LEFT JOIN memberships ON memberships.member_id = members.id
+WHERE
+  memberships.node_id = $1`;
+}
 
-const authorizedGetNodesQuery = `SELECT
-  nodes.*,
-  buildings.address AS building,
-  (${nodeDevicesQuery}) AS devices
-FROM
-  nodes
-  LEFT JOIN buildings ON nodes.building_id = buildings.id
-  LEFT JOIN devices ON nodes.id = devices.node_id
-  LEFT JOIN device_types ON device_types.id IN (devices.device_type_id)
-GROUP BY
-  nodes.id,
-  buildings.id
-ORDER BY
-  nodes.create_date DESC`;
-
-const connectedNodesQuery = `COALESCE(
+function connectedNodesQuery() {
+  return `COALESCE(
   (SELECT
     json_agg(json_build_object(
       'id', nodes.id,
@@ -83,133 +213,4 @@ const connectedNodesQuery = `COALESCE(
     AND links.status = 'active'),
   '[]'
 )`;
-
-const getNodeQuery = `SELECT
-  nodes.id,
-  nodes.lat,
-  nodes.lng,
-  nodes.alt,
-  nodes.status,
-  nodes.name,
-  nodes.notes,
-  json_build_object('id', buildings.id, 'lat', buildings.lat, 'lng', buildings.lng, 'alt', buildings.alt, 'bin', buildings.bin, 'notes', buildings.notes) AS building,
-  COALESCE(json_agg(panoramas ORDER BY panoramas.date DESC) FILTER (WHERE panoramas IS NOT NULL), '[]') AS panoramas,
-  (${nodeDevicesQuery}) AS devices,
-  (${connectedNodesQuery}) AS connected_nodes
-FROM
-  nodes
-  LEFT JOIN buildings ON nodes.building_id = buildings.id
-  LEFT JOIN requests ON requests.building_id = buildings.id
-  LEFT JOIN panoramas ON panoramas.request_id = requests.id
-WHERE
-  nodes.id = $1
-GROUP BY
-  nodes.id,
-  buildings.id`;
-
-const nodeMembersQuery = `SELECT
-  json_agg(json_build_object('id', members.id, 'name', members.name, 'email', members.email, 'phone', members.phone, 'donor', members.donor, 'membership_id', memberships.id))
-FROM
-  members
-  LEFT JOIN memberships ON memberships.member_id = members.id
-WHERE
-  memberships.node_id = $1`;
-
-const authorizedGetNodeQuery = `SELECT
-  nodes.*,
-  to_json(buildings) AS building,
-  (${nodeMembersQuery}) AS members,
-  json_agg(DISTINCT requests) AS requests,
-  COALESCE(json_agg(panoramas ORDER BY panoramas.date DESC) FILTER (WHERE panoramas IS NOT NULL), '[]') AS panoramas,
-  (${nodeDevicesQuery}) AS devices,
-  (${connectedNodesQuery}) AS connected_nodes
-FROM
-  nodes
-  LEFT JOIN buildings ON buildings.id = nodes.building_id
-  LEFT JOIN requests ON requests.building_id = buildings.id
-  LEFT JOIN panoramas ON panoramas.request_id = requests.id
-WHERE
-  nodes.id = $1
-GROUP BY
-  nodes.id,
-  buildings.id`;
-
-const updateNodeQuery = `UPDATE nodes SET status = $2, lat = $3, lng = $4, alt = $5, name = $6, notes = $7, building_id = $8
-WHERE id = $1
-RETURNING
-  *`;
-
-export async function getNode(id, authorized) {
-  if (!Number.isInteger(parseInt(id, 10))) throw new Error("Bad params");
-  const query = authorized ? authorizedGetNodeQuery : getNodeQuery;
-  const [node] = await performQuery(query, [id]);
-  if (!node) throw Error("Not found");
-  return node;
-}
-
-export async function getNodes() {
-  return performQuery(getNodesQuery);
-}
-
-const createNodeQuery = `INSERT INTO nodes (id, lat, lng, alt, status, name, notes, create_date, building_id)
-  VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING
-  *`;
-
-export async function createNode(node) {
-  const { lat, lng, alt, status, name, notes, building_id } = node;
-  const randomId = await unusedNodeId();
-  const now = new Date();
-  const values = [
-    randomId,
-    lat,
-    lng,
-    alt,
-    status,
-    name,
-    notes,
-    now,
-    building_id,
-  ];
-  const newNode = await performQuery(createNodeQuery, values);
-  return newNode;
-}
-
-// Super hacky way to find unused node id
-// Keep trying random numbers between 100-8000
-async function unusedNodeId(tries = 10) {
-  if (tries === 0) throw new Error("Unable to find unused node id");
-  const randomId = 100 + Math.floor(Math.random() * 7900);
-  const [existingNode] = await performQuery(
-    "SELECT * FROM nodes WHERE id = $1",
-    [randomId]
-  );
-  if (existingNode) return unusedNodeId(tries - 1);
-  return randomId;
-}
-
-export async function updateNode(id, nodePatch) {
-  const existingNode = await getNode(id, true);
-
-  // TODO: Sanitize / validated new values!!
-
-  const newNode = {
-    ...existingNode,
-    ...nodePatch,
-  };
-
-  const values = [
-    newNode.id,
-    newNode.status,
-    newNode.lat,
-    newNode.lng,
-    newNode.alt,
-    newNode.name,
-    newNode.notes,
-    newNode.building_id,
-  ];
-  await performQuery(updateNodeQuery, values);
-
-  const updatedNode = await getNode(id);
-  return updatedNode;
 }

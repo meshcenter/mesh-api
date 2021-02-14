@@ -2,22 +2,28 @@ import { performQuery } from ".";
 import { getBuilding } from "./buildings";
 import { createNode } from "./nodes";
 
-const getAppointmentsQuery = `SELECT
+export async function getAppointments() {
+  const appointments = await performQuery(`SELECT 
   appointments.*,
-  to_json(buildings) AS building
+  to_json(buildings) AS building,
+  to_json(requests) AS request,
+  to_json(members) AS member
 FROM
   appointments
-  LEFT JOIN buildings ON appointments.building_id = buildings.id
-GROUP BY
-  appointments.id,
-  buildings.id`;
-
-export async function getAppointments() {
-  const appointments = await performQuery(getAppointmentsQuery);
+JOIN
+  buildings ON buildings.id = appointments.building_id
+JOIN
+  requests ON requests.id = appointments.request_id
+JOIN
+  members ON members.id = appointments.member_id
+ORDER BY
+  appointments.date`);
   return appointments;
 }
 
-const authorizedGetAppointmentQuery = `SELECT
+export async function getAppointment(id) {
+  const [appointment] = await performQuery(
+    `SELECT
   appointments.*,
   to_json(buildings) AS building,
   to_json(members) AS member,
@@ -53,32 +59,10 @@ GROUP BY
   appointments.id,
   buildings.id,
   members.id,
-  nodes.id`;
-
-export async function authorizedGetAppointment(id) {
-  const [appointment] = await performQuery(authorizedGetAppointmentQuery, [id]);
+  nodes.id`,
+    [id]
+  );
   return appointment;
-}
-
-const authorizedGetAppointmentsQuery = `SELECT 
-  appointments.*,
-  to_json(buildings) AS building,
-  to_json(requests) AS request,
-  to_json(members) AS member
-FROM
-  appointments
-JOIN
-  buildings ON buildings.id = appointments.building_id
-JOIN
-  requests ON requests.id = appointments.request_id
-JOIN
-  members ON members.id = appointments.member_id
-ORDER BY
-  appointments.date`;
-
-export async function authorizedGetAppointments() {
-  const appointments = await performQuery(authorizedGetAppointmentsQuery);
-  return appointments;
 }
 
 export async function getAppointmentByAcuityId(acuity_id) {
@@ -90,11 +74,6 @@ export async function getAppointmentByAcuityId(acuity_id) {
   );
   return authorizedGetAppointment(idAppointment.id);
 }
-
-const createAppointmentQuery = `INSERT INTO appointments (type, date, notes, member_id, building_id, request_id, node_id, acuity_id)
-  VALUES($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING
-  *`;
 
 export async function createAppointment(appointment) {
   // TODO: Allocate node if none in building
@@ -114,20 +93,28 @@ export async function createAppointment(appointment) {
     appointment.node_id = buildingNode.id;
   }
 
-  const [newAppointment] = await performQuery(createAppointmentQuery, [
-    appointment.type,
-    appointment.date,
-    appointment.notes,
-    appointment.member_id,
-    appointment.building_id,
-    appointment.request_id,
-    appointment.node_id,
-    appointment.acuity_id,
-  ]);
+  const [newAppointment] = await performQuery(
+    `INSERT INTO appointments (type, date, notes, member_id, building_id, request_id, node_id, acuity_id)
+  VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING
+  *`,
+    [
+      appointment.type,
+      appointment.date,
+      appointment.notes,
+      appointment.member_id,
+      appointment.building_id,
+      appointment.request_id,
+      appointment.node_id,
+      appointment.acuity_id,
+    ]
+  );
   return newAppointment;
 }
 
-const updateAppointmentQuery = `UPDATE
+export async function updateAppointment(appointment) {
+  const [updatedAppointment] = await performQuery(
+    `UPDATE
   appointments
 SET
   type = $2,
@@ -141,19 +128,18 @@ SET
 WHERE
   id = $1
 RETURNING
-  *`;
-
-export async function updateAppointment(appointment) {
-  const [updatedAppointment] = await performQuery(updateAppointmentQuery, [
-    appointment.id,
-    appointment.type,
-    appointment.date,
-    appointment.notes,
-    appointment.member_id,
-    appointment.building_id,
-    appointment.request_id,
-    appointment.acuity_id,
-    appointment.slack_ts,
-  ]);
+  *`,
+    [
+      appointment.id,
+      appointment.type,
+      appointment.date,
+      appointment.notes,
+      appointment.member_id,
+      appointment.building_id,
+      appointment.request_id,
+      appointment.acuity_id,
+      appointment.slack_ts,
+    ]
+  );
   return updatedAppointment;
 }

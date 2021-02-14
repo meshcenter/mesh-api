@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
+
 import {
-  authorizedGetAppointment,
+  getAppointment,
   getAppointmentByAcuityId,
   createAppointment,
   updateAppointment,
@@ -39,7 +40,7 @@ export async function acuityWebhook(body, slackClient) {
       acuity_id: id,
     });
 
-    const fullAppointment = await authorizedGetAppointment(newApointment.id);
+    const fullAppointment = await getAppointment(newApointment.id);
 
     // Send message to slack
     const slackRes = await installMessage(slackClient, fullAppointment);
