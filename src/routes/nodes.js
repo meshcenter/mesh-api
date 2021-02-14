@@ -7,6 +7,7 @@ import {
   createNode,
   updateNode,
 } from "../db/nodes";
+import { findMembership, createMembership } from "../db/memberships";
 import { checkAuth } from "../auth";
 
 const router = Router({
@@ -22,7 +23,7 @@ router.get("/:id", async (req, res) => {
   let node;
   try {
     await checkAuth(req.headers);
-    node = await authorizedGetNode(req.params.id, true);
+    node = await authorizedGetNode(req.params.id);
   } catch (error) {
     node = await getNode(req.params.id);
   }
@@ -56,7 +57,7 @@ router.post("/:node_id/memberships", async (req, res) => {
   }
 
   await createMembership(req.params.node_id, req.body);
-  const node = await getNode(req.params.node_id, true);
+  const node = await authorizedGetNode(req.params.node_id);
   res.json(node);
 });
 

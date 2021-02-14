@@ -6,6 +6,7 @@ import {
   createMember,
   updateMember,
 } from "../db/members";
+import { authorizedSearchMembers } from "../db/search";
 import { checkAuth } from "../auth";
 
 const router = Router({
@@ -18,16 +19,16 @@ router.get("/", async (req, res) => {
   res.json(members);
 });
 
-router.get("/:id", async (req, res) => {
-  await checkAuth(req.headers);
-  const member = await getMember(req.params.id);
-  res.json(member);
-});
-
 router.get("/search", async (req, res) => {
   await checkAuth(req.headers);
   const members = await authorizedSearchMembers(req.query.s);
   res.json(members);
+});
+
+router.get("/:id", async (req, res) => {
+  await checkAuth(req.headers);
+  const member = await getMember(req.params.id);
+  res.json(member);
 });
 
 export default router;

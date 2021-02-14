@@ -9,6 +9,7 @@ import devices from "./routes/devices";
 import links from "./routes/links";
 import los from "./routes/los";
 import members from "./routes/members";
+import memberships from "./routes/memberships";
 import map from "./routes/map";
 import nodes from "./routes/nodes";
 import panos from "./routes/panos";
@@ -34,16 +35,17 @@ router.use("/appointments", appointments);
 router.use("/buildings", buildings);
 router.use("/device_types", device_types);
 router.use("/devices", devices);
+router.use("/geojson", geojson);
+router.use("/kml", kml);
 router.use("/links", links);
 router.use("/los", los);
-router.use("/members", members);
 router.use("/map", map);
+router.use("/members", members);
+router.use("/memberships", memberships);
 router.use("/nodes", nodes);
 router.use("/panos", panos);
 router.use("/requests", requests);
 router.use("/search", search);
-router.use("/kml", kml);
-router.use("/geojson", geojson);
 router.use("/webhooks", webhooks);
 
 function handleErrors(error, req, res, next) {
