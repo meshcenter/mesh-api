@@ -4,6 +4,7 @@
   "main": "index.js",
   "dependencies": {
     "@slack/web-api": "^5.8.0",
+    "acuityscheduling": "^0.1.9",
     "aws-sdk": "^2.575.0",
     "cors": "^2.8.5",
     "date-fns": "^2.8.1",

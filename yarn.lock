@@ -1560,6 +1560,13 @@ acorn@^7.1.1:
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-7.4.1.tgz#feaed255973d2e77555b83dbc08851a6c63520fa"
   integrity sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==
 
+acuityscheduling@^0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/acuityscheduling/-/acuityscheduling-0.1.9.tgz#686b90a40a56a7f5b0bba7b40ad6c4934604b067"
+  integrity sha512-cXdYzEtZynbiPVKjJkgQWVI6aEW37hyjjYZaBeLxmWZjmUeIA/68XNkoekVxxtGszbPQjB0azs3FRTMzlMzPRA==
+  dependencies:
+    request "^2.66.0"
+
 agent-base@6:
   version "6.0.2"
   resolved "https://registry.yarnpkg.com/agent-base/-/agent-base-6.0.2.tgz#49fff58577cfee3f37176feab4c22e00f86d7f77"
@@ -5945,7 +5952,7 @@ request-promise-native@^1.0.8:
     stealthy-require "^1.1.1"
     tough-cookie "^2.3.3"
 
-request@^2.88.2:
+request@^2.66.0, request@^2.88.2:
   version "2.88.2"
   resolved "https://registry.yarnpkg.com/request/-/request-2.88.2.tgz#d73c918731cb5a87da047e207234146f664d12b3"
   integrity sha512-MsvtOrfG9ZcrOwAW+Qi+F6HbD0CWXEh9ou77uOb7FM2WPhwT7smM833PzanhJLsgXjN89Ir6V2PczXNnMpwKhw==

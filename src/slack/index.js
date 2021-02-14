@@ -36,11 +36,21 @@ export async function panoMessage(client, pano, request) {
 }
 
 export async function installMessage(client, appointment) {
-  return sendMessage(
+  const slackRes = await sendMessage(
     client,
     process.env.SLACK_INSTALL_CHANNEL,
     installMessageContent(appointment)
   );
+
+  // Reply in thread
+  const channel = await client.getChannel(process.env.SLACK_INSTALL_CHANNEL);
+  await client.postMessage({
+    channel: channel.id,
+    thread_ts: slackRes.ts,
+    ...installMessageReplyContent(appointment),
+  });
+
+  return slackRes;
 }
 
 export async function rescheduleMessage(client, appointment, slackTS) {
@@ -138,29 +148,31 @@ function panoMessageContent(pano, request) {
 }
 
 function installMessageContent(appointment) {
-  const { building, member } = appointment;
+  const { building, member, request } = appointment;
   const formattedDate = format(appointment.date, dateFmtString);
-  const mapURL = getMapURL(appointment.request_id);
-  const earthURL = getEarthURL(building);
-  const losURL = getLosURL(building);
-  const ticketURL = getTicketURL(appointment.request_id);
+  const fallbackText = `${request.id} - ${member.name} - ${appointment.type}`;
+  const line1 = `<https://dashboard.nycmesh.net/appointments/${appointment.id}|*${request.id} - ${member.name} - ${appointment.type}*>`;
+  const blocks = [
+    markdownSection(`${line1}\n${formattedDate}\n${building.address}`),
+  ];
 
-  const introText = `New ${appointment.type}:\n*${building.address}*\n${formattedDate}`;
+  return {
+    blocks,
+    text: fallbackText,
+  };
+}
+
+function installMessageReplyContent(appointment) {
+  const { member } = appointment;
+  // const introText = `New ${appointment.type}:\n*${building.address}*\n${formattedDate}`;
   const nameText = `*Name:*\t${member.name}\n`;
   const phoneText = `*Phone:*\t<tel:${member.phone}|${member.phone}>\n`;
   const emailText = `*Email:*\t${member.email}\n`;
-  const nodeText = `*Node:*\t<${mapURL}|${appointment.node_id}>\n`;
   const notesText = appointment.notes ? `*Notes:*\t${appointment.notes}\n` : "";
-  const infoText = `${nameText}${phoneText}${emailText}${nodeText}${notesText}`;
-  const linksText = `<${earthURL}|Earth →>\t<${losURL}|LoS →>\t<${ticketURL}|Ticket →>`;
 
-  const fallbackText = `New ${appointment.type}:\n${building.address}\n${formattedDate}`;
-
+  const fallbackText = `Name: ${member.name}\nPhone: ${member.phone}\nEmail: ${member.email}\nNotes: ${appointment.notes}`;
   const blocks = [
-    markdownSection(introText),
-    markdownSection(infoText),
-    markdownSection(linksText),
-    markdownSection("Are you available? Thread here"),
+    markdownSection(`${nameText}${phoneText}${emailText}${notesText}`),
   ];
 
   return {
