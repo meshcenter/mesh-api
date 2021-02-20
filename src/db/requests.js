@@ -146,8 +146,7 @@ export async function createRequest(request, slackClient) {
       id: spreadsheetId || dbRequest.id,
     };
     const slack_ts = await sendSlackMessage({
-      slackRequest,
-      request,
+      request: slackRequest,
       building,
       visibleNodes,
       slackClient,
