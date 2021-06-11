@@ -68,26 +68,22 @@ Currently, we use node numbers to represent join requests, members, and nodes. T
 
 A physical location.
 
-- id
-- address
-- lat
-- lng
-- alt
-- bin (optional) // NYC Building ID Number
-- notes (optional)
+| id  | address | lat | lng | alt | bin | notes |
+| --- | ------- | --- | --- | --- | --- | ----- |
 
 ### Member
 
 A person in the mesh community. For example, a node-owner, donor or installer.
 
-- id
-- name
-- email
-- phone
+| id  | name | email | phone |
+| --- | ---- | ----- | ----- |
 
 ### Node
 
 A specific location on the network. Typically one per building.
+
+| id  | lat | lng | alt | status | name | location |
+| --- | --- | --- | --- | ------ | ---- | -------- |
 
 - id
 - lat
@@ -335,39 +331,52 @@ ORDER BY building_height DESC;
 
 ### DB Setup
 
-Install dependencies:
+Install lxml:
 
-- Python
-- Postgres
-- PostGIS
+```python
+pip3 install lxml
+```
 
-Create a table in the db:
+Set up the db:
 
-```sql
-CREATE TABLE ny(gid SERIAL PRIMARY KEY, bldg_id varchar(255), bldg_bin varchar(255), geom GEOMETRY('MULTIPOLYGONZ', 2263))
+```bash
+node scripts/reset-los-db.js
 ```
 
 Download the [building data](https://www1.nyc.gov/site/doitt/initiatives/3d-building.page):
 
 ```bash
-curl -o data.zip http://maps.nyc.gov/download/3dmodel/DA_WISE_GML.zip
-unzip data.zip -d data
-rm data.zip
+curl -o building_data.zip http://maps.nyc.gov/download/3dmodel/DA_WISE_GML.zip
+unzip building_data.zip -d building_data
+rm building_data.zip
 ```
 
-Insert the data:
+Insert the data
 
 ```bash
-# 12 and 13 are Manhattan
-python2 ./scripts/gml_to_pgsql.py ./data/DA_WISE_GMLs/DA12_3D_Buildings_Merged.gml ny | psql db
-python2 ./scripts/gml_to_pgsql.py ./data/DA_WISE_GMLs/DA13_3D_Buildings_Merged.gml ny | psql db
-```
-
-Create indices:
-
-```sql
-CREATE INDEX geom_index ON ny USING GIST (geom);
-CREATE INDEX bin_index ON ny (bldg_bin);
+{
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA1_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA2_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA3_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA4_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA5_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA6_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA7_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA8_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA9_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA10_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA11_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA12_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA13_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA14_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA15_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA16_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA17_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA18_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA19_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA20_3D_Buildings_Merged.gml buildings
+	python3 ./scripts/gml_to_pgsql.py ./building_data/DA_WISE_GMLs/DA21_3D_Buildings_Merged.gml buildings
+} | psql $LOS_DATABASE_URL
 ```
 
 Now we are ready to make queries!
