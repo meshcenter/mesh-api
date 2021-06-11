@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import fetch from "node-fetch";
 import { getLos, getBuildingHeightMeters } from "./los";
 import { requestMessage } from "../slack";
@@ -22,6 +23,29 @@ GROUP BY
   requests.id,
   buildings.id,
   members.id`,
+    [id]
+  );
+  if (!request) throw new Error("Not found");
+  return request;
+}
+
+// Get request without api key using a secret token
+export async function getRequestFromToken(token) {
+  if (!token) throw new Error("Bad params");
+  const [request] = await performQuery(
+    `SELECT
+  requests.*,
+  to_json(buildings) AS building,
+  COALESCE(json_agg(DISTINCT panoramas) FILTER (WHERE panoramas IS NOT NULL), '[]') AS panoramas
+FROM
+  requests
+  JOIN buildings ON requests.building_id = buildings.id
+  LEFT JOIN panoramas ON requests.id = panoramas.request_id
+WHERE
+  requests.id = $1
+GROUP BY
+  requests.id,
+  buildings.id`,
     [id]
   );
   if (!request) throw new Error("Not found");
@@ -129,6 +153,14 @@ export async function createRequest(request, slackClient) {
     [now, apartment, roof_access || roofAccess, member.id, building.id]
   );
 
+  // Create token
+  const buffer = await crypto.randomBytes(8);
+  const token = buffer.toString("hex");
+  await performQuery(
+    "INSERT INTO request_tokens (token, request_id) VALUES ($1, $2) RETURNING *",
+    [token, dbRequest.id]
+  );
+
   // Get los
   let visibleNodes = [];
   try {
@@ -161,7 +193,10 @@ export async function createRequest(request, slackClient) {
 
   dbRequest = await getRequest(dbRequest.id);
 
-  return dbRequest;
+  return {
+    ...dbRequest,
+    token,
+  };
 }
 
 async function sendSlackMessage({

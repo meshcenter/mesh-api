@@ -5,6 +5,7 @@ import {
   getRequest,
   createRequest,
   updateRequest,
+  getRequestFromToken,
 } from "../db/requests";
 import { checkAuth } from "../auth";
 import SlackClient from "../slack/client";
@@ -36,8 +37,8 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.post("/:id", async (req, res, next) => {
-  const request = await updateRequest(req.params.id, req.body);
+router.post("/token/:token", async (req, res, next) => {
+  const request = await getRequestFromToken(req.params.token);
   res.json(request);
 });
 
