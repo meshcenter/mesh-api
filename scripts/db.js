@@ -9,15 +9,15 @@ async function createPool(connectionString) {
     connectionString,
     ssl: sslOptions(params.hostname),
   });
-}
 
-// See src/db/index.js
-function sslOptions(host) {
-  if (host === "localhost" || host === "127.0.0.1") return false;
-  return {
-    rejectUnauthorized: false,
-    mode: "require",
-  };
+  // See src/db/index.js
+  function sslOptions(host) {
+    if (host === "localhost" || host === "127.0.0.1") return false;
+    return {
+      rejectUnauthorized: false,
+      mode: "require",
+    };
+  }
 }
 
 async function performQuery(text, values) {
