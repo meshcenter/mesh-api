@@ -12,6 +12,8 @@ const s3 = new AWS.S3({
 export async function getUploadURL(name, type) {
   if (!name || !type) throw new Error("Bad params");
 
+  // const timestamp =
+
   // TODO: Validate content type?
 
   const url = await s3.getSignedUrl("putObject", {
@@ -24,20 +26,23 @@ export async function getUploadURL(name, type) {
   return url;
 }
 
-const insertPanoQuery =
-  "INSERT INTO panoramas (url, date, request_id) VALUES ($1, $2, $3) RETURNING *";
+export async function createPano({ url, request_id }, slackClient) {
+  if (!url) throw new Error("Bad params");
 
-// TODO: Restrict this somehow. Maybe require a secret?
-export async function savePano(requestId, panoURL, slackClient) {
-  if (!requestId || !panoURL) throw new Error("Bad params");
-  const values = [panoURL, new Date(), requestId];
-  const [pano] = await performQuery(insertPanoQuery, values);
+  const [
+    pano,
+  ] = await performQuery(
+    "INSERT INTO panoramas (url, date, request_id) VALUES ($1, $2, $3) RETURNING *",
+    [url, new Date(), request_id]
+  );
+
   try {
-    const request = await getRequest(requestId);
+    const request = await getRequest(request_id);
     await panoMessage(slackClient, pano, request);
   } catch (error) {
     console.log("Failed to send pano slack message!");
     console.log(error.message);
   }
+
   return pano;
 }
