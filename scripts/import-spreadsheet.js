@@ -624,7 +624,7 @@ GROUP BY buildings.id`,
         building = matchingAddress[0];
       }
     } else {
-      [building] = buildings;
+      building = buildings[0];
     }
 
     if (!building) {
@@ -719,7 +719,7 @@ function getClusteredNodes(nodes) {
   return Object.values(clusterMap);
 
   function geoKey(node) {
-    const precision = 4;
+    const precision = 5;
     const [lng, lat] = node.coordinates;
     return `${parseFloat(lat).toFixed(precision)}-${parseFloat(lng).toFixed(
       precision

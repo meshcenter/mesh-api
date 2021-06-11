@@ -18,13 +18,17 @@ export async function acuityWebhook(body, slackClient) {
     throw new Error(`Acuity appointment ${id} not found`);
   }
 
-  const { values } = acuityAppointment.forms[0];
-  const [requestIdValue] = values.filter((v) => v.name === "Node Number");
-  const [notesValue] = values.filter((v) => v.name === "Notes");
-  const requestId = parseInt(requestIdValue.value);
-  const notes = String(notesValue.value);
-
-  const request = await getRequest(requestId);
+  let request_id, member_id, building_id, notes;
+  try {
+    const { values } = acuityAppointment.forms[0];
+    request_id = parseInt(values.filter((v) => v.name === "Node Number")[0]);
+    const request = await getRequest(request_id);
+    member_id = request.member.id;
+    building_id = request.building.id;
+    notes = String(values.filter((v) => v.name === "Notes")[0]);
+  } catch (error) {
+    console.log("Unable to find request", request_id);
+  }
 
   if (action === "scheduled") {
     const sanitizedType = sanitizeType(acuityAppointment.type);
@@ -34,9 +38,9 @@ export async function acuityWebhook(body, slackClient) {
       type: sanitizedType,
       date: acuityAppointment.date,
       notes,
-      request_id: request.id,
-      member_id: request.member.id,
-      building_id: request.building.id,
+      request_id,
+      member_id,
+      building_id,
       acuity_id: id,
     });
 

@@ -92,7 +92,7 @@ export async function getLos(bin) {
 
 async function getBuildingMidpoint(bin) {
   const text =
-    "SELECT ST_AsText(ST_Centroid((SELECT geom FROM ny WHERE bldg_bin = $1)))";
+    "SELECT ST_AsText(ST_Centroid((SELECT geom FROM buildings WHERE bldg_bin = $1)))";
   const values = [bin];
   const res = await performLosQuery(text, values);
   if (!res.length) throw new Error("Not found");
@@ -105,7 +105,8 @@ async function getBuildingMidpoint(bin) {
 
 export async function getBuildingHeight(bin) {
   try {
-    const text = "SELECT ST_ZMax((SELECT geom FROM ny WHERE bldg_bin = $1))";
+    const text =
+      "SELECT ST_ZMax((SELECT geom FROM buildings WHERE bldg_bin = $1))";
     const values = [bin];
     const res = await performLosQuery(text, values);
     if (!res.length) throw new Error("Not found");
@@ -136,7 +137,7 @@ FROM (
   SELECT
     *
   FROM
-    ny
+    buildings
   WHERE
     bldg_bin = ANY ($1)) AS hubs
 WHERE
@@ -144,7 +145,7 @@ WHERE
       SELECT
         ST_Centroid(geom)
       FROM
-        ny
+        buildings
       WHERE
         bldg_bin = $2), $3)`,
     [nodeBins, bin, range]
