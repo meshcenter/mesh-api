@@ -186,7 +186,7 @@ async function getIntersections(
   const text = `SELECT
         a.bldg_bin as bin
       FROM
-        ny AS a
+        buildings AS a
       WHERE
         ST_3DIntersects (a.geom, ST_SetSRID(ST_GeomFromText('LINESTRINGZ(${x1} ${y1} ${height1}, ${x2} ${y2} ${height2})'), 2263))
         AND bldg_bin != $1
