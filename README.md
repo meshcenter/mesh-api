@@ -60,6 +60,25 @@ ACUITY_USER_ID=
 ACUITY_API_KEY=
 ```
 
+### Dev Database Setup
+
+A simple dev database can be configured by running
+
+```
+docker run -d -p 5432:5432 \
+           --name meshcenter-test-db \
+           -e POSTGRES_USER=meshdb\
+           -e POSTGRES_PASSWORD=meshdb \
+           -e POSTGRES_DB=meshdb \
+           postgres 
+```
+
+Add these credentials to the `.env` file using a connection URL:
+`postgres://meshdb:meshdb@127.0.0.1:5432/meshdb?sslmode=disable`
+
+Finally, initialize the database tables by running
+`yarn migrate up`
+
 ## Schema
 
 Currently, we use node numbers to represent join requests, members, and nodes. This schema is an attempt to detangle our data and create a common definition of the various components of the mesh.
