@@ -4,3 +4,12 @@ building_data/
 .env
 .DS_Store
 .netlify
+
+# IDEA IDEs
+.idea/
+*.iml
+
+# VS Code IDE
+.vscode/*
+.history/
+*.vsix
