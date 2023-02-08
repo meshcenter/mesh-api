@@ -7,7 +7,7 @@ importSpreadsheet().then(() => process.exit(0));
 
 async function importSpreadsheet() {
   console.log("Fetching spreadsheet...");
-  const spreadsheetRes = await fetch(process.env.SPREADSHEET_URL);
+  const spreadsheetRes = await fetch(process.env.SPREADSHEET_APPS_SCRIPT_WEBHOOK_URL);
   const { nodes: rawNodes, links, sectors } = await spreadsheetRes.json();
   const nodes = rawNodes
     .filter((node) => node.address)

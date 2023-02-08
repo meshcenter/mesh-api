@@ -30,7 +30,7 @@ https://api.nycmesh.net/v1/kml
 
 ## Running locally
 
-Clone the repo: `git clone git@github.com:olivernyc/nycmesh-api.git`  
+Clone the repo: `git clone git@github.com:Andrew-Dickinson/mesh-api.git`  
 Install dependencies: `yarn install`  
 Run the local server: `yarn start`
 
@@ -58,7 +58,28 @@ OSTICKET_API_KEY=
 
 ACUITY_USER_ID=
 ACUITY_API_KEY=
+
+SPREADSHEET_APPS_SCRIPT_WEBHOOK_URL=
 ```
+
+### Dev Database Setup
+
+A simple dev database can be configured by running
+
+```
+docker run -d -p 5432:5432 \
+           --name meshcenter-test-db \
+           -e POSTGRES_USER=meshdb\
+           -e POSTGRES_PASSWORD=meshdb \
+           -e POSTGRES_DB=meshdb \
+           postgres 
+```
+
+Add these credentials to the `.env` file using a connection URL:
+`postgres://meshdb:meshdb@127.0.0.1:5432/meshdb?sslmode=disable`
+
+Finally, initialize the database tables by running
+`yarn migrate up`
 
 ## Schema
 
